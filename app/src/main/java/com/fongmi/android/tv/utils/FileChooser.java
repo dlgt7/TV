@@ -65,6 +65,10 @@ public class FileChooser {
         }
     }
 
+    public static String getPathFromUri(Uri uri) {
+        return getPathFromUri(App.get(), uri);
+    }
+
     public static String getPathFromUri(Context context, Uri uri) {
         if (uri == null) return null;
         String path = null;

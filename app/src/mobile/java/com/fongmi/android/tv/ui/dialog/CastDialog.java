@@ -181,6 +181,7 @@ public class CastDialog extends BaseDialog implements DeviceAdapter.OnClickListe
 
     @Override
     public void onSuccess(Unit unit) {
+        control.seek(video.getPosition(), null);
         control.play("1", null);
         onCasted();
     }

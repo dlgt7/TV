@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -80,19 +81,42 @@ public class ParserImpl implements Parser {
         return videoInfo;
     }
 
+    private String randomVisitorData() {
+        ProtoBuilder pbE2 = new ProtoBuilder();
+        pbE2.string(2, "");
+        pbE2.varint(4, new Random().nextInt(255) + 1);
+        ProtoBuilder pbE = new ProtoBuilder();
+        pbE.string(1, "GB");
+        pbE.bytes(2, pbE2.toBytes());
+        ProtoBuilder pb = new ProtoBuilder();
+        pb.string(1, generate(11, new Random()));
+        pb.varint(5, System.currentTimeMillis() / 1000 - new Random().nextInt(600000));
+        pb.bytes(6, pbE.toBytes());
+        return pb.toUrlencodedBase64();
+    }
+
+    private String generate(int length, Random random) {
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        final StringBuilder stringBuilder = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            stringBuilder.append(alphabet.charAt(random.nextInt(alphabet.length())));
+        }
+        return stringBuilder.toString();
+    }
+
     private VideoInfo parseVideoAndroid(String videoId, YoutubeCallback<VideoInfo> callback) throws YoutubeException {
         String url = "https://youtubei.googleapis.com/youtubei/v1/player?key=" + ANDROID_APIKEY;
         String body = "{" +
                       "  \"videoId\": \"" + videoId + "\"," +
                       "  \"context\": {" +
                       "    \"client\": {" +
-                      "      \"clientName\": \"ANDROID_VR\"," +
-                      "      \"clientVersion\": \"1.57.29\"," +
-                      "      \"deviceMake\": \"Oculus\"," +
-                      "      \"deviceModel\": \"Quest 3\"," +
-                      "      \"osName\": \"Android\"," +
-                      "      \"osVersion\": \"12L\"," +
-                      "      \"androidSdkVersion\": 32" +
+                      "      \"clientName\": \"IOS\"," +
+                      "      \"clientVersion\": \"19.45.4\"," +
+                      "      \"deviceMake\": \"Apple\"," +
+                      "      \"deviceModel\": \"iPhone16,2\"," +
+                      "      \"osName\": \"iPhone\"," +
+                      "      \"osVersion\": \"18.1.0.22B83\"," +
+                      "      \"visitorData\": \"" + randomVisitorData() + "\"," +
                       "    }" +
                       "  }" +
                       "}";

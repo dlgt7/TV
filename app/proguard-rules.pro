@@ -55,6 +55,9 @@
 # Jianpian
 -keep class com.p2p.** { *; }
 
+# Nano
+-keep class fi.iki.elonen.** { *; }
+
 # QuickJS
 -keep class com.fongmi.quickjs.method.** { *; }
 

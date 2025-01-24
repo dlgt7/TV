@@ -33,6 +33,7 @@
         "days": "7",
         "type": "append",
         "regex": "/PLTV/",
+        "replace": "/PLTV/,/TVOD/",
         "source": "?playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"
       }
     },

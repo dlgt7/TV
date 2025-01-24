@@ -26,7 +26,7 @@ public class PushActivity extends BaseActivity {
     }
 
     public static void start(Activity activity, int tab) {
-        Intent intent = new Intent(new Intent(activity, PushActivity.class));
+        Intent intent = new Intent(activity, PushActivity.class);
         intent.putExtra("tab", tab);
         activity.startActivity(intent);
     }

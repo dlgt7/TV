@@ -3,11 +3,13 @@ package com.fongmi.android.tv.player.extractor;
 import android.net.Uri;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.bean.Core;
 import com.fongmi.android.tv.exception.ExtractException;
 import com.fongmi.android.tv.player.Source;
+import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
 import com.google.gson.JsonObject;
@@ -58,7 +60,7 @@ public class TVBus implements Source.Extractor, Listener {
     }
 
     private void onCheck() throws Exception {
-        if (hls.startsWith("-")) throw new ExtractException("Error code: " + hls);
+        if (hls.startsWith("-")) throw new ExtractException(ResUtil.getString(R.string.error_play_code, hls));
     }
 
     private void onWait() throws InterruptedException {

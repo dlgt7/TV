@@ -39,25 +39,15 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
     }
 
     private void checkToAdd(String item) {
-        int index = mItems.indexOf(item);
-        if (index == -1) {
-            mItems.add(0, item);
-            notifyItemInserted(0);
-        } else {
-            mItems.remove(index);
-            mItems.add(0, item);
-            notifyItemRangeChanged(0, mItems.size());
-        }
-        if (mItems.size() > 8) {
-            mItems.remove(8);
-            notifyItemRemoved(8);
-        }
+        mItems.remove(item);
+        mItems.add(0, item);
+        if (mItems.size() > 8) mItems.remove(8);
     }
 
     public void add(String item) {
         checkToAdd(item);
+        notifyDataSetChanged();
         mListener.onDataChanged(getItemCount());
-        Setting.putKeyword(App.gson().toJson(mItems));
     }
 
     @Override

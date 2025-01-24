@@ -22,6 +22,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Collect;
 import com.fongmi.android.tv.bean.Site;
@@ -32,6 +33,7 @@ import com.fongmi.android.tv.ui.fragment.CollectFragment;
 import com.fongmi.android.tv.ui.presenter.CollectPresenter;
 import com.fongmi.android.tv.utils.PauseExecutor;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +75,7 @@ public class CollectActivity extends BaseActivity {
     protected void initView() {
         setRecyclerView();
         setViewModel();
+        saveKeyword();
         setPager();
         setSite();
         search();
@@ -135,6 +138,14 @@ public class CollectActivity extends BaseActivity {
             mViewModel.searchContent(site, getKeyword(), false);
         } catch (Throwable ignored) {
         }
+    }
+
+    private void saveKeyword() {
+        List<String> items = Setting.getKeyword().isEmpty() ? new ArrayList<>() : App.gson().fromJson(Setting.getKeyword(), new TypeToken<List<String>>() {}.getType());
+        items.remove(getKeyword());
+        items.add(0, getKeyword());
+        if (items.size() > 8) items.remove(8);
+        Setting.putKeyword(App.gson().toJson(items));
     }
 
     private void stop() {
