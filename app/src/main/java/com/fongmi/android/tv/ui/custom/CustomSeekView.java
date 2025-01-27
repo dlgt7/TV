@@ -103,7 +103,9 @@ public class CustomSeekView extends FrameLayout implements TimeBar.OnScrubListen
     }
 
     private void setKeyTimeIncrement(long duration) {
-        if (duration > TimeUnit.MINUTES.toMillis(30)) {
+        if (duration > TimeUnit.HOURS.toMillis(3)) {
+            timeBar.setKeyTimeIncrement(TimeUnit.MINUTES.toMillis(5));
+        } else if (duration > TimeUnit.MINUTES.toMillis(30)) {
             timeBar.setKeyTimeIncrement(TimeUnit.MINUTES.toMillis(1));
         } else if (duration > TimeUnit.MINUTES.toMillis(15)) {
             timeBar.setKeyTimeIncrement(TimeUnit.SECONDS.toMillis(30));

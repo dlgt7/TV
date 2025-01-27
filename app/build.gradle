@@ -13,8 +13,8 @@ android {
         minSdk 21
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        versionCode 290
-        versionName "2.9.0"
+        versionCode 293
+        versionName "2.9.3"
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
@@ -34,10 +34,6 @@ android {
         }
         python {
             dimension "api"
-        }
-        x86 {
-            dimension "abi"
-            ndk { abiFilters "x86" }
         }
         arm64_v8a {
             dimension "abi"
@@ -68,11 +64,6 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
-    }
-
     android.applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
             outputFileName = "${variant.productFlavors[0].name}-${variant.productFlavors[1].name}-${variant.productFlavors[2].name}.apk"
@@ -87,6 +78,11 @@ android {
 
     lint {
         disable 'UnsafeOptInUsageError'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 

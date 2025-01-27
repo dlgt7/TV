@@ -562,7 +562,11 @@ public class Players implements Player.Listener, ParseCallback {
 
     @Override
     public void onTracksChanged(@NonNull Tracks tracks) {
-        if (!tracks.isEmpty()) PlayerEvent.track();
+        if (isHard() && ExoUtil.shouldSoftDecode(tracks)) {
+            ErrorEvent.url(PlaybackException.ERROR_CODE_DECODING_FAILED);
+        } else if (!tracks.isEmpty()) {
+            PlayerEvent.track();
+        }
     }
 
     @Override
