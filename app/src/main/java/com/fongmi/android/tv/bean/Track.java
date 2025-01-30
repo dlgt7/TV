@@ -1,13 +1,15 @@
 package com.fongmi.android.tv.bean;
 
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
-import androidx.media3.common.C;
 import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import com.fongmi.android.tv.db.AppDatabase;
 
+import java.util.Collections;
 import java.util.List;
 
 @Entity(indices = @Index(value = {"key", "type"}, unique = true))
@@ -98,15 +100,16 @@ public class Track {
     }
 
     public void save() {
-        if (getType() != C.TRACK_TYPE_TEXT) return;
+        if (TextUtils.isEmpty(getKey())) return;
         AppDatabase.get().getTrackDao().insert(this);
     }
 
     public static List<Track> find(String key) {
-        return AppDatabase.get().getTrackDao().find(key);
+        return TextUtils.isEmpty(key) ? Collections.emptyList() : AppDatabase.get().getTrackDao().find(key);
     }
 
     public static void delete(String key) {
+        if (TextUtils.isEmpty(key)) return;
         AppDatabase.get().getTrackDao().delete(key);
     }
 }

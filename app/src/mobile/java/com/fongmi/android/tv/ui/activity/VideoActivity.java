@@ -371,7 +371,6 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         ExoUtil.setSubtitleView(mBinding.exo);
         if (isPort() && ResUtil.isLand(this)) enterFullscreen();
         mBinding.control.action.decode.setText(mPlayers.getDecodeText());
-        mBinding.control.action.speed.setEnabled(mPlayers.canAdjustSpeed());
         mBinding.control.action.reset.setText(ResUtil.getStringArray(R.array.select_reset)[Setting.getReset()]);
         mBinding.video.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> mPiP.update(getActivity(), view));
     }
@@ -1039,7 +1038,6 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mHistory.setDuration(duration = mPlayers.getDuration());
         if (position >= 0 && duration > 0 && !Setting.isIncognito()) App.execute(() -> mHistory.update());
         if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
-            mClock.setCallback(null);
             checkEnded();
         }
     }
@@ -1105,8 +1103,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void setPosition() {
-        if (mHistory == null) return;
-        mPlayers.seekTo(Math.max(mHistory.getOpening(), mHistory.getPosition()));
+        if (mHistory != null) mPlayers.seekTo(Math.max(mHistory.getOpening(), mHistory.getPosition()));
     }
 
     private void checkPortrait() {
@@ -1156,9 +1153,10 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void onCheck(ErrorEvent event) {
-        if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
-        else if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekTo(C.TIME_UNSET);
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED) mPlayers.init(mBinding.exo);
+        if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekToDefaultPosition();
+        else if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
+        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isSoft()) mPlayers.init(mBinding.exo);
+        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isHard()) onDecode();
         else if (event.getCode() == PlaybackException.ERROR_CODE_DECODING_FAILED && mPlayers.isHard()) onDecode();
         else onError(event);
     }
@@ -1408,7 +1406,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
 
     @Override
     public void onSpeedUp() {
-        if (!mPlayers.isPlaying() || !mPlayers.canAdjustSpeed()) return;
+        if (!mPlayers.isPlaying()) return;
         mBinding.control.action.speed.setText(mPlayers.setSpeed(Setting.getSpeed()));
         mBinding.widget.speed.startAnimation(ResUtil.getAnim(R.anim.forward));
         mBinding.widget.speed.setVisibility(View.VISIBLE);

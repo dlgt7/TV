@@ -142,7 +142,6 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
         findViewById(R.id.timeBar).setNextFocusUpId(R.id.reset);
         mBinding.control.speed.setText(mPlayers.getSpeedText());
         mBinding.control.decode.setText(mPlayers.getDecodeText());
-        mBinding.control.speed.setEnabled(mPlayers.canAdjustSpeed());
         mBinding.control.reset.setText(ResUtil.getStringArray(R.array.select_reset)[0]);
     }
 
@@ -330,9 +329,10 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
     }
 
     private void onCheck(ErrorEvent event) {
-        if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
-        else if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekTo(C.TIME_UNSET);
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED) mPlayers.init(mBinding.exo);
+        if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekToDefaultPosition();
+        else if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
+        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isSoft()) mPlayers.init(mBinding.exo);
+        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isHard()) onDecode();
         else if (event.getCode() == PlaybackException.ERROR_CODE_DECODING_FAILED && mPlayers.isHard()) onDecode();
         else onError(event);
     }
@@ -456,7 +456,7 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
 
     @Override
     public void onSpeedUp() {
-        if (!mPlayers.isPlaying() || !mPlayers.canAdjustSpeed()) return;
+        if (!mPlayers.isPlaying()) return;
         mBinding.control.speed.setText(mPlayers.setSpeed(Setting.getSpeed()));
         mBinding.widget.speed.startAnimation(ResUtil.getAnim(R.anim.forward));
         mBinding.widget.speed.setVisibility(View.VISIBLE);

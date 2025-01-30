@@ -174,7 +174,6 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
     }
 
     public void setPlayer() {
-        binding.speed.setEnabled(player.canAdjustSpeed());
         binding.speed.setValue(Math.max(player.getSpeed(), 0.5f));
         binding.player.setText(parent.control.action.player.getText());
         binding.decode.setVisibility(parent.control.action.decode.getVisibility());

@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.player;
 
+import static androidx.media3.common.Player.COMMAND_SET_SPEED_AND_PITCH;
 import static androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON;
 import static androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
 
@@ -176,6 +177,10 @@ public class Players implements Player.Listener, ParseCallback {
         return exoPlayer == null ? 0 : exoPlayer.getVideoSize().height;
     }
 
+    public int getRetry() {
+        return retry;
+    }
+
     public float getSpeed() {
         return exoPlayer == null ? 1.0f : exoPlayer.getPlaybackParameters().speed;
     }
@@ -194,10 +199,6 @@ public class Players implements Player.Listener, ParseCallback {
 
     public boolean retried() {
         return ++retry > 2;
-    }
-
-    public boolean canAdjustSpeed() {
-        return !Setting.isTunnel();
     }
 
     public boolean haveTrack(int type) {
@@ -221,15 +222,19 @@ public class Players implements Player.Listener, ParseCallback {
     }
 
     public boolean isLive() {
-        return getDuration() < 3 * 60 * 1000 || exoPlayer.isCurrentMediaItemLive();
+        return getDuration() < 60 * 1000 || exoPlayer.isCurrentMediaItemLive();
     }
 
     public boolean isVod() {
-        return getDuration() > 3 * 60 * 1000 && !exoPlayer.isCurrentMediaItemLive();
+        return getDuration() > 60 * 1000 && !exoPlayer.isCurrentMediaItemLive();
     }
 
     public boolean isHard() {
         return decode == HARD;
+    }
+
+    public boolean isSoft() {
+        return decode == SOFT;
     }
 
     public boolean isPortrait() {
@@ -249,7 +254,8 @@ public class Players implements Player.Listener, ParseCallback {
     }
 
     public String setSpeed(float speed) {
-        if (exoPlayer != null && !Setting.isTunnel()) exoPlayer.setPlaybackSpeed(speed);
+        if (exoPlayer == null || !exoPlayer.isCommandAvailable(COMMAND_SET_SPEED_AND_PITCH)) return getSpeedText();
+        exoPlayer.setPlaybackParameters(exoPlayer.getPlaybackParameters().withSpeed(speed));
         return getSpeedText();
     }
 
@@ -303,6 +309,11 @@ public class Players implements Player.Listener, ParseCallback {
 
     public void seekTo(long time) {
         if (exoPlayer != null) exoPlayer.seekTo(time);
+    }
+
+    public void seekToDefaultPosition() {
+        if (exoPlayer != null) exoPlayer.seekToDefaultPosition();
+        prepare();
     }
 
     public void prepare() {
@@ -562,11 +573,7 @@ public class Players implements Player.Listener, ParseCallback {
 
     @Override
     public void onTracksChanged(@NonNull Tracks tracks) {
-        if (isHard() && ExoUtil.shouldSoftDecode(tracks)) {
-            ErrorEvent.url(PlaybackException.ERROR_CODE_DECODING_FAILED);
-        } else if (!tracks.isEmpty()) {
-            PlayerEvent.track();
-        }
+        if (!tracks.isEmpty()) PlayerEvent.track();
     }
 
     @Override

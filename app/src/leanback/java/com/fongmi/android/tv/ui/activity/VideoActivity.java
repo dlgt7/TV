@@ -91,9 +91,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -368,7 +368,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mPlayers.init(mBinding.exo);
         ExoUtil.setSubtitleView(mBinding.exo);
         mBinding.control.decode.setText(mPlayers.getDecodeText());
-        mBinding.control.speed.setEnabled(mPlayers.canAdjustSpeed());
         mBinding.control.reset.setText(ResUtil.getStringArray(R.array.select_reset)[Setting.getReset()]);
     }
 
@@ -772,6 +771,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         long current = mPlayers.getPosition();
         long duration = mPlayers.getDuration();
         if (current < 0 || duration < 0) return;
+        if (mHistory.getOpening() < 0) mHistory.setOpening(0);
         setOpening(Math.min(mHistory.getOpening() + 1000, duration / 2));
     }
 
@@ -786,7 +786,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
 
     private void setOpening(long opening) {
         mHistory.setOpening(opening);
-        mBinding.control.opening.setText(opening == 0 ? getString(R.string.play_op) : mPlayers.stringToTime(mHistory.getOpening()));
+        mBinding.control.opening.setText(opening <= 0 ? getString(R.string.play_op) : mPlayers.stringToTime(mHistory.getOpening()));
     }
 
     private void onEnding() {
@@ -814,7 +814,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
 
     private void setEnding(long ending) {
         mHistory.setEnding(ending);
-        mBinding.control.ending.setText(ending == 0 ? getString(R.string.play_ed) : mPlayers.stringToTime(mHistory.getEnding()));
+        mBinding.control.ending.setText(ending <= 0 ? getString(R.string.play_ed) : mPlayers.stringToTime(mHistory.getEnding()));
     }
 
     private void onChoose() {
@@ -1000,7 +1000,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mHistory.setDuration(duration = mPlayers.getDuration());
         if (position >= 0 && duration > 0 && !Setting.isIncognito()) App.execute(() -> mHistory.update());
         if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
-            mClock.setCallback(null);
             checkEnded();
         }
     }
@@ -1058,8 +1057,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     }
 
     private void setPosition() {
-        if (mHistory == null) return;
-        mPlayers.seekTo(Math.max(mHistory.getOpening(), mHistory.getPosition()));
+        if (mHistory != null) mPlayers.seekTo(Math.max(mHistory.getOpening(), mHistory.getPosition()));
     }
 
     private void checkEnded() {
@@ -1100,9 +1098,10 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     }
 
     private void onCheck(ErrorEvent event) {
-        if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
-        else if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekTo(C.TIME_UNSET);
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED) mPlayers.init(mBinding.exo);
+        if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekToDefaultPosition();
+        else if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
+        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isSoft()) mPlayers.init(mBinding.exo);
+        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isHard()) onDecode();
         else if (event.getCode() == PlaybackException.ERROR_CODE_DECODING_FAILED && mPlayers.isHard()) onDecode();
         else onError(event);
     }
@@ -1328,7 +1327,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
 
     @Override
     public void onSpeedUp() {
-        if (!mPlayers.isPlaying() || !mPlayers.canAdjustSpeed()) return;
+        if (!mPlayers.isPlaying()) return;
         mBinding.control.speed.setText(mPlayers.setSpeed(Setting.getSpeed()));
         mBinding.widget.speed.startAnimation(ResUtil.getAnim(R.anim.forward));
         mBinding.widget.speed.setVisibility(View.VISIBLE);
