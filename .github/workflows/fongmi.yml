@@ -1,5 +1,5 @@
 
-name: fongmiboxtv Build
+name: Build
 
 on:
   workflow_dispatch:
