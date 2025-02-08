@@ -3,10 +3,10 @@ package com.fongmi.quickjs.crawler;
 import android.content.Context;
 
 import com.fongmi.quickjs.bean.Res;
-import com.fongmi.quickjs.method.Async;
 import com.fongmi.quickjs.method.Console;
 import com.fongmi.quickjs.method.Global;
 import com.fongmi.quickjs.method.Local;
+import com.fongmi.quickjs.utils.Async;
 import com.fongmi.quickjs.utils.JSUtil;
 import com.fongmi.quickjs.utils.Module;
 import com.github.catvod.utils.Asset;
@@ -29,21 +29,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import dalvik.system.DexClassLoader;
 import java9.util.concurrent.CompletableFuture;
 
 public class Spider extends com.github.catvod.crawler.Spider {
 
     private final ExecutorService executor;
+    private final DexClassLoader dex;
     private QuickJSContext ctx;
     private JSObject jsObject;
     private final String key;
     private final String api;
     private boolean cat;
 
-    public Spider(String key, String api) throws Exception {
+    public Spider(String key, String api, DexClassLoader dex) throws Exception {
         this.executor = Executors.newSingleThreadExecutor();
         this.key = key;
         this.api = api;
+        this.dex = dex;
         initializeJS();
     }
 
@@ -56,7 +59,6 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     private Object call(String func, Object... args) throws Exception {
-        //return executor.submit((Function.call(jsObject, func, args))).get();
         return CompletableFuture.supplyAsync(() -> Async.run(jsObject, func, args), executor).join().get();
     }
 
@@ -78,7 +80,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     @Override
     public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) throws Exception {
-        JSObject obj = submit(() -> JSUtil.toObj(ctx, extend)).get();
+        JSObject obj = submit(() -> JSUtil.toObject(ctx, extend)).get();
         return (String) call("category", tid, pg, filter, obj);
     }
 
@@ -146,6 +148,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
     private void initializeJS() throws Exception {
         submit(() -> {
             createCtx();
+            createFun();
             createObj();
             return null;
         }).get();
@@ -155,7 +158,6 @@ public class Spider extends com.github.catvod.crawler.Spider {
         ctx = QuickJSContext.create();
         ctx.setConsole(new Console());
         ctx.evaluate(Asset.read("js/lib/http.js"));
-        Global.create(ctx, executor).setProperty();
         ctx.getGlobalObject().setProperty("local", Local.class);
         ctx.setModuleLoader(new QuickJSContext.BytecodeModuleLoader() {
             @Override
@@ -165,19 +167,27 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
             @Override
             public byte[] getModuleBytecode(String moduleName) {
-                String content = Module.get().fetch(moduleName);
-                return content.startsWith("//bb") ? Module.get().bb(content) : ctx.compileModule(content, moduleName);
+                return ctx.compileModule(Module.get().fetch(moduleName), moduleName);
             }
         });
+    }
+
+    private void createFun() {
+        try {
+            Global.create(ctx, executor);
+            Class<?> clz = dex.loadClass("com.github.catvod.js.Function");
+            clz.getDeclaredConstructor(QuickJSContext.class).newInstance(ctx);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private void createObj() {
         String spider = "__JS_SPIDER__";
         String global = "globalThis." + spider;
         String content = Module.get().fetch(api);
-        boolean bb = content.startsWith("//bb");
-        cat = bb || content.contains("__jsEvalReturn");
-        if (!bb) ctx.evaluateModule(content.replace(spider, global), api);
+        cat = content.contains("__jsEvalReturn");
+        ctx.evaluateModule(content.replace(spider, global), api);
         ctx.evaluateModule(String.format(Asset.read("js/lib/spider.js"), api));
         jsObject = (JSObject) ctx.getProperty(ctx.getGlobalObject(), spider);
     }
@@ -192,7 +202,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     private Object[] proxy1(Map<String, String> params) throws Exception {
-        JSObject object = JSUtil.toObj(ctx, params);
+        JSObject object = JSUtil.toObject(ctx, params);
         JSONArray array = new JSONArray(((JSArray) jsObject.getJSFunction("proxy").call(object)).stringify());
         Map<String, String> headers = array.length() > 3 ? Json.toMap(array.optString(3)) : null;
         boolean base64 = array.length() > 4 && array.optInt(4) == 1;
@@ -219,11 +229,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     private ByteArrayInputStream getStream(Object o, boolean base64) {
-        if (o instanceof JSONArray) {
-            JSONArray a = (JSONArray) o;
-            byte[] bytes = new byte[a.length()];
-            for (int i = 0; i < a.length(); i++) bytes[i] = (byte) a.optInt(i);
-            return new ByteArrayInputStream(bytes);
+        if (o instanceof byte[]) {
+            return new ByteArrayInputStream((byte[]) o);
         } else {
             String content = o.toString();
             if (base64 && content.contains("base64,")) content = content.split("base64,")[1];

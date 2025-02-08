@@ -52,6 +52,7 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
         mBinding.tunnelText.setText(getSwitch(Setting.isTunnel()));
         mBinding.speedText.setText(format.format(Setting.getSpeed()));
         mBinding.bufferText.setText(String.valueOf(Setting.getBuffer()));
+        mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
         mBinding.rtspText.setText((rtsp = ResUtil.getStringArray(R.array.select_rtsp))[Setting.getRtsp()]);
         mBinding.scaleText.setText((scale = ResUtil.getStringArray(R.array.select_scale))[Setting.getScale()]);
         mBinding.renderText.setText((render = ResUtil.getStringArray(R.array.select_render))[Setting.getRender()]);
@@ -69,6 +70,7 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
         mBinding.tunnel.setOnClickListener(this::setTunnel);
         mBinding.caption.setOnClickListener(this::setCaption);
         mBinding.caption.setOnLongClickListener(this::onCaption);
+        mBinding.audioDecode.setOnClickListener(this::setAudioDecode);
     }
 
     private void setVisible() {
@@ -138,5 +140,10 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
     private boolean onCaption(View view) {
         if (Setting.isCaption()) startActivity(new Intent(Settings.ACTION_CAPTIONING_SETTINGS));
         return Setting.isCaption();
+    }
+
+    private void setAudioDecode(View view) {
+        Setting.putAudioPrefer(!Setting.isAudioPrefer());
+        mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
     }
 }

@@ -4,35 +4,7 @@
     <application>
 
         <service
-            android:name="com.forcetech.service.P2PService"
-            android:exported="false" />
-
-        <service
             android:name="com.forcetech.service.P3PService"
-            android:exported="false" />
-
-        <service
-            android:name="com.forcetech.service.P4PService"
-            android:exported="false" />
-
-        <service
-            android:name="com.forcetech.service.P5PService"
-            android:exported="false" />
-
-        <service
-            android:name="com.forcetech.service.P6PService"
-            android:exported="false" />
-
-        <service
-            android:name="com.forcetech.service.P7PService"
-            android:exported="false" />
-
-        <service
-            android:name="com.forcetech.service.P8PService"
-            android:exported="false" />
-
-        <service
-            android:name="com.forcetech.service.P9PService"
             android:exported="false" />
 
         <service

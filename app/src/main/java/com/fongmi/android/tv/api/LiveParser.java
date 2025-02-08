@@ -1,7 +1,5 @@
 package com.fongmi.android.tv.api;
 
-import android.util.Base64;
-
 import androidx.media3.common.MimeTypes;
 
 import com.fongmi.android.tv.bean.Catchup;
@@ -16,7 +14,6 @@ import com.fongmi.android.tv.bean.XStream;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Json;
-import com.github.catvod.utils.Path;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,6 +27,7 @@ public class LiveParser {
     private static final Pattern CATCHUP_REPLACE = Pattern.compile(".*catchup-replace=\"(.?|.+?)\".*");
     private static final Pattern CATCHUP_SOURCE = Pattern.compile(".*catchup-source=\"(.?|.+?)\".*");
     private static final Pattern CATCHUP = Pattern.compile(".*catchup=\"(.?|.+?)\".*");
+    private static final Pattern TVG_CHNO = Pattern.compile(".*tvg-chno=\"(.?|.+?)\".*");
     private static final Pattern TVG_LOGO = Pattern.compile(".*tvg-logo=\"(.?|.+?)\".*");
     private static final Pattern TVG_NAME = Pattern.compile(".*tvg-name=\"(.?|.+?)\".*");
     private static final Pattern TVG_URL = Pattern.compile(".*tvg-url=\"(.?|.+?)\".*");
@@ -64,7 +62,7 @@ public class LiveParser {
         if (live.isXtream()) xtream(live);
         for (Group group : live.getGroups()) {
             for (Channel channel : group.getChannel()) {
-                channel.setNumber(++number);
+                if (channel.getNumber().isEmpty()) channel.setNumber(++number);
                 channel.live(live);
             }
         }
@@ -105,6 +103,7 @@ public class LiveParser {
                 Group group = live.find(Group.create(extract(line, GROUP), live.isPass()));
                 channel = group.find(Channel.create(extract(line, NAME)));
                 channel.setTvgName(extract(line, TVG_NAME));
+                channel.setNumber(extract(line, TVG_CHNO));
                 channel.setLogo(extract(line, TVG_LOGO));
                 Catchup unknown = Catchup.create();
                 unknown.setType(extract(line, CATCHUP));
@@ -163,15 +162,7 @@ public class LiveParser {
 
     private static String getText(Live live) {
         if (live.isXtream() && !XtreamParser.isGetUrl(live.getUrl())) return "";
-        return getText(live.getUrl(), live.getHeaders());
-    }
-
-    private static String getText(String url, Map<String, String> header) {
-        if (url.startsWith("file")) return Path.read(url);
-        if (url.startsWith("http")) return OkHttp.string(url, header);
-        if (url.startsWith("assets") || url.startsWith("proxy")) return getText(UrlUtil.convert(url), header);
-        if (!url.isEmpty() && url.length() % 4 == 0) return getText(new String(Base64.decode(url, Base64.DEFAULT)), header);
-        return "";
+        return OkHttp.string(UrlUtil.convert(live.getUrl()), live.getHeaders());
     }
 
     private static class Setting {
@@ -208,6 +199,7 @@ public class LiveParser {
             else if (line.startsWith("#EXTVLCOPT:http-referrer")) referer(line);
             else if (line.startsWith("#KODIPROP:inputstream.adaptive.license_key")) key(line);
             else if (line.startsWith("#KODIPROP:inputstream.adaptive.license_type")) type(line);
+            else if (line.startsWith("#KODIPROP:inputstream.adaptive.drm_legacy")) drmLegacy(line);
             else if (line.startsWith("#KODIPROP:inputstream.adaptive.manifest_type")) format(line);
             else if (line.startsWith("#KODIPROP:inputstream.adaptive.stream_headers")) headers(line);
         }
@@ -290,6 +282,18 @@ public class LiveParser {
                 type = line.split("license_type=")[1].trim();
             } catch (Exception e) {
                 type = null;
+            }
+        }
+
+        public void drmLegacy(String line) {
+            try {
+                line = line.split("drm_legacy=")[1].trim();
+                type = line.split("\\|")[0].trim();
+                key = line.split("\\|")[1].trim();
+                if (!key.startsWith("http")) convert();
+            } catch (Exception e) {
+                type = null;
+                key = null;
             }
         }
 

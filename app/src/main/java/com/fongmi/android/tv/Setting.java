@@ -225,6 +225,14 @@ public class Setting {
         Prefers.put("tunnel", tunnel);
     }
 
+    public static boolean isAudioPrefer() {
+        return Prefers.getBoolean("audio_prefer");
+    }
+
+    public static void putAudioPrefer(boolean audioPrefer) {
+        Prefers.put("audio_prefer", audioPrefer);
+    }
+
     public static boolean isZhuyin() {
         return Prefers.getBoolean("zhuyin");
     }

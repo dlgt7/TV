@@ -233,7 +233,7 @@ public class Channel {
     }
 
     public boolean hasMsg() {
-        return getMsg().length() > 0;
+        return !getMsg().isEmpty();
     }
 
     public Epg getData() {

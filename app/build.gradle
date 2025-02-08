@@ -13,8 +13,8 @@ android {
         minSdk 21
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        versionCode 298
-        versionName "2.9.8"
+        versionCode 305
+        versionName "3.0.5"
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
@@ -81,6 +81,7 @@ android {
     }
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
@@ -116,15 +117,13 @@ dependencies {
     implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'
     implementation 'com.github.jahirfiquitiva:TextDrawable:1.0.3'
     implementation 'com.github.thegrizzlylabs:sardine-android:0.9'
+    implementation 'com.github.teamnewpipe:NewPipeExtractor:v0.24.5'
     implementation 'com.google.android.material:material:1.12.0'
-    implementation 'com.google.net.cronet:cronet-okhttp:0.1.0'
     implementation 'com.google.zxing:core:3.3.0'
     implementation 'com.guolindev.permissionx:permissionx:1.8.0'
     implementation 'com.hierynomus:smbj:0.14.0'
     implementation 'io.antmedia:rtmp-client:3.2.0'
     implementation 'javax.servlet:javax.servlet-api:3.1.0'
-    implementation 'net.java.dev.jna:jna:5.2.0'
-    implementation 'org.chromium.net:cronet-embedded:76.3809.111'
     implementation 'org.eclipse.jetty:jetty-client:8.1.21.v20160908'
     implementation('org.eclipse.jetty:jetty-server:8.1.21.v20160908') { exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet' }
     implementation('org.eclipse.jetty:jetty-servlet:8.1.21.v20160908') { exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet' }
@@ -141,4 +140,5 @@ dependencies {
     annotationProcessor 'androidx.room:room-compiler:2.6.1'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     annotationProcessor 'org.greenrobot:eventbus-annotation-processor:3.3.1'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.1.4'
 }

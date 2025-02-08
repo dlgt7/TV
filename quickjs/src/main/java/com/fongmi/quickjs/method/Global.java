@@ -6,13 +6,10 @@ import androidx.annotation.NonNull;
 import com.fongmi.quickjs.bean.Req;
 import com.fongmi.quickjs.utils.Connect;
 import com.fongmi.quickjs.utils.Crypto;
-import com.fongmi.quickjs.utils.JSUtil;
-import com.fongmi.quickjs.utils.Parser;
 import com.github.catvod.Proxy;
 import com.github.catvod.utils.Trans;
 import com.github.catvod.utils.UriUtil;
 import com.orhanobut.logger.Logger;
-import com.whl.quickjs.wrapper.JSArray;
 import com.whl.quickjs.wrapper.JSFunction;
 import com.whl.quickjs.wrapper.JSMethod;
 import com.whl.quickjs.wrapper.JSObject;
@@ -21,7 +18,6 @@ import com.whl.quickjs.wrapper.QuickJSContext;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
-import java.nio.charset.CharacterCodingException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -34,7 +30,6 @@ public class Global {
 
     private final ExecutorService executor;
     private final QuickJSContext ctx;
-    private final Parser parser;
     private final Timer timer;
 
     public static Global create(QuickJSContext ctx, ExecutorService executor) {
@@ -42,13 +37,13 @@ public class Global {
     }
 
     private Global(QuickJSContext ctx, ExecutorService executor) {
-        this.parser = new Parser();
         this.executor = executor;
         this.timer = new Timer();
         this.ctx = ctx;
+        setProperty();
     }
 
-    public void setProperty() {
+    private void setProperty() {
         for (Method method : getClass().getMethods()) {
             if (!method.isAnnotationPresent(JSMethod.class)) continue;
             ctx.getGlobalObject().setProperty(method.getName(), args -> {
@@ -121,40 +116,8 @@ public class Global {
 
     @Keep
     @JSMethod
-    public String pd(String html, String rule, String urlKey) {
-        return parser.parseDomForUrl(html, rule, urlKey);
-    }
-
-    @Keep
-    @JSMethod
-    public String pdfh(String html, String rule) {
-        return parser.parseDomForUrl(html, rule, "");
-    }
-
-    @Keep
-    @JSMethod
-    public JSArray pdfa(String html, String rule) {
-        return JSUtil.toArray(ctx, parser.parseDomForArray(html, rule));
-    }
-
-    @Keep
-    @JSMethod
-    public JSArray pdfl(String html, String rule, String texts, String urls, String urlKey) {
-        return JSUtil.toArray(ctx, parser.parseDomForList(html, rule, texts, urls, urlKey));
-    }
-
-    @Keep
-    @JSMethod
     public String joinUrl(String parent, String child) {
         return UriUtil.resolve(parent, child);
-    }
-
-    @Keep
-    @JSMethod
-    public String gbkDecode(JSArray buffer) throws CharacterCodingException {
-        String result = JSUtil.decodeTo("GB2312", buffer);
-        Logger.t("gbkDecode").d("text:%s\nresult:\n%s", buffer, result);
-        return result;
     }
 
     @Keep

@@ -44,7 +44,7 @@ public class InfoDialog {
     }
 
     public InfoDialog url(String url) {
-        this.url = url;
+        this.url = fix(url);
         return this;
     }
 
@@ -61,8 +61,8 @@ public class InfoDialog {
     }
 
     private void initView() {
+        binding.url.setText(url);
         binding.title.setText(title);
-        binding.url.setText(fixUrl());
         binding.header.setText(header);
         binding.title.setSingleLine(title.toString().contains(url));
         binding.url.setVisibility(TextUtils.isEmpty(url) ? View.GONE : View.VISIBLE);
@@ -75,7 +75,7 @@ public class InfoDialog {
         binding.header.setOnLongClickListener(v -> onCopy(header));
     }
 
-    private String fixUrl() {
+    private String fix(String url) {
         return TextUtils.isEmpty(url) ? "" : url.startsWith("data") ? url.substring(0, Math.min(url.length(), 128)).concat("...") : url;
     }
 

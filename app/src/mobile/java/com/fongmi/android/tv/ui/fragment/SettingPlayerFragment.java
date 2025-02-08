@@ -55,6 +55,7 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.tunnelText.setText(getSwitch(Setting.isTunnel()));
         mBinding.speedText.setText(format.format(Setting.getSpeed()));
         mBinding.bufferText.setText(String.valueOf(Setting.getBuffer()));
+        mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
         mBinding.caption.setVisibility(Setting.hasCaption() ? View.VISIBLE : View.GONE);
         mBinding.rtspText.setText((rtsp = ResUtil.getStringArray(R.array.select_rtsp))[Setting.getRtsp()]);
         mBinding.scaleText.setText((scale = ResUtil.getStringArray(R.array.select_scale))[Setting.getScale()]);
@@ -75,6 +76,7 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.caption.setOnClickListener(this::setCaption);
         mBinding.caption.setOnLongClickListener(this::onCaption);
         mBinding.background.setOnClickListener(this::onBackground);
+        mBinding.audioDecode.setOnClickListener(this::setAudioDecode);
     }
 
     private void onUa(View view) {
@@ -150,6 +152,11 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
             Setting.putBackground(which);
             dialog.dismiss();
         }).show();
+    }
+
+    private void setAudioDecode(View view) {
+        Setting.putAudioPrefer(!Setting.isAudioPrefer());
+        mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
     }
 
     @Override

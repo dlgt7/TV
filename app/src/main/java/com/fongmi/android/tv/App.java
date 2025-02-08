@@ -39,12 +39,14 @@ public class App extends Application {
     private static App instance;
     private Activity activity;
     private final Gson gson;
+    private final long time;
     private Hook hook;
 
     public App() {
         instance = this;
         executor = Executors.newFixedThreadPool(Constant.THREAD_POOL);
         handler = HandlerCompat.createAsync(Looper.getMainLooper());
+        time = System.currentTimeMillis();
         gson = new Gson();
     }
 
@@ -54,6 +56,10 @@ public class App extends Application {
 
     public static Gson gson() {
         return get().gson;
+    }
+
+    public static long time() {
+        return get().time;
     }
 
     public static Activity activity() {

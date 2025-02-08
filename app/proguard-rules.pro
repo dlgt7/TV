@@ -37,10 +37,6 @@
 -keep class org.fourthline.cling.** { *; }
 -keep class javax.xml.** { *; }
 
-# Cronet
--keep class org.chromium.net.** { *; }
--keep class com.google.net.cronet.** { *; }
-
 # EXO
 -dontwarn org.kxml2.io.**
 -dontwarn org.xmlpull.v1.**
@@ -57,6 +53,13 @@
 
 # Nano
 -keep class fi.iki.elonen.** { *; }
+
+# NewPipeExtractor
+-keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class org.mozilla.javascript.** { *; }
+-keep class org.mozilla.classfile.ClassFileWriter
+-dontwarn org.mozilla.javascript.tools.**
+-dontwarn java.beans.**
 
 # QuickJS
 -keep class com.fongmi.quickjs.method.** { *; }

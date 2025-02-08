@@ -170,8 +170,8 @@ public class VodConfig {
         for (JsonElement element : Json.safeListElement(object, "sites")) {
             Site site = Site.objectFrom(element);
             if (sites.contains(site)) continue;
-            site.setApi(parseApi(site.getApi()));
-            site.setExt(parseExt(site.getExt()));
+            site.setApi(UrlUtil.convert(site.getApi()));
+            site.setExt(UrlUtil.convert(site.getExt()));
             site.setJar(parseJar(site, spider));
             sites.add(site.trans().sync());
         }
@@ -207,20 +207,8 @@ public class VodConfig {
         setAds(Json.safeListString(object, "ads"));
     }
 
-    private String parseApi(String api) {
-        if (api.startsWith("file") || api.startsWith("assets")) return UrlUtil.convert(api);
-        return api;
-    }
-
-    private String parseExt(String ext) {
-        if (ext.startsWith("file") || ext.startsWith("assets")) return UrlUtil.convert(ext);
-        if (ext.startsWith("img+")) return Decoder.getExt(ext);
-        return ext;
-    }
-
     private String parseJar(Site site, String spider) {
-        if (site.getJar().isEmpty() && site.getApi().startsWith("csp_")) return spider;
-        return site.getJar();
+        return site.getJar().isEmpty() ? spider : site.getJar();
     }
 
     public List<Doh> getDoh() {

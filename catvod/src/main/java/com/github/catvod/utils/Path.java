@@ -134,14 +134,6 @@ public class Path {
         }
     }
 
-    public static String read(String path) {
-        try {
-            return read(new FileInputStream(local(path)));
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
     public static String read(InputStream is) {
         try {
             byte[] data = new byte[is.available()];

@@ -277,7 +277,7 @@ public class Result implements Parcelable {
     }
 
     public boolean hasMsg() {
-        return getMsg().length() > 0;
+        return !getMsg().isEmpty();
     }
 
     public String getRealUrl() {

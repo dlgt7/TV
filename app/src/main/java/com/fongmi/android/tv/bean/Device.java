@@ -44,9 +44,13 @@ public class Device {
     @Ignore
     @SerializedName("wlan")
     private String wlan;
+    @Ignore
+    @SerializedName("time")
+    private long time;
 
     public static Device get() {
         Device device = new Device();
+        device.setTime(App.time());
         device.setSerial(Util.getSerial());
         device.setEth(Util.getMac("eth0"));
         device.setWlan(Util.getMac("wlan0"));
@@ -119,6 +123,10 @@ public class Device {
 
     public void setWlan(String wlan) {
         this.wlan = wlan;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
     }
 
     public boolean isLeanback() {
