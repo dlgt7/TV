@@ -3,7 +3,6 @@ package com.fongmi.android.tv.impl;
 import androidx.annotation.NonNull;
 
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Util;
 
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.downloader.Request;
@@ -18,6 +17,8 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 
 public final class NewPipeImpl extends Downloader {
+
+    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0";
 
     private static class Loader {
         static volatile NewPipeImpl INSTANCE = new NewPipeImpl();
@@ -39,7 +40,7 @@ public final class NewPipeImpl extends Downloader {
             requestBody = RequestBody.create(null, dataToSend);
         }
 
-        okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder().method(httpMethod, requestBody).url(url).addHeader("User-Agent", Util.CHROME);
+        okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder().method(httpMethod, requestBody).url(url).addHeader("User-Agent", USER_AGENT);
 
         for (Map.Entry<String, List<String>> pair : headers.entrySet()) {
             String headerName = pair.getKey();

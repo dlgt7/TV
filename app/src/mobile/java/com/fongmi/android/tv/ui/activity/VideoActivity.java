@@ -554,6 +554,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mFlagAdapter.toggle(item);
         notifyItemChanged(mEpisodeAdapter);
         mBinding.episode.scrollToPosition(mEpisodeAdapter.getPosition());
+        if (isFullscreen()) Notify.show(getString(R.string.play_ready, item.getName()));
         onRefresh();
     }
 
@@ -677,17 +678,21 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void checkNext() {
+        checkNext(true);
+    }
+
+    private void checkNext(boolean notify) {
         setR1Callback();
         Episode item = mEpisodeAdapter.getNext();
-        if (item.isActivated()) Notify.show(R.string.error_play_next);
-        else onItemClick(item);
+        if (!item.isActivated()) onItemClick(item);
+        else if (notify) Notify.show(R.string.error_play_next);
     }
 
     private void checkPrev() {
         setR1Callback();
         Episode item = mEpisodeAdapter.getPrev();
-        if (item.isActivated()) Notify.show(R.string.error_play_prev);
-        else onItemClick(item);
+        if (!item.isActivated()) onItemClick(item);
+        else Notify.show(R.string.error_play_prev);
     }
 
     private void onSetting() {
@@ -1038,7 +1043,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mHistory.setDuration(duration = mPlayers.getDuration());
         if (position >= 0 && duration > 0 && !Setting.isIncognito()) App.execute(() -> mHistory.update());
         if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
-            checkEnded();
+            checkEnded(false);
         }
     }
 
@@ -1086,7 +1091,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
                 checkPlayImg(mPlayers.isPlaying());
                 break;
             case Player.STATE_ENDED:
-                checkEnded();
+                checkEnded(true);
                 break;
             case PlayerEvent.TRACK:
                 setMetadata();
@@ -1113,13 +1118,13 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         }
     }
 
-    private void checkEnded() {
+    private void checkEnded(boolean notify) {
         if (mBinding.control.action.loop.isActivated()) {
             onReset(true);
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             checkPlayImg(false);
-            checkNext();
+            checkNext(notify);
         }
     }
 

@@ -71,7 +71,7 @@ public class LiveDialog implements LiveAdapter.OnClickListener {
     private void setDialog() {
         if (adapter.getItemCount() == 0) return;
         WindowManager.LayoutParams params = dialog.getWindow().getAttributes();
-        if (full) params.width = (int) (ResUtil.getScreenWidth() * 0.5f);
+        if (full && ResUtil.isLand(dialog.getContext())) params.width = (int) (ResUtil.getScreenWidth() * 0.5f);
         dialog.getWindow().setAttributes(params);
         dialog.getWindow().setDimAmount(0);
         dialog.show();

@@ -15,6 +15,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import okhttp3.HttpUrl;
 import okhttp3.Response;
 
 public class Decoder {
@@ -22,8 +23,12 @@ public class Decoder {
     private static final Pattern JS_URI = Pattern.compile("\"(\\.|\\.\\.)/(.?|.+?)\\.js\\?(.?|.+?)\"");
 
     public static String getJson(String url) throws Exception {
-        Response res = OkHttp.newCall(UrlUtil.convert(url)).execute();
-        return verify(res.request().url().toString(), res.body().string());
+        url = UrlUtil.convert(url);
+        int size = HttpUrl.parse(url).querySize();
+        Response res = OkHttp.newCall(url).execute();
+        HttpUrl httpUrl = res.request().url();
+        if (httpUrl.querySize() == size) url = httpUrl.toString();
+        return verify(url, res.body().string());
     }
 
     private static String verify(String url, String data) throws Exception {

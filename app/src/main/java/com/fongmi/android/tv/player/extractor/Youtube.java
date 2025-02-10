@@ -9,14 +9,12 @@ import com.fongmi.android.tv.player.Source;
 import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.ServiceList;
-import org.schabi.newpipe.extractor.linkhandler.LinkHandler;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubePlaylistExtractor;
-import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor;
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubePlaylistLinkHandlerFactory;
-import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeStreamLinkHandlerFactory;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -45,21 +43,32 @@ public class Youtube implements Source.Extractor {
 
     @Override
     public String fetch(String url) throws Exception {
-        LinkHandler handler = YoutubeStreamLinkHandlerFactory.getInstance().fromUrl(url);
-        YoutubeStreamExtractor extractor = new YoutubeStreamExtractor(ServiceList.YouTube, handler);
-        extractor.forceLocalization(NewPipe.getPreferredLocalization());
-        extractor.fetchPage();
-        return StreamType.LIVE_STREAM.equals(extractor.getStreamType()) ? extractor.getHlsUrl() : getMpd(extractor);
+        StreamInfo info = StreamInfo.getInfo(url);
+        return isLive(info) ? getLive(info) : getMpd(info);
     }
 
-    private String getMpd(YoutubeStreamExtractor extractor) throws Exception {
+    private boolean isLive(StreamInfo info) {
+        return StreamType.LIVE_STREAM.equals(info.getStreamType());
+    }
+
+    private String getLive(StreamInfo info) {
+        if (!info.getHlsUrl().isEmpty()) {
+            return info.getHlsUrl();
+        } else if (!info.getDashMpdUrl().isEmpty()) {
+            return info.getDashMpdUrl();
+        } else {
+            return "";
+        }
+    }
+
+    private String getMpd(StreamInfo info) {
         StringBuilder video = new StringBuilder();
         StringBuilder audio = new StringBuilder();
-        List<AudioStream> audioFormats = extractor.getAudioStreams();
-        List<VideoStream> videoFormats = extractor.getVideoOnlyStreams();
+        List<AudioStream> audioFormats = info.getAudioStreams();
+        List<VideoStream> videoFormats = info.getVideoOnlyStreams();
         for (AudioStream format : audioFormats) audio.append(getAdaptationSet(format, getAudioParam(format)));
         for (VideoStream format : videoFormats) video.append(getAdaptationSet(format, getVideoParam(format)));
-        String mpd = String.format(Locale.getDefault(), MPD, extractor.getLength(), extractor.getLength(), video, audio);
+        String mpd = String.format(Locale.getDefault(), MPD, info.getDuration(), info.getDuration(), video, audio);
         return "data:application/dash+xml;base64," + Base64.encodeToString(mpd.getBytes(), Base64.DEFAULT);
     }
 
