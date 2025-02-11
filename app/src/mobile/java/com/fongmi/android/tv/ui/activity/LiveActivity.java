@@ -16,7 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.C;
-import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.viewbinding.ViewBinding;
 
@@ -756,12 +755,14 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
         switch (event.getState()) {
             case PlayerEvent.PREPARE:
                 setInitTrack(true);
+                setDecode();
                 break;
             case Player.STATE_BUFFERING:
                 showProgress();
                 break;
             case Player.STATE_READY:
                 hideProgress();
+                mPlayers.reset();
                 checkPlayImg(mPlayers.isPlaying());
                 break;
             case Player.STATE_ENDED:
@@ -770,7 +771,6 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
             case PlayerEvent.TRACK:
                 setMetadata();
                 setInitTrack();
-                mPlayers.reset();
                 setTrackVisible();
                 break;
             case PlayerEvent.SIZE:
@@ -802,17 +802,7 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onErrorEvent(ErrorEvent event) {
         if (mPlayers.retried()) onError(event);
-        else if (event.isExo()) onCheck(event);
         else fetch();
-    }
-
-    private void onCheck(ErrorEvent event) {
-        if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekToDefaultPosition();
-        else if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isSoft()) mPlayers.init(mBinding.exo);
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isHard()) onDecode();
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODING_FAILED && mPlayers.isHard()) onDecode();
-        else onError(event);
     }
 
     private void onError(ErrorEvent event) {

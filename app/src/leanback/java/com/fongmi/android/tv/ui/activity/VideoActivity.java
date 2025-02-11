@@ -26,7 +26,6 @@ import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.C;
-import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
@@ -91,9 +90,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1037,12 +1036,14 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
             case PlayerEvent.PREPARE:
                 setInitTrack(true);
                 setPosition();
+                setDecode();
                 break;
             case Player.STATE_BUFFERING:
                 showProgress();
                 break;
             case Player.STATE_READY:
                 hideProgress();
+                mPlayers.reset();
                 break;
             case Player.STATE_ENDED:
                 checkEnded(true);
@@ -1050,7 +1051,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
             case PlayerEvent.TRACK:
                 setMetadata();
                 setInitTrack();
-                mPlayers.reset();
                 setTrackVisible();
                 mClock.setCallback(this);
                 break;
@@ -1097,17 +1097,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     public void onErrorEvent(ErrorEvent event) {
         if (isBackground()) return;
         if (mPlayers.retried()) onError(event);
-        else if (event.isExo()) onCheck(event);
         else onRefresh();
-    }
-
-    private void onCheck(ErrorEvent event) {
-        if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekToDefaultPosition();
-        else if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isSoft()) mPlayers.init(mBinding.exo);
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isHard()) onDecode();
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODING_FAILED && mPlayers.isHard()) onDecode();
-        else onError(event);
     }
 
     private void onError(ErrorEvent event) {

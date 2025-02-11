@@ -37,19 +37,19 @@ public class Sniffer {
         return SNIFFER.matcher(url).find();
     }
 
-    public static Rule getRule(Uri uri) {
-        if (uri.getHost() == null) return Rule.empty();
-        String hosts = TextUtils.join(",", Arrays.asList(UrlUtil.host(uri), UrlUtil.host(uri.getQueryParameter("url"))));
-        for (Rule rule : VodConfig.get().getRules()) for (String host : rule.getHosts()) if (Util.containOrMatch(hosts, host)) return rule;
-        for (Rule rule : LiveConfig.get().getRules()) for (String host : rule.getHosts()) if (Util.containOrMatch(hosts, host)) return rule;
-        return Rule.empty();
-    }
-
     public static List<String> getRegex(Uri uri) {
         return getRule(uri).getRegex();
     }
 
     public static List<String> getScript(Uri uri) {
         return getRule(uri).getScript();
+    }
+
+    private static Rule getRule(Uri uri) {
+        if (uri.getHost() == null) return Rule.empty();
+        String hosts = TextUtils.join(",", Arrays.asList(UrlUtil.host(uri), UrlUtil.host(uri.getQueryParameter("url"))));
+        for (Rule rule : VodConfig.get().getRules()) for (String host : rule.getHosts()) if (Util.containOrMatch(hosts, host)) return rule;
+        for (Rule rule : LiveConfig.get().getRules()) for (String host : rule.getHosts()) if (Util.containOrMatch(hosts, host)) return rule;
+        return Rule.empty();
     }
 }

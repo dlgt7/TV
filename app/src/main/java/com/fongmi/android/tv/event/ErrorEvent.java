@@ -9,39 +9,33 @@ public class ErrorEvent {
 
     private final Type type;
     private String msg;
-    private int code;
 
     public static void url() {
-        EventBus.getDefault().post(new ErrorEvent(Type.URL, -1));
-    }
-
-    public static void url(int code) {
-        EventBus.getDefault().post(new ErrorEvent(Type.URL, code));
+        EventBus.getDefault().post(new ErrorEvent(Type.URL));
     }
 
     public static void drm() {
-        EventBus.getDefault().post(new ErrorEvent(Type.DRM, -1));
+        EventBus.getDefault().post(new ErrorEvent(Type.DRM));
     }
 
     public static void flag() {
-        EventBus.getDefault().post(new ErrorEvent(Type.FLAG, -1));
+        EventBus.getDefault().post(new ErrorEvent(Type.FLAG));
     }
 
     public static void parse() {
-        EventBus.getDefault().post(new ErrorEvent(Type.PARSE, -1));
+        EventBus.getDefault().post(new ErrorEvent(Type.PARSE));
     }
 
     public static void timeout() {
-        EventBus.getDefault().post(new ErrorEvent(Type.TIMEOUT, -1));
+        EventBus.getDefault().post(new ErrorEvent(Type.TIMEOUT));
     }
 
     public static void extract(String msg) {
         EventBus.getDefault().post(new ErrorEvent(Type.EXTRACT, msg));
     }
 
-    public ErrorEvent(Type type, int code) {
+    public ErrorEvent(Type type) {
         this.type = type;
-        this.code = code;
     }
 
     public ErrorEvent(Type type, String msg) {
@@ -53,16 +47,8 @@ public class ErrorEvent {
         return type;
     }
 
-    public int getCode() {
-        return code;
-    }
-
-    public boolean isExo() {
-        return code / 1000 == 2 || code / 1000 == 3 || code / 1000 == 4;
-    }
-
     public String getMsg() {
-        if (type == Type.URL) return ResUtil.getString(code == -1 ? R.string.error_play_url : R.string.error_play_url_code, code);
+        if (type == Type.URL) return ResUtil.getString(R.string.error_play_url);
         if (type == Type.DRM) return ResUtil.getString(R.string.error_play_drm_scheme);
         if (type == Type.FLAG) return ResUtil.getString(R.string.error_play_flag);
         if (type == Type.PARSE) return ResUtil.getString(R.string.error_play_parse);

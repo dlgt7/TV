@@ -23,7 +23,6 @@ import javax.net.ssl.X509TrustManager;
 
 import okhttp3.Cache;
 import okhttp3.Call;
-import okhttp3.Dns;
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -39,10 +38,11 @@ public class OkHttp {
     private static final int CACHE = 100 * 1024 * 1024;
     private static final ProxySelector defaultSelector;
 
-    private boolean proxy;
-    private DnsOverHttps dns;
-    private OkHttpClient client;
     private OkProxySelector selector;
+    private OkHttpClient client;
+    private OkDns dns;
+
+    private boolean proxy;
 
     static {
         defaultSelector = ProxySelector.getDefault();
@@ -56,14 +56,15 @@ public class OkHttp {
         return Loader.INSTANCE;
     }
 
-    public static Dns dns() {
-        return get().dns != null ? get().dns : Dns.SYSTEM;
+    public void setDoh(Doh doh) {
+        OkHttpClient c = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).build();
+        dns().setDoh(doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder().client(c).url(HttpUrl.get(doh.getUrl())).bootstrapDnsHosts(doh.getHosts()).build());
+        client = null;
     }
 
-    public void setDoh(Doh doh) {
-        OkHttpClient dohClient = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).build();
-        dns = doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder().client(dohClient).url(HttpUrl.get(doh.getUrl())).bootstrapDnsHosts(doh.getHosts()).build();
-        client = null;
+    public static OkDns dns() {
+        if (get().dns != null) return get().dns;
+        return get().dns = new OkDns();
     }
 
     public void setProxy(String proxy) {
@@ -152,7 +153,6 @@ public class OkHttp {
     private static OkHttpClient.Builder getBuilder() {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY);
         OkHttpClient.Builder builder = new OkHttpClient.Builder().cookieJar(OkCookieJar.get()).addInterceptor(new RequestInterceptor()).addNetworkInterceptor(new ResponseInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(getSSLContext().getSocketFactory(), trustAllCertificates());
-        //builder.addInterceptor(CronetInterceptor.newBuilder(new CronetEngine.Builder(Init.context()).build()).build());
         builder.proxySelector(get().proxy ? selector() : defaultSelector);
         //builder.addNetworkInterceptor(logging);
         return builder;

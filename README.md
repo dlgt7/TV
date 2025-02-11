@@ -10,6 +10,8 @@ https://github.com/CatVodTVOfficial/CatVodTVJarLoader
 |------------|------|------|------------|
 | searchable | 1    | 是否搜索 | 0：關閉；1：啟用  |
 | changeable | 1    | 是否換源 | 0：關閉；1：啟用  |
+| quickserch | 1    | 是否快搜 | 0：關閉；1：啟用  |
+| indexs     | 0    | 是否聚搜 | 0：關閉；1：啟用  |
 | timeout    | 15   | 播放超時 | 單位：秒       |
 | header     | none | 請求標頭 | 格式：json    |
 | click      | none | 點擊js | javascript |
@@ -146,13 +148,28 @@ scheme 支持 http, https, socks4, socks5
 scheme://username:password@host:port
 ```
 
-配置 rules 新增 proxy 判斷 host 是否走代理
+配置新增 proxy 判斷域名是否走代理  
+全局只需要加上一條規則 ".*."
 
 ```json
 {
-  "name": "proxy",
+  "spider": "",
+  "proxy": [
+    "raw.githubusercontent.com",
+    "googlevideo.com"
+  ]
+}
+```
+
+### 域名映射
+
+```json
+{
+  "spider": "",
   "hosts": [
-    "api.nivodz.com"
+    "cache.ott.ystenlive.itv.cmvideo.cn=base-v4-free-mghy.e.cdn.chinamobile.com",
+    "cache.ott.bestlive.itv.cmvideo.cn=base-v4-free-mghy.e.cdn.chinamobile.com",
+    "cache.ott.wasulive.itv.cmvideo.cn=base-v4-free-mghy.e.cdn.chinamobile.com"
   ]
 }
 ```

@@ -199,6 +199,8 @@ public class LiveConfig {
     private void initOther(JsonObject object) {
         if (home == null) setHome(lives.isEmpty() ? new Live() : lives.get(0), true);
         setRules(Rule.arrayFrom(object.getAsJsonArray("rules")));
+        setHosts(Json.safeListString(object, "hosts"));
+        setProxy(Json.safeListString(object, "proxy"));
         setAds(Json.safeListString(object, "ads"));
     }
 
@@ -263,9 +265,15 @@ public class LiveConfig {
     }
 
     public void setRules(List<Rule> rules) {
-        for (Rule rule : rules) if ("proxy".equals(rule.getName())) OkHttp.selector().addAll(rule.getHosts());
-        rules.remove(Rule.create("proxy"));
         this.rules = rules;
+    }
+
+    public void setHosts(List<String> hosts) {
+        OkHttp.dns().addAll(hosts);
+    }
+
+    public void setProxy(List<String> hosts) {
+        OkHttp.selector().addAll(hosts);
     }
 
     public List<String> getAds() {

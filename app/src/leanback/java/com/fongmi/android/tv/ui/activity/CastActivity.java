@@ -13,7 +13,6 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
-import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.viewbinding.ViewBinding;
 
@@ -283,6 +282,7 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
         switch (event.getState()) {
             case PlayerEvent.PREPARE:
                 setState(RenderState.PREPARING);
+                setDecode();
                 break;
             case Player.STATE_IDLE:
                 setState(RenderState.IDLE);
@@ -293,6 +293,7 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
                 break;
             case Player.STATE_READY:
                 hideProgress();
+                mPlayers.reset();
                 setState(RenderState.PLAYING);
                 break;
             case Player.STATE_ENDED:
@@ -301,7 +302,6 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
                 break;
             case PlayerEvent.TRACK:
                 setMetadata();
-                mPlayers.reset();
                 setTrackVisible();
                 mClock.setCallback(this);
                 break;
@@ -324,17 +324,7 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onErrorEvent(ErrorEvent event) {
         if (mPlayers.retried()) onError(event);
-        else if (event.isExo()) onCheck(event);
         else onReset();
-    }
-
-    private void onCheck(ErrorEvent event) {
-        if (event.getCode() == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) mPlayers.seekToDefaultPosition();
-        else if (event.getCode() == PlaybackException.ERROR_CODE_IO_UNSPECIFIED || event.getCode() >= PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED && event.getCode() <= PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED) mPlayers.setFormat(ExoUtil.getMimeType(event.getCode()));
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isSoft()) mPlayers.init(mBinding.exo);
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED && mPlayers.isHard()) onDecode();
-        else if (event.getCode() == PlaybackException.ERROR_CODE_DECODING_FAILED && mPlayers.isHard()) onDecode();
-        else onError(event);
     }
 
     private void onError(ErrorEvent event) {
