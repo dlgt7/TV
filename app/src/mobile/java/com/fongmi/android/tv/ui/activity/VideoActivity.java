@@ -451,6 +451,11 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     }
 
     @Override
+    public void setVodId(String id) {
+        getIntent().putExtra("id", id);
+    }
+
+    @Override
     public String getVodName() {
         String name = mBinding.name.getText().toString();
         return name.isEmpty() ? getName() : name;
@@ -487,8 +492,23 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     }
 
     @Override
+    public boolean isLivePlayback() {
+        return service() != null && isOwner() && player().isLive();
+    }
+
+    @Override
+    public boolean canTrackPlaybackProgress() {
+        return service() != null && isOwner() && player().isVod();
+    }
+
+    @Override
     public long getPlayerPosition() {
         return player().getPosition();
+    }
+
+    @Override
+    public long getPlayerDuration() {
+        return player().getDuration();
     }
 
     @Override
@@ -568,6 +588,22 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         setArtwork(item.getPic());
         checkKeepImg();
         setText(item);
+        updateKeep();
+    }
+
+    @Override
+    public void renderVodUpdate(Vod item) {
+        if (!item.getId().isEmpty()) updateNavigationKey();
+        renderVodMetadata(item.getName(), item.getPic());
+        setText(item);
+    }
+
+    private void renderVodMetadata(String name, String pic) {
+        if (name.isEmpty() && pic.isEmpty()) return;
+        if (!name.isEmpty()) mBinding.name.setText(name);
+        if (!name.isEmpty()) mBinding.control.title.setText(name);
+        if (!pic.isEmpty()) setArtwork();
+        setMetadata();
         updateKeep();
     }
 
@@ -802,7 +838,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private void onName() {
         String name = mBinding.name.getText().toString();
         Notify.show(getString(R.string.detail_search, name));
-        mVod.search(name, false);
+        mVod.search(name);
     }
 
     private void onMore() {
@@ -1179,10 +1215,6 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         if (mVod != null) mVod.saveHistory(exit, System.currentTimeMillis(), position, duration);
     }
 
-    private void syncHistory() {
-        if (mVod != null) mVod.syncHistory();
-    }
-
     private void checkControl() {
         if (isVisible(mBinding.control.getRoot())) showControl();
     }
@@ -1217,24 +1249,6 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
             keep.setVodPic(mHistory.getVodPic());
             keep.save();
         }
-    }
-
-    private void updateVod(Vod item) {
-        boolean id = !item.getId().isEmpty();
-        boolean pic = !item.getPic().isEmpty();
-        boolean name = !item.getName().isEmpty();
-        if (id) getIntent().putExtra("id", item.getId());
-        if (id) mHistory.replace(getHistoryKey());
-        if (name) mHistory.setVodName(item.getName());
-        if (name) mBinding.name.setText(item.getName());
-        if (name) mBinding.control.title.setText(item.getName());
-        mVod.mergeFlags(item.getFlags());
-        if (pic) setArtwork(item.getPic());
-        if (pic || name) setMetadata();
-        if (pic || name) syncHistory();
-        if (pic || name) updateKeep();
-        if (id) updateNavigationKey();
-        setText(item);
     }
 
     private final PlaybackService.NavigationCallback mNavigationCallback = new PlaybackService.NavigationCallback() {
@@ -1297,7 +1311,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     protected void onReclaim() {
-        mVod.reclaim(player().getPosition());
+        mVod.refresh();
     }
 
     @Override
@@ -1365,7 +1379,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         if (isRedirect()) return;
         if (event.getType() == RefreshEvent.Type.DETAIL) mVod.requestDetail();
         else if (event.getType() == RefreshEvent.Type.PLAYER) mVod.refresh();
-        else if (event.getType() == RefreshEvent.Type.VOD) updateVod(event.getVod());
+        else if (event.getType() == RefreshEvent.Type.VOD) mVod.updateVod(event.getVod());
         else if (event.getType() == RefreshEvent.Type.SUBTITLE) player().setSub(Sub.from(event.getPath()));
         else if (event.getType() == RefreshEvent.Type.DANMAKU) player().setDanmaku(Danmaku.from(event.getPath()));
     }
@@ -1622,6 +1636,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     @Override
     protected void onStop() {
         super.onStop();
+        saveHistory(false);
         if (PlayerSetting.isBackgroundOff()) mClock.stop();
         if (!isAudioOnly()) setStop(true);
     }
