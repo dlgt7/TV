@@ -24,7 +24,6 @@ import androidx.media3.extractor.ts.TsExtractor;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.setting.PreloadSetting;
-import com.fongmi.android.tv.utils.FileUtil;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
 
@@ -65,8 +64,8 @@ public class MediaSourceFactory implements MediaSource.Factory {
     }
 
     private static long getMaxCacheSize(File dir) {
-        long usedBytes = FileUtil.getDirectorySize(dir);
-        long availableBytes = Math.max(0, FileUtil.getAvailableStorageSpace(dir));
+        long usedBytes = Path.size(dir);
+        long availableBytes = Math.max(0, Path.available(dir));
         long storageBudget = (usedBytes + availableBytes) * CACHE_SPACE_PERCENT / 100;
         return Math.min(PreloadSetting.getPreloadSizeBytes(), storageBudget);
     }
