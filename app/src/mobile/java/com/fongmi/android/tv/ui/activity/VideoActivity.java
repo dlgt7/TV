@@ -95,6 +95,7 @@ import com.fongmi.android.tv.playback.vod.VodPlaybackHost;
 import com.fongmi.android.tv.playback.vod.VodPlaybackMedia;
 import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.FileChooser;
+import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PiP;
@@ -109,7 +110,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
@@ -141,14 +141,13 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     public static void push(FragmentActivity activity, String text) {
         Uri uri = UrlUtil.uri(text);
-        if (FileChooser.isValid(activity, uri)) file(activity, FileChooser.getPathFromUri(uri));
+        if (FileChooser.isFileSource(uri)) FileChooser.getFileUri(uri, fileUri -> file(activity, fileUri));
         else start(activity, Sniffer.getUrl(text));
     }
 
-    public static void file(FragmentActivity activity, String path) {
-        if (TextUtils.isEmpty(path)) return;
-        String name = new File(path).getName();
-        start(activity, SiteApi.PUSH, "file://" + path, name);
+    public static void file(FragmentActivity activity, Uri fileUri) {
+        if (fileUri == null || activity.isFinishing() || activity.isDestroyed()) return;
+        start(activity, SiteApi.PUSH, fileUri.toString(), FileUtil.getDisplayName(fileUri));
     }
 
     public static void cast(Activity activity, History history) {
