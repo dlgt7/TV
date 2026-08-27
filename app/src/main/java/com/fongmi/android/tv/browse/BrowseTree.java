@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 
 import com.fongmi.android.tv.bean.Result;
+import com.fongmi.android.tv.player.media.MediaItemFactory;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Map;
@@ -164,8 +165,9 @@ public class BrowseTree {
     private static MediaItem build(@NonNull String id, boolean browsable, boolean playable, int mediaType, @NonNull String title, @Nullable String subtitle, @Nullable String art, @Nullable Uri uri) {
         MediaMetadata.Builder metadata = new MediaMetadata.Builder().setTitle(title).setIsBrowsable(browsable).setIsPlayable(playable).setMediaType(mediaType);
         if (!TextUtils.isEmpty(subtitle)) metadata.setSubtitle(subtitle);
-        if (!TextUtils.isEmpty(art)) metadata.setArtworkUri(Uri.parse(art));
-        if (!TextUtils.isEmpty(subtitle) && uri != null) metadata.setArtist(subtitle);
+        if (!TextUtils.isEmpty(art)) metadata.setArtworkUri(MediaItemFactory.getArtworkUri(art));
+        if (uri != null && !TextUtils.isEmpty(subtitle)) metadata.setArtist(subtitle);
+        if (uri != null) metadata.setDisplayTitle(MediaItemFactory.formatDisplayTitle(title, subtitle));
         MediaItem.Builder builder = new MediaItem.Builder().setMediaId(id).setMediaMetadata(metadata.build());
         if (uri != null) builder.setUri(uri);
         return builder.build();
