@@ -16,6 +16,7 @@ import com.fongmi.android.tv.api.loader.BaseLoader;
 import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.gson.ExtAdapter;
 import com.fongmi.android.tv.gson.HeaderAdapter;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.net.OkHttp;
@@ -211,6 +212,7 @@ public class Site implements Parcelable {
     }
 
     public Integer getIndexs() {
+        if (Setting.isAggregatedSearch() && (indexs == null || indexs == 1)) return 1;
         return indexs == null ? 0 : indexs;
     }
 
