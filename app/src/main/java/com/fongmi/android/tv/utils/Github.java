@@ -15,4 +15,12 @@ public class Github {
     public static String getApk(String name) {
         return getUrl(name + ".apk");
     }
+
+    public static String getJson(boolean dev, String name) {
+        return getUrl((dev ? "dev/" : "") + name + ".json");
+    }
+
+    public static String getApk(boolean dev, String name) {
+        return getUrl((dev ? "dev/" : "") + name + ".apk");
+    }
 }

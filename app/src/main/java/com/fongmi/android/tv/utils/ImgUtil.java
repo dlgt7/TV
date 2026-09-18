@@ -20,6 +20,8 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.model.GlideUrl;
 import com.bumptech.glide.load.model.LazyHeaders;
+
+import com.bumptech.glide.signature.ObjectKey;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.fongmi.android.tv.App;
@@ -27,6 +29,7 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.impl.CustomTarget;
 import com.fongmi.android.tv.server.Server;
+import com.fongmi.android.tv.setting.Setting;
 import com.github.catvod.utils.Crypto;
 import com.github.catvod.utils.Json;
 import com.google.common.cache.Cache;
@@ -58,9 +61,13 @@ public class ImgUtil {
         }
     }
 
+    public static ObjectKey getSignature(String url) {
+        return new ObjectKey(url + "_" + Setting.getQuality());
+    }
+
     public static void load(String url, CustomTarget<Bitmap> target) {
         try {
-            Glide.with(App.get()).asBitmap().load(getUrl(url)).override(ResUtil.dp2px(96), ResUtil.dp2px(96)).error(R.drawable.artwork).into(target);
+            Glide.with(App.get()).asBitmap().load(getUrl(url)).override(ResUtil.dp2px(96), ResUtil.dp2px(96)).signature(getSignature(url)).error(R.drawable.artwork).into(target);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -68,7 +75,7 @@ public class ImgUtil {
 
     public static void load(Context context, String url, CustomTarget<Drawable> target) {
         try {
-            Glide.with(context).load(getUrl(url)).override(ResUtil.getScreenWidth(), ResUtil.getScreenHeight()).error(R.drawable.artwork).into(target);
+            Glide.with(context).load(getUrl(url)).override(ResUtil.getScreenWidth(), ResUtil.getScreenHeight()).signature(getSignature(url)).error(R.drawable.artwork).into(target);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -83,7 +90,7 @@ public class ImgUtil {
         if (!vod) view.setVisibility(TextUtils.isEmpty(url) ? View.GONE : View.VISIBLE);
         if (TextUtils.isEmpty(url) || failed.contains(url)) view.setImageDrawable(getTextDrawable(text, vod));
         else try {
-            RequestBuilder<Drawable> builder = Glide.with(view).load(getUrl(url)).listener(getListener(text, url, view, vod));
+            RequestBuilder<Drawable> builder = Glide.with(view).load(getUrl(url)).signature(getSignature(url)).thumbnail(Setting.getThumbnail()).listener(getListener(text, url, view, vod));
             if (vod) builder.centerCrop().into(view);
             else builder.fitCenter().into(view);
         } catch (Throwable e) {

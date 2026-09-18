@@ -47,6 +47,16 @@ public class Util {
         }
     }
 
+    public static void restartApp(Activity activity) {
+        Intent intent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(intent);
+        }
+        activity.finishAffinity();
+        System.exit(0);
+    }
+
     public static void hideSystemUI(Activity activity) {
         hideSystemUI(activity.getWindow());
     }
