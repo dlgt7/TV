@@ -32,6 +32,7 @@ import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
+import com.fongmi.android.tv.ui.dialog.ProxyDialog;
 import com.fongmi.android.tv.ui.dialog.RestoreDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.ui.dialog.ThemeDialog;
@@ -39,6 +40,7 @@ import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.bean.Doh;
 import com.github.catvod.net.OkHttp;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -50,10 +52,11 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SettingFragment extends BaseFragment implements ConfigListener, SiteListener, LiveListener, ThemeDialog.Listener {
+public class SettingFragment extends BaseFragment implements ConfigListener, SiteListener, LiveListener, ThemeDialog.Listener, ProxyDialog.Listener {
 
     private FragmentSettingBinding mBinding;
     private String[] size;
+    private String[] backup;
 
     public static SettingFragment newInstance() {
         return new SettingFragment();
@@ -91,6 +94,8 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.liveUrl.setText(LiveConfig.getDesc());
         mBinding.wallUrl.setText(WallConfig.getDesc());
         mBinding.versionText.setText(BuildConfig.VERSION_NAME);
+        mBinding.proxyText.setText(UrlUtil.scheme(Setting.getProxy()));
+        mBinding.aboutText.setText(BuildConfig.FLAVOR);
         setOtherText();
         setCacheText();
     }
@@ -100,6 +105,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.dohText.setText(getDohList()[getDohIndex()]);
         mBinding.incognitoText.setText(Setting.getSwitch(Setting.isIncognito()));
         mBinding.sizeText.setText((size = ResUtil.getStringArray(R.array.select_size))[PlayerSetting.getSize()]);
+        mBinding.backupText.setText((backup = ResUtil.getStringArray(R.array.select_backup))[Setting.getBackupMode()]);
     }
 
     private void setCacheText() {
@@ -119,11 +125,14 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.wall.setOnClickListener(this::onWall);
         mBinding.size.setOnClickListener(this::setSize);
         mBinding.cache.setOnClickListener(this::onCache);
+        mBinding.cache.setOnLongClickListener(this::onCacheLongClick);
         mBinding.backup.setOnClickListener(this::onBackup);
+        mBinding.backup.setOnLongClickListener(this::onBackupMode);
         mBinding.player.setOnClickListener(this::onPlayer);
         mBinding.danmaku.setOnClickListener(this::onDanmaku);
         mBinding.restore.setOnClickListener(this::onRestore);
         mBinding.version.setOnClickListener(this::onVersion);
+        mBinding.version.setOnLongClickListener(this::onVersionDev);
         mBinding.vod.setOnLongClickListener(this::onVodEdit);
         mBinding.vodHome.setOnClickListener(this::onVodHome);
         mBinding.live.setOnLongClickListener(this::onLiveEdit);
@@ -136,6 +145,9 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.wallDefault.setOnClickListener(this::setWallDefault);
         mBinding.wallRefresh.setOnClickListener(this::setWallRefresh);
         mBinding.wallRefresh.setOnLongClickListener(this::onWallHistory);
+        mBinding.proxy.setOnClickListener(this::onProxy);
+        mBinding.custom.setOnClickListener(this::onCustom);
+        mBinding.about.setOnClickListener(this::onAbout);
     }
 
     @Override
@@ -338,6 +350,47 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
                 Notify.show(R.string.restore_fail);
             }
         }));
+    }
+
+    private void onProxy(View view) {
+        ProxyDialog.create(this).show();
+    }
+
+    @Override
+    public void setProxy(String proxy) {
+        Setting.putProxy(proxy);
+        OkHttp.setProxy(proxy);
+        mBinding.proxyText.setText(UrlUtil.scheme(proxy));
+    }
+
+    private void onCustom(View view) {
+        getRoot().change(6);
+    }
+
+    private void onAbout(View view) {
+        mBinding.aboutText.setText(BuildConfig.FLAVOR);
+    }
+
+    private boolean onVersionDev(View view) {
+        Updater.create().force().start(requireActivity());
+        return true;
+    }
+
+    private boolean onBackupMode(View view) {
+        int index = Setting.getBackupMode();
+        Setting.putBackupMode(index = index == backup.length - 1 ? 0 : ++index);
+        mBinding.backupText.setText(backup[index]);
+        return true;
+    }
+
+    private boolean onCacheLongClick(View view) {
+        FileUtil.clearCache(new Callback() {
+            @Override
+            public void success() {
+                setCacheText();
+            }
+        });
+        return true;
     }
 
     private void initConfig() {
