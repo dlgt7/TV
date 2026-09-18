@@ -151,8 +151,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     public void toggleDebugView() {
-        getPlayerView().toggleDebugView();
-        PlayerSetting.putDebug(getPlayerView().isDebugViewVisible());
+
     }
 
     public void onChoose() {
@@ -418,12 +417,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void restoreDebugView() {
-        if (PlayerSetting.isDebug() && !getPlayerView().isDebugViewVisible()) getPlayerView().toggleDebugView();
+
     }
 
     private void configurePlayerView() {
         PlayerView playerView = getPlayerView();
-        playerView.setRender(PlayerSetting.getRender());
+
         danmakuController.setOkHttpClient(OkHttp.player());
         danmakuController.setEnabled(DanmakuSetting.isShow());
         danmakuController.setConfig(DanmakuSetting.getConfig());
