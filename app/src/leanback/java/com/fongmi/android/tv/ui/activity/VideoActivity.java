@@ -16,6 +16,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
 import androidx.lifecycle.ViewModelProvider;
@@ -63,6 +65,7 @@ import com.fongmi.android.tv.player.media.PlaySpec;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.setting.SpeedSetting;
 import com.fongmi.android.tv.ui.adapter.ArrayAdapter;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
@@ -656,6 +659,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         if (service() != null && isOwner()) player().setMetadata(metadata);
         mBinding.widget.title.setText(metadata.displayTitle);
         mBinding.widget.title.setSelected(true);
+        showDisplayInfo();
     }
 
     @Override
@@ -1057,22 +1061,45 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mBinding.widget.center.setVisibility(View.VISIBLE);
         mBinding.widget.duration.setText(player().getDurationTime());
         mBinding.widget.position.setText(player().getPositionTime(0));
+        showDisplayInfo();
     }
 
     private void hideInfo() {
         mBinding.widget.top.setVisibility(View.GONE);
         mBinding.widget.center.setVisibility(View.GONE);
+        showDisplayInfo();
+    }
+
+    private void showDisplayInfo() {
+        boolean hasDialog = false;
+        for (Fragment f : getSupportFragmentManager().getFragments()) if (f instanceof DialogFragment) hasDialog = true;
+        boolean controlVisible = isVisible(mBinding.control.getRoot());
+        boolean isVod = service() != null && isOwner() && player().isVod();
+        mBinding.widget.clock.setVisibility(Setting.isDisplayTime() || isVisible(mBinding.widget.top) ? View.VISIBLE : View.GONE);
+        mBinding.widget.title.setVisibility(Setting.isDisplayVideoTitle() && !controlVisible ? View.VISIBLE : View.GONE);
+        mBinding.progress.traffic.setVisibility(Setting.isDisplaySpeed() && !controlVisible && !hasDialog ? View.VISIBLE : View.GONE);
+        mBinding.widget.duration.setVisibility(Setting.isDisplayDuration() && !controlVisible && isVod && !hasDialog ? View.VISIBLE : View.GONE);
+        mBinding.widget.miniProgress.setVisibility(Setting.isDisplayMiniProgress() && !controlVisible && isVod && !hasDialog ? View.VISIBLE : View.GONE);
+        if (Setting.isDisplayMiniProgress() && isVod) updateMiniProgress();
+    }
+
+    private void updateMiniProgress() {
+        long position = player().getPosition();
+        long duration = player().getDuration();
+        if (duration > 0) mBinding.widget.miniProgress.setProgress((int) (position * 100 / duration));
     }
 
     private void showControl(View view) {
         mBinding.control.getRoot().setVisibility(View.VISIBLE);
         view.requestFocus();
         setR1Callback();
+        showDisplayInfo();
     }
 
     private void hideControl() {
         mBinding.control.getRoot().setVisibility(View.GONE);
         App.removeCallbacks(mR1);
+        showDisplayInfo();
     }
 
     private void hideCenter() {
@@ -1081,7 +1108,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
+        if (Setting.isDisplaySpeed()) Traffic.setSpeed(mBinding.progress.traffic);
+        else mBinding.progress.traffic.setVisibility(View.GONE);
         App.post(mR3, 1000);
     }
 
@@ -1225,6 +1253,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
                 hideProgress();
                 player().reset();
                 mClock.setCallback(this);
+                showDisplayInfo();
                 break;
             case Player.STATE_ENDED:
                 hideProgress();
@@ -1242,6 +1271,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
             if (isFullscreen()) showInfo();
             else hideInfo();
         }
+        showDisplayInfo();
     }
 
     @Override
@@ -1256,6 +1286,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         long duration = player().getDuration();
         if (position < 0 || duration <= 0) return;
         mVod.onTimeChanged(time, position, duration);
+        updateMiniProgress();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -1337,7 +1368,12 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (isFullscreen() && KeyUtil.isMenuKey(event)) onToggle();
+        if (mBinding.progressLayout.isContent() && !isFullscreen() && KeyUtil.isBackKey(event) && Setting.getSmallWindowBackKey() == 1 && getCurrentFocus() != mBinding.video) {
+            mBinding.video.requestFocus();
+            return true;
+        }
+        if (isFullscreen() && KeyUtil.isMenuKey(event) && Setting.getFullscreenMenuKey() == 0) onToggle();
+        if (isFullscreen() && KeyUtil.isMenuKey(event) && Setting.getFullscreenMenuKey() == 1) exitFullscreen();
         if (isVisible(mBinding.control.getRoot())) setR1Callback();
         if (isVisible(mBinding.control.getRoot())) mFocus2 = getCurrentFocus();
         if (isFullscreen() && isGone(mBinding.control.getRoot()) && mKeyDown.hasEvent(event) && service() != null) return mKeyDown.onKeyDown(event);
@@ -1353,6 +1389,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mBinding.widget.position.setText(player().getPositionTime(time));
         mBinding.widget.action.setImageResource(time > 0 ? R.drawable.ic_widget_forward : R.drawable.ic_widget_rewind);
         hideProgress();
+        showDisplayInfo();
     }
 
     @Override

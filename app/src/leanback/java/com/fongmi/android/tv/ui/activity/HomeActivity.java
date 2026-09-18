@@ -28,6 +28,7 @@ import com.fongmi.android.tv.Updater;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.api.config.WallConfig;
+import com.fongmi.android.tv.bean.Button;
 import com.fongmi.android.tv.bean.Cache;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Func;
@@ -43,16 +44,19 @@ import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.event.ServerEvent;
 import com.fongmi.android.tv.impl.Callback;
+import com.fongmi.android.tv.impl.ConfigListener;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.player.extractor.Source;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.service.DLNARendererService;
 import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
 import com.fongmi.android.tv.ui.custom.CustomSelector;
 import com.fongmi.android.tv.ui.custom.CustomTitleView;
+import com.fongmi.android.tv.ui.dialog.ConfigDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.ui.presenter.FuncPresenter;
 import com.fongmi.android.tv.ui.presenter.HeaderPresenter;
@@ -79,7 +83,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener {
+public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener, ConfigListener {
 
     private ActivityHomeBinding mBinding;
     private ArrayObjectAdapter mHistoryAdapter;
@@ -269,12 +273,10 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     private void setFunc() {
         List<Func> items = new ArrayList<>();
-        items.add(Func.create(R.string.home_vod));
-        if (LiveConfig.hasUrl()) items.add(Func.create(R.string.home_live));
-        items.add(Func.create(R.string.home_search));
-        items.add(Func.create(R.string.home_keep));
-        items.add(Func.create(R.string.home_push));
-        items.add(Func.create(R.string.home_setting));
+        for (Button button : Button.getButtonList()) {
+            if (button.getResId() == R.string.home_live && !LiveConfig.hasUrl()) continue;
+            items.add(Func.create(button.getResId()));
+        }
         mFuncAdapter.setItems(items, new BaseDiffCallback<Func>());
     }
 
@@ -283,6 +285,12 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void getHistory(boolean renew) {
+        if (!Setting.isHomeHistory()) {
+            int historyIndex = getHistoryIndex();
+            int recommendIndex = getRecommendIndex();
+            if (recommendIndex - historyIndex == 2) mAdapter.removeItems(historyIndex, 1);
+            return;
+        }
         List<History> items = History.get();
         int historyIndex = getHistoryIndex();
         int recommendIndex = getRecommendIndex();
@@ -393,6 +401,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         else if (item.getResId() == R.string.home_keep) KeepActivity.start(this);
         else if (item.getResId() == R.string.home_push) PushActivity.start(this);
         else if (item.getResId() == R.string.home_search) SearchActivity.start(this);
+        else if (item.getResId() == R.string.home_history_short) mBinding.recycler.scrollToPosition(getHistoryIndex());
         else if (item.getResId() == R.string.home_setting) SettingActivity.start(this);
     }
 
@@ -432,7 +441,27 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     public void showDialog() {
+        if (Setting.isHomeSiteLock()) return;
         SiteDialog.create().show(this);
+    }
+
+    private void onHomeMenuKey() {
+        switch (Setting.getHomeMenuKey()) {
+            case 0: showDialog(); break;
+            case 1: SiteDialog.create().show(this); break;
+            case 2: ConfigDialog.create().vod().show(this); break;
+            case 3: LiveActivity.start(this); break;
+            case 4: mBinding.recycler.scrollToPosition(getHistoryIndex()); break;
+            case 5: SearchActivity.start(this); break;
+            case 6: PushActivity.start(this); break;
+            case 7: KeepActivity.start(this); break;
+            case 8: SettingActivity.start(this); break;
+        }
+    }
+
+    @Override
+    public void setConfig(Config config) {
+        VodConfig.load(config, getCallback());
     }
 
     @Override
@@ -447,7 +476,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (KeyUtil.isMenuKey(event)) showDialog();
+        if (KeyUtil.isMenuKey(event)) onHomeMenuKey();
         if (KeyUtil.isActionDown(event) & KeyUtil.isDownKey(event) && getCurrentFocus() == mBinding.title) return mBinding.recycler.getChildAt(0).requestFocus();
         return super.dispatchKeyEvent(event);
     }

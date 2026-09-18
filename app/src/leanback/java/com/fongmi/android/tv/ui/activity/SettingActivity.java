@@ -7,6 +7,7 @@ import android.view.View;
 
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.BuildConfig;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Updater;
@@ -27,29 +28,34 @@ import com.fongmi.android.tv.impl.SiteListener;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
+import com.fongmi.android.tv.ui.dialog.BackupDialog;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
 import com.fongmi.android.tv.ui.dialog.DohDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
+import com.fongmi.android.tv.ui.dialog.ProxyDialog;
 import com.fongmi.android.tv.ui.dialog.RestoreDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.bean.Doh;
 import com.github.catvod.net.OkHttp;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SettingActivity extends BaseActivity implements ConfigListener, SiteListener, LiveListener, DohDialog.Listener {
+public class SettingActivity extends BaseActivity implements ConfigListener, SiteListener, LiveListener, DohDialog.Listener, ProxyDialog.Listener, BackupDialog.Listener {
 
     private ActivitySettingBinding mBinding;
     private String[] size;
+    private String[] backup;
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingActivity.class));
@@ -77,6 +83,9 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         mBinding.liveUrl.setText(LiveConfig.getDesc());
         mBinding.wallUrl.setText(WallConfig.getDesc());
         mBinding.versionText.setText(BuildConfig.VERSION_NAME);
+        mBinding.proxyText.setText(UrlUtil.scheme(Setting.getProxy()));
+        mBinding.backupText.setText((backup = ResUtil.getStringArray(R.array.select_backup))[Setting.getBackupMode()]);
+        mBinding.aboutText.setText(BuildConfig.FLAVOR);
         setCacheText();
         setOtherText();
     }
@@ -104,11 +113,14 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         mBinding.wall.setOnClickListener(this::onWall);
         mBinding.size.setOnClickListener(this::setSize);
         mBinding.cache.setOnClickListener(this::onCache);
+        mBinding.cache.setOnLongClickListener(this::onCacheLongClick);
         mBinding.backup.setOnClickListener(this::onBackup);
+        mBinding.backup.setOnLongClickListener(this::onBackupMode);
         mBinding.player.setOnClickListener(this::onPlayer);
         mBinding.danmaku.setOnClickListener(this::onDanmaku);
         mBinding.restore.setOnClickListener(this::onRestore);
         mBinding.version.setOnClickListener(this::onVersion);
+        mBinding.version.setOnLongClickListener(this::onVersionDev);
         mBinding.vod.setOnLongClickListener(this::onVodEdit);
         mBinding.vodHome.setOnClickListener(this::onVodHome);
         mBinding.live.setOnLongClickListener(this::onLiveEdit);
@@ -120,6 +132,9 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         mBinding.wallDefault.setOnClickListener(this::setWallDefault);
         mBinding.wallRefresh.setOnClickListener(this::setWallRefresh);
         mBinding.wallRefresh.setOnLongClickListener(this::onWallHistory);
+        mBinding.proxy.setOnClickListener(this::onProxy);
+        mBinding.custom.setOnClickListener(this::onCustom);
+        mBinding.about.setOnClickListener(this::onAbout);
     }
 
     @Override
@@ -232,6 +247,64 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         Updater.create().force().start(this);
     }
 
+    private boolean onVersionDev(View view) {
+        Updater.create().force().start(this);
+        return true;
+    }
+
+    private void onProxy(View view) {
+        ProxyDialog.create(this).show();
+    }
+
+    @Override
+    public void setProxy(String proxy) {
+        Setting.putProxy(proxy);
+        OkHttp.setProxy(proxy);
+        mBinding.proxyText.setText(UrlUtil.scheme(proxy));
+    }
+
+    private void onCustom(View view) {
+        SettingCustomActivity.start(this);
+    }
+
+    private void onAbout(View view) {
+        mBinding.aboutText.setText(BuildConfig.FLAVOR);
+    }
+
+    private boolean onBackupMode(View view) {
+        int index = Setting.getBackupMode();
+        Setting.putBackupMode(index = index == backup.length - 1 ? 0 : ++index);
+        mBinding.backupText.setText(backup[index]);
+        return true;
+    }
+
+    private boolean onCacheLongClick(View view) {
+        FileUtil.clearCache(new Callback() {
+            @Override
+            public void success() {
+                setCacheText();
+            }
+        });
+        return true;
+    }
+
+    @Override
+    public void restore(File file) {
+        PermissionUtil.requestFile(this, allGranted -> BackupManager.restore(file, new Callback() {
+            @Override
+            public void success() {
+                Notify.show(R.string.restore_success);
+                setOtherText();
+                initConfig();
+            }
+
+            @Override
+            public void error() {
+                Notify.show(R.string.restore_fail);
+            }
+        }));
+    }
+
     private void setWallDefault(View view) {
         Setting.putWall(Setting.getWall() == 4 ? 1 : Setting.getWall() + 1);
         Setting.putWallType(0);
@@ -295,19 +368,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     }
 
     private void onRestore(View view) {
-        PermissionUtil.requestFile(this, allGranted -> RestoreDialog.create().callback(new Callback() {
-            @Override
-            public void success() {
-                Notify.show(R.string.restore_success);
-                setOtherText();
-                initConfig();
-            }
-
-            @Override
-            public void error() {
-                Notify.show(R.string.restore_fail);
-            }
-        }).show(this));
+        PermissionUtil.requestFile(this, allGranted -> BackupDialog.create(this).show());
     }
 
     private void initConfig() {
