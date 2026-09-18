@@ -438,4 +438,125 @@
         <item>Select subtitle track</item>
     </string-array>
 
+    <!-- Custom Setting -->
+    <string name="setting_danmu">Danmu setting</string>
+    <string name="setting_about">About</string>
+    <string name="setting_quality">Image quality</string>
+    <string name="setting_episode">Episode style</string>
+    <string name="setting_config_cache">Config cache</string>
+    <string name="setting_cache_dir">Thunder cache</string>
+    <string name="setting_reset">Reset app</string>
+    <string name="setting_aggregated_search">Aggregated search</string>
+    <string name="setting_language">Language</string>
+    <string name="setting_parse_webview">Parse webview</string>
+    <string name="setting_fullscreen_menu_key">Fullscreen menu key</string>
+    <string name="setting_home_menu_key">Home menu key</string>
+    <string name="setting_home_site_lock">Home site lock</string>
+    <string name="setting_remove_ad">Remove ads</string>
+    <string name="setting_small_window_back_key">Small window back key</string>
+    <string name="setting_home_ui">Home UI style</string>
+    <string name="setting_home_buttons">Home buttons</string>
+    <string name="setting_home_history">Home history</string>
+    <string name="setting_display">Display</string>
+    <string name="setting_speed">Speed</string>
+    <string name="setting_backup_mode">Backup mode</string>
+
+    <!-- Play Display -->
+    <string name="play_time">Time</string>
+    <string name="play_netspeed">Net Speed</string>
+    <string name="play_duration">Duration</string>
+    <string name="play_video_title">Title</string>
+    <string name="play_mini_progress">Mini</string>
+
+    <!-- Dialog Reset -->
+    <string name="dialog_reset_app">Reset app?</string>
+    <string name="dialog_reset_app_data">All app data will be reset, and app will be shutdown.</string>
+    <string name="dialog_restore">Restore backup data?</string>
+    <string name="dialog_restore_msg">Config, history and setting will be restored.</string>
+
+    <!-- X5 WebView -->
+    <string name="x5webview_title">X5 WebView</string>
+    <string name="x5webview_download_enable">Unzip X5 WebView and Enable?</string>
+    <string name="x5webview_enabled">X5 WebView Enabled</string>
+    <string name="x5webview_parsing">X5 WebView Parsing</string>
+
+    <!-- Hint -->
+    <string name="backed">Backup successful</string>
+    <string name="config_refreshed">Config refreshed</string>
+
+    <!-- Danmu Player -->
+    <string name="player_danmu_load">Danmu load</string>
+    <string name="player_danmu_speed">Danmu speed</string>
+    <string name="player_danmu_size">Danmu size</string>
+    <string name="player_danmu_line">Danmu line</string>
+    <string name="player_danmu_alpha">Danmu alpha</string>
+    <string name="player_episode">Episode style</string>
+
+    <string-array name="select_quality">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+    </string-array>
+
+    <string-array name="select_episode">
+        <item>Single</item>
+        <item>Multiple</item>
+    </string-array>
+
+    <string-array name="select_fullscreen_menu_key">
+        <item>Control</item>
+        <item>Episodes</item>
+    </string-array>
+
+    <string-array name="select_home_menu_key">
+        <item>Select dialog</item>
+        <item>Change site</item>
+        <item>Change config</item>
+        <item>Live page</item>
+        <item>History page</item>
+        <item>Search page</item>
+        <item>Push page</item>
+        <item>Keep page</item>
+        <item>Setting page</item>
+    </string-array>
+
+    <string-array name="select_small_window_back_key">
+        <item>Back</item>
+        <item>Focus move</item>
+    </string-array>
+
+    <string-array name="select_home_ui">
+        <item>Simple style</item>
+        <item>TVBox style</item>
+    </string-array>
+
+    <string-array name="select_language">
+        <item>English</item>
+        <item>Simplified Chinese</item>
+        <item>Traditional Chinese</item>
+    </string-array>
+
+    <string-array name="select_parse_webview">
+        <item>System</item>
+        <item>X5 WebView</item>
+    </string-array>
+
+    <string-array name="select_config_cache">
+        <item>Close</item>
+        <item>12 Hour</item>
+        <item>24 Hour</item>
+    </string-array>
+
+    <string-array name="select_backup">
+        <item>Auto</item>
+        <item>Manual</item>
+    </string-array>
+
+    <string-array name="select_danmu_speed">
+        <item>Super slow</item>
+        <item>Slow</item>
+        <item>Moderate</item>
+        <item>Fast</item>
+    </string-array>
+
 </resources>
