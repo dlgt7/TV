@@ -428,4 +428,125 @@
         <item>選擇字幕</item>
     </string-array>
 
+    <!-- Custom Setting -->
+    <string name="setting_danmu">彈幕外觀</string>
+    <string name="setting_about">關於</string>
+    <string name="setting_quality">圖片質量</string>
+    <string name="setting_episode">選集樣式</string>
+    <string name="setting_config_cache">配置快取</string>
+    <string name="setting_cache_dir">迅雷快取</string>
+    <string name="setting_reset">重置應用</string>
+    <string name="setting_aggregated_search">聚合搜尋</string>
+    <string name="setting_language">語言設定</string>
+    <string name="setting_parse_webview">解析核心</string>
+    <string name="setting_fullscreen_menu_key">全屏選單鍵</string>
+    <string name="setting_home_menu_key">首頁選單鍵</string>
+    <string name="setting_home_site_lock">首頁鎖定</string>
+    <string name="setting_remove_ad">去廣告</string>
+    <string name="setting_small_window_back_key">小窗返回鍵</string>
+    <string name="setting_home_ui">首頁樣式</string>
+    <string name="setting_home_buttons">首頁按鈕</string>
+    <string name="setting_home_history">首頁歷史</string>
+    <string name="setting_display">顯示設定</string>
+    <string name="setting_speed">倍速</string>
+    <string name="setting_backup_mode">備份模式</string>
+
+    <!-- Play Display -->
+    <string name="play_time">時間</string>
+    <string name="play_netspeed">網速</string>
+    <string name="play_duration">時長</string>
+    <string name="play_video_title">標題</string>
+    <string name="play_mini_progress">進度</string>
+
+    <!-- Dialog Reset -->
+    <string name="dialog_reset_app">重置應用？</string>
+    <string name="dialog_reset_app_data">所有應用資料將被重置，應用將關閉。</string>
+    <string name="dialog_restore">恢復備份資料？</string>
+    <string name="dialog_restore_msg">配置、歷史和設定將被恢復。</string>
+
+    <!-- X5 WebView -->
+    <string name="x5webview_title">X5 核心</string>
+    <string name="x5webview_download_enable">下載 X5 核心並啟用？</string>
+    <string name="x5webview_enabled">X5 核心已啟用</string>
+    <string name="x5webview_parsing">X5 核心解析中</string>
+
+    <!-- Hint -->
+    <string name="backed">備份成功</string>
+    <string name="config_refreshed">配置已刷新</string>
+
+    <!-- Danmu Player -->
+    <string name="player_danmu_load">彈幕載入</string>
+    <string name="player_danmu_speed">彈幕速度</string>
+    <string name="player_danmu_size">彈幕大小</string>
+    <string name="player_danmu_line">彈幕行數</string>
+    <string name="player_danmu_alpha">彈幕透明度</string>
+    <string name="player_episode">選集樣式</string>
+
+    <string-array name="select_quality">
+        <item>低</item>
+        <item>中</item>
+        <item>高</item>
+    </string-array>
+
+    <string-array name="select_episode">
+        <item>單行</item>
+        <item>多行</item>
+    </string-array>
+
+    <string-array name="select_fullscreen_menu_key">
+        <item>控制</item>
+        <item>選集</item>
+    </string-array>
+
+    <string-array name="select_home_menu_key">
+        <item>選擇對話框</item>
+        <item>切換站源</item>
+        <item>切換配置</item>
+        <item>直播頁</item>
+        <item>歷史頁</item>
+        <item>搜尋頁</item>
+        <item>推送頁</item>
+        <item>收藏頁</item>
+        <item>設定頁</item>
+    </string-array>
+
+    <string-array name="select_small_window_back_key">
+        <item>返回</item>
+        <item>移動焦點</item>
+    </string-array>
+
+    <string-array name="select_home_ui">
+        <item>簡潔樣式</item>
+        <item>TVBox樣式</item>
+    </string-array>
+
+    <string-array name="select_language">
+        <item>英文</item>
+        <item>簡體中文</item>
+        <item>繁體中文</item>
+    </string-array>
+
+    <string-array name="select_parse_webview">
+        <item>系統核心</item>
+        <item>X5核心</item>
+    </string-array>
+
+    <string-array name="select_config_cache">
+        <item>關閉</item>
+        <item>12小時</item>
+        <item>24小時</item>
+    </string-array>
+
+    <string-array name="select_backup">
+        <item>自動</item>
+        <item>手動</item>
+    </string-array>
+
+    <string-array name="select_danmu_speed">
+        <item>極慢</item>
+        <item>慢速</item>
+        <item>中速</item>
+        <item>快速</item>
+    </string-array>
+
 </resources>
