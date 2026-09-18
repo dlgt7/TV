@@ -1,10 +1,14 @@
 package com.github.catvod.net;
 
+import android.text.TextUtils;
+
 import com.github.catvod.bean.Proxy;
 import com.github.catvod.utils.Util;
 
 import java.io.IOException;
 import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
@@ -15,6 +19,7 @@ public class OkProxySelector extends ProxySelector {
 
     private final List<Proxy> proxy;
     private final ProxySelector system;
+    private java.net.Proxy userProxy;
     private boolean authSet;
 
     public OkProxySelector() {
@@ -35,6 +40,30 @@ public class OkProxySelector extends ProxySelector {
         proxy.clear();
     }
 
+    public synchronized void setProxy(String proxy) {
+        this.userProxy = TextUtils.isEmpty(proxy) ? null : parse(proxy);
+    }
+
+    private java.net.Proxy parse(String proxy) {
+        android.net.Uri uri = android.net.Uri.parse(proxy);
+        String userInfo = uri.getUserInfo();
+        if (!TextUtils.isEmpty(userInfo) && userInfo.contains(":")) setAuthenticator(userInfo);
+        if (uri.getScheme() == null || uri.getHost() == null || uri.getPort() <= 0) return java.net.Proxy.NO_PROXY;
+        if (uri.getScheme().startsWith("http")) return new java.net.Proxy(java.net.Proxy.Type.HTTP, InetSocketAddress.createUnresolved(uri.getHost(), uri.getPort()));
+        if (uri.getScheme().startsWith("socks")) return new java.net.Proxy(java.net.Proxy.Type.SOCKS, InetSocketAddress.createUnresolved(uri.getHost(), uri.getPort()));
+        return java.net.Proxy.NO_PROXY;
+    }
+
+    private void setAuthenticator(String userInfo) {
+        String[] auth = userInfo.split(":");
+        Authenticator.setDefault(new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(auth[0], auth[1].toCharArray());
+            }
+        });
+    }
+
     public List<Proxy> getProxy() {
         return proxy;
     }
@@ -45,6 +74,7 @@ public class OkProxySelector extends ProxySelector {
 
     @Override
     public List<java.net.Proxy> select(URI uri) {
+        if (userProxy != null && uri.getHost() != null && !"127.0.0.1".equals(uri.getHost()) && !"localhost".equals(uri.getHost())) return List.of(userProxy);
         if (proxy.isEmpty() || uri.getHost() == null || "127.0.0.1".equals(uri.getHost())) return fallback(uri);
         for (Proxy item : proxy) for (String host : item.getHosts()) if (Util.containOrMatch(uri.getHost(), host)) return !item.getProxies().isEmpty() ? item.getProxies() : fallback(uri);
         return fallback(uri);
