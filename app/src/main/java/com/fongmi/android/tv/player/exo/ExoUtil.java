@@ -61,7 +61,7 @@ public final class ExoUtil {
     public static String getMimeType(int errorCode) {
         return switch (errorCode) {
             case PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED, PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED, PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> MimeTypes.APPLICATION_M3U8;
-            case PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED, PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> MimeTypes.APPLICATION_OCTET_STREAM;
+            case PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED, PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> "application/octet-stream";
             default -> null;
         };
     }
@@ -113,7 +113,7 @@ public final class ExoUtil {
 
     private static AudioSink buildAudioSink(Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams, @Nullable AudioProcessor audioProcessor) {
         DefaultAudioSink.Builder builder = new DefaultAudioSink.Builder(context).setEnableFloatOutput(enableFloatOutput).setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams);
-        if (!DecodeSetting.isAudioPassThrough()) builder.setAudioOutputProvider(new AudioTrackAudioOutputProvider.Builder(null).build());
+
         if (audioProcessor != null) builder.setAudioProcessors(new AudioProcessor[]{audioProcessor});
         return builder.build();
     }
@@ -131,7 +131,7 @@ public final class ExoUtil {
             this.libassPlaybackSession = libassPlaybackSession;
             setEnableDecoderFallback(true);
             setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON);
-            setDolbyVisionOutputPolicy(DecodeSetting.getDolbyVisionOutputPolicy());
+
         }
 
         @Override
