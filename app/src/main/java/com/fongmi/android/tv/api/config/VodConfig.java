@@ -6,6 +6,7 @@ import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.api.Decoder;
 import com.fongmi.android.tv.api.loader.BaseLoader;
 import com.fongmi.android.tv.bean.Config;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.bean.Depot;
 import com.fongmi.android.tv.bean.Parse;
 import com.fongmi.android.tv.bean.Rule;
@@ -111,7 +112,12 @@ public class VodConfig extends BaseConfig {
 
     @Override
     protected void load(Config config) throws Throwable {
+        if (Setting.getConfigCache() > 0 && config.isCache() && !TextUtils.isEmpty(config.getJson())) {
+            checkJson(config, Json.parse(config.getJson()).getAsJsonObject());
+            return;
+        }
         String json = Decoder.getJson(UrlUtil.convert(config.getUrl()), TAG);
+        config.setJson(json);
         checkJson(config, Json.parse(json).getAsJsonObject());
     }
 
