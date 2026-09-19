@@ -371,7 +371,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         setSeekNextFocusDown(R.id.next);
         setActionFocusBoundary(mBinding.control.action.getRoot());
         PlayerEngineDialog.setText(mBinding.control.action.player);
-        mBinding.control.action.danmaku.setVisibility(DanmakuSetting.isLoad() ? View.VISIBLE : View.GONE);
+        mBinding.control.action.danmaku.setVisibility(DanmakuSetting.shouldLoad() ? View.VISIBLE : View.GONE);
     }
 
     private void setPlaybackMode() {
