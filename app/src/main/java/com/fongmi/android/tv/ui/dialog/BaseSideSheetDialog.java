@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.utils.Util;
 import com.google.android.material.sidesheet.SideSheetDialog;
 
@@ -58,6 +59,7 @@ public abstract class BaseSideSheetDialog extends AppCompatDialogFragment {
         super.onStart();
         FrameLayout sheet = getDialog().findViewById(com.google.android.material.R.id.m3_side_sheet);
         if (sheet == null) return;
+        sheet.setBackgroundResource(R.drawable.shape_side_sheet);
         ViewGroup.LayoutParams params = sheet.getLayoutParams();
         params.width = getWidth();
         sheet.setLayoutParams(params);

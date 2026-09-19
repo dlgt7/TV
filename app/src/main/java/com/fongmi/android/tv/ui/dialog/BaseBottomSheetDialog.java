@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.utils.Util;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -77,6 +78,7 @@ public abstract class BaseBottomSheetDialog extends BottomSheetDialogFragment {
     private void setSheet(BottomSheetDialog dialog) {
         FrameLayout sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
         if (sheet == null) return;
+        sheet.setBackgroundResource(R.drawable.shape_bottom_sheet);
         setHeight(sheet, getMaxHeight());
         setBehavior(sheet);
     }
