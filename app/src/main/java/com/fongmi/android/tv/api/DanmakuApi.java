@@ -27,7 +27,7 @@ public class DanmakuApi {
     private static final AtomicInteger REQUEST_ID = new AtomicInteger();
 
     public static boolean canSearch() {
-        return DanmakuSetting.isLoad() && DanmakuSetting.isAuto() && !TextUtils.isEmpty(DanmakuSetting.getEffectiveApiUrl());
+        return DanmakuSetting.shouldLoad() && DanmakuSetting.shouldAutoSearch();
     }
 
     public static void cancel() {
