@@ -31,8 +31,8 @@ public class DecodeTrackSelector extends DefaultTrackSelector {
     private int videoDecode;
 
     @Nullable
-    private TrackSelectionOverride secondaryOverride;
-    private boolean secondaryAutoSelectionEnabled;
+    private volatile TrackSelectionOverride secondaryOverride;
+    private volatile boolean secondaryAutoSelectionEnabled;
     private volatile boolean secondarySuppressed;
 
     @Nullable
