@@ -132,7 +132,7 @@ dependencies {
     implementation 'androidx.media3:media3-effect:1.11.1'
     implementation 'androidx.media3:media3-session:1.11.1'
     implementation 'androidx.media3:media3-ui:1.11.1'
-    implementation('io.github.anilbeesetti:nextlib-media3ext:1.11.1-0.16.0') { exclude group: 'androidx.media3', module: 'media3-exoplayer' }
+    // nextlib 扩展由 app/libs/media3ext-release.aar 提供（含 ffmpeg .so），不再从 Maven 引入，否则重复类
     leanbackImplementation libs.leanback
     leanbackImplementation libs.androidautosize
     mobileImplementation libs.biometric
