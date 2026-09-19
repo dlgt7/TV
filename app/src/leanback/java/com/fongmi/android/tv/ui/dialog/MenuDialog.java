@@ -48,7 +48,7 @@ public class MenuDialog implements MenuAdapter.OnClickListener {
     }
 
     private int getCount() {
-        return 3;
+        return 2;
     }
 
     private float getWidth() {
