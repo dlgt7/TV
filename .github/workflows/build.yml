@@ -14,8 +14,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # 不拉取 submodules，避免多余产物
+
 
       - name: Remove tracked stale build artifacts
         run: |
