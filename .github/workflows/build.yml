@@ -14,6 +14,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # 不拉取 submodules，避免多余产物
+
+      - name: Remove tracked stale build artifacts
+        run: |
+          git ls-files -- app/build/ | xargs -r rm -f
+          rm -rf app/build/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -40,10 +47,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Clean stale build artifacts
-        run: |
-          ./gradlew clean
-          rm -rf app/build/intermediates/javac
 
       - name: Build leanback release
         run: ./gradlew assembleLeanbackRelease
