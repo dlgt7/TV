@@ -81,6 +81,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
+
+    sourceSets {
+        main {
+            java.srcDirs += ['src/stubs/java']
+        }
+    }
 }
 
 AbiApkPackaging.configure(project, SingleArtifact.APK.INSTANCE)
@@ -114,6 +120,23 @@ dependencies {
     implementation libs.permissionx
     implementation libs.simple.xml
     implementation libs.textdrawable
+    implementation 'com.github.YarikSOffice:lingver:1.3.0'
+    implementation 'com.tencent.tbs:tbssdk:44286'
+    implementation 'androidx.media3:media3-common:1.11.1'
+    implementation 'androidx.media3:media3-database:1.11.1'
+    implementation 'androidx.media3:media3-datasource:1.11.1'
+    implementation 'androidx.media3:media3-datasource-okhttp:1.11.1'
+    implementation 'androidx.media3:media3-datasource-rtmp:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer-dash:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer-rtsp:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer-smoothstreaming:1.11.1'
+    implementation 'androidx.media3:media3-extractor:1.11.1'
+    implementation 'androidx.media3:media3-effect:1.11.1'
+    implementation 'androidx.media3:media3-session:1.11.1'
+    implementation 'androidx.media3:media3-ui:1.11.1'
+    implementation('io.github.anilbeesetti:nextlib-media3ext:1.11.1-0.16.0') { exclude group: 'androidx.media3', module: 'media3-exoplayer' }
     leanbackImplementation libs.leanback
     leanbackImplementation libs.androidautosize
     mobileImplementation libs.biometric
