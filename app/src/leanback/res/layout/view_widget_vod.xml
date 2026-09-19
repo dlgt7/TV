@@ -144,4 +144,16 @@
         </androidx.appcompat.widget.LinearLayoutCompat>
     </androidx.appcompat.widget.LinearLayoutCompat>
 
+    <ProgressBar
+        android:id="@+id/miniProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_gravity="bottom"
+        android:max="100"
+        android:progress="0"
+        android:progressTint="@color/white"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
 </FrameLayout>
