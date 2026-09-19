@@ -60,23 +60,30 @@ jobs:
       - name: Build mobile release
         run: ./gradlew assembleMobileRelease
 
-      - name: Upload APKs
+      - name: Upload leanback-arm64_v8a (电视版 64位)
         uses: actions/upload-artifact@v4
         with:
-          name: APK
-          path: Release/apk/*.apk
-          if-no-files-found: ignore
+          name: leanback-arm64_v8a
+          path: app/build/outputs/apk/leanback/release/leanback-arm64_v8a.apk
+          if-no-files-found: error
 
-      - name: Upload leanback APKs
+      - name: Upload leanback-armeabi_v7a (电视版 32位)
         uses: actions/upload-artifact@v4
         with:
-          name: leanback-apk
-          path: app/build/outputs/apk/leanback/release/*.apk
-          if-no-files-found: ignore
+          name: leanback-armeabi_v7a
+          path: app/build/outputs/apk/leanback/release/leanback-armeabi_v7a.apk
+          if-no-files-found: error
 
-      - name: Upload mobile APKs
+      - name: Upload mobile-arm64_v8a (手机版 64位)
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-apk
-          path: app/build/outputs/apk/mobile/release/*.apk
-          if-no-files-found: ignore
+          name: mobile-arm64_v8a
+          path: app/build/outputs/apk/mobile/release/mobile-arm64_v8a.apk
+          if-no-files-found: error
+
+      - name: Upload mobile-armeabi_v7a (手机版 32位)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-armeabi_v7a
+          path: app/build/outputs/apk/mobile/release/mobile-armeabi_v7a.apk
+          if-no-files-found: error
