@@ -252,7 +252,7 @@ public class Result implements Parcelable {
     }
 
     public List<Danmaku> getDanmaku() {
-        if (!DanmakuSetting.isLoad()) return new ArrayList<>();
+        if (!DanmakuSetting.shouldLoad()) return new ArrayList<>();
         return danmaku = danmaku == null ? new ArrayList<>() : danmaku;
     }
 
