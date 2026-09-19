@@ -43,6 +43,7 @@ public final class DanmakuPlayerViewController implements Player.Listener {
     private boolean enabled;
     private boolean prepared;
     private volatile boolean released;
+    private volatile int dataSourceVersion;
     private long timeOffsetMs;
 
     public DanmakuPlayerViewController() {}
@@ -60,6 +61,7 @@ public final class DanmakuPlayerViewController implements Player.Listener {
         applyConfig();
         ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         playerView.addView(danmakuView, lp);
+        danmakuView.bringToFront();
         danmakuView.setVisibility(enabled ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 
@@ -80,6 +82,7 @@ public final class DanmakuPlayerViewController implements Player.Listener {
 
     public void setDataSource(@Nullable Uri uri) {
         if (danmakuView == null || released) return;
+        int version = ++dataSourceVersion;
         danmakuView.release();
         prepared = false;
         if (uri == null) return;
@@ -87,11 +90,11 @@ public final class DanmakuPlayerViewController implements Player.Listener {
         final String uriStr = uri.toString();
         new Thread(() -> {
             String content = fetch(client, uriStr);
-            if (released) return;
+            if (released || version != dataSourceVersion) return;
             Danmakus danmakus = parse(content);
-            if (released) return;
+            if (released || version != dataSourceVersion) return;
             androidx.media3.ui.danmaku.DanmakuPlayerViewController.PostHelper.post(() -> {
-                if (danmakuView == null || released) return;
+                if (danmakuView == null || released || version != dataSourceVersion) return;
                 danmakuView.prepare(new DanmakuParser(danmakus), danmakuContext);
                 prepared = true;
                 attachPlayer();
@@ -209,6 +212,7 @@ public final class DanmakuPlayerViewController implements Player.Listener {
         if (danmakuView == null || !prepared) return;
         if (isPlaying) {
             if (danmakuView.isPrepared()) danmakuView.resume();
+            if (enabled) danmakuView.show();
         } else {
             danmakuView.pause();
         }
@@ -222,6 +226,7 @@ public final class DanmakuPlayerViewController implements Player.Listener {
                 startIfNeeded();
             } else if (player.isPlaying()) {
                 danmakuView.start(player.getCurrentPosition());
+                if (enabled) danmakuView.show();
             }
         } else if (playbackState == Player.STATE_ENDED) {
             danmakuView.stop();
@@ -268,7 +273,10 @@ public final class DanmakuPlayerViewController implements Player.Listener {
     private Danmakus parse(String content) {
         Danmakus result = new Danmakus(IDanmakus.ST_BY_TIME);
         if (TextUtils.isEmpty(content)) return result;
-        if (content.trim().startsWith("<") || content.contains("<d ")) {
+        String trimmed = content.trim();
+        if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+            parseJson(content, result);
+        } else if (trimmed.startsWith("<") || content.contains("<d p=")) {
             parseXml(content, result);
         } else {
             parseJson(content, result);
