@@ -244,9 +244,9 @@ public final class DanmakuPlayerViewController implements Player.Listener {
         if (uriStr.startsWith("http")) {
             OkHttpClient c = client != null ? client : new OkHttpClient();
             try (Response res = c.newCall(new Request.Builder().url(uriStr).build()).execute()) {
-                if (!res.isSuccessful()) return "";
+                if (!res.isSuccessful() || res.body() == null) return "";
                 return res.body().string();
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 return "";
             }
         }
