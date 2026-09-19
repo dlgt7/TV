@@ -2,8 +2,11 @@ package androidx.media3.mpvplayer;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Handler;
 import android.os.Looper;
+import android.view.ViewGroup;
 import android.view.accessibility.CaptioningManager;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,13 +19,14 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.TrackGroup;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.Tracks;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.text.CueGroup;
 import androidx.media3.effect.Brightness;
 import androidx.media3.effect.Contrast;
 import androidx.media3.effect.HslAdjustment;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.Renderer;
-import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.analytics.AnalyticsListener;
 import androidx.media3.exoplayer.audio.AudioSink;
 import androidx.media3.exoplayer.text.SecondaryTextOutput;
@@ -54,13 +58,16 @@ public class MpvPlayer extends ForwardingPlayer {
     public static final int AUDIO_EFFECTS_UNSUPPORTED_PASSTHROUGH = 1;
 
     private final SecondaryTextOutput secondaryTextOutput;
+    private final SecondaryTextOutput.Listener cueListener = this::onSecondaryCues;
     private final AnalyticsListener analyticsListener;
+    private final Handler handler;
     private final MpvPlayerConfig config;
     private final ExoPlayer player;
 
     private MpvVideoEqualizer equalizer;
     private MpvAudioFilter audioFilter;
     private MpvSubtitleOptions subtitleOptions;
+    private SubtitleView secondaryView;
     private PlayerView playerView;
     private Runnable audioOutputListener;
     private int decode;
@@ -73,6 +80,7 @@ public class MpvPlayer extends ForwardingPlayer {
         super(createPlayer(builder));
         this.player = (ExoPlayer) getWrappedPlayer();
         this.secondaryTextOutput = builder.secondaryTextOutput;
+        this.handler = new Handler(Looper.getMainLooper());
         this.config = builder.config;
         this.equalizer = MpvVideoEqualizer.DEFAULT;
         this.audioFilter = MpvAudioFilter.EMPTY;
@@ -171,10 +179,13 @@ public class MpvPlayer extends ForwardingPlayer {
     }
 
     /**
-     * 绑定播放视图后，字幕位置 / 缩放 / 样式才能真正作用到字幕视图上。
+     * 绑定播放视图后，字幕位置 / 缩放 / 样式才能真正作用到字幕视图上，
+     * 同时会挂载第二个 {@link SubtitleView} 承载副字幕。
      */
     public void bindPlayerView(@Nullable PlayerView playerView) {
+        detachSecondaryView();
         this.playerView = playerView;
+        if (playerView != null) attachSecondaryView(playerView);
         applySubtitleOptions();
     }
 
@@ -269,6 +280,11 @@ public class MpvPlayer extends ForwardingPlayer {
     private void applySubtitleOptions() {
         PlayerView view = playerView;
         if (view == null || subtitleOptions == null) return;
+        applyPrimarySubtitleOptions(view);
+        applySecondarySubtitleOptions();
+    }
+
+    private void applyPrimarySubtitleOptions(PlayerView view) {
         SubtitleView subtitleView = view.getSubtitleView();
         if (subtitleView == null) return;
         if (subtitleOptions.hasScale()) subtitleView.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subtitleOptions.getScale(), false);
@@ -283,6 +299,38 @@ public class MpvPlayer extends ForwardingPlayer {
         } else {
             subtitleView.setApplyEmbeddedStyles(true);
         }
+    }
+
+    private void applySecondarySubtitleOptions() {
+        SubtitleView view = secondaryView;
+        if (view == null) return;
+        if (subtitleOptions.hasScale()) view.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subtitleOptions.getScale(), false);
+        if (subtitleOptions.hasSecondaryPosition()) view.setBottomPaddingFraction(Math.min(1.0f, Math.max(0.0f, (100.0f - subtitleOptions.getSecondaryPosition()) / 100.0f)));
+        view.setCues(secondaryTextOutput.getCueGroup().cues);
+    }
+
+    private void attachSecondaryView(PlayerView view) {
+        SubtitleView subtitleView = new SubtitleView(view.getContext());
+        subtitleView.setUserDefaultStyle();
+        subtitleView.setUserDefaultTextSize();
+        subtitleView.setApplyEmbeddedStyles(true);
+        view.addView(subtitleView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        secondaryView = subtitleView;
+        secondaryTextOutput.addListener(cueListener);
+    }
+
+    private void detachSecondaryView() {
+        secondaryTextOutput.removeListener(cueListener);
+        if (secondaryView != null && playerView != null) playerView.removeView(secondaryView);
+        secondaryView = null;
+    }
+
+    private void onSecondaryCues(CueGroup cueGroup) {
+        if (secondaryView == null) return;
+        List<Cue> cues = cueGroup.cues;
+        handler.post(() -> {
+            if (secondaryView != null) secondaryView.setCues(cues);
+        });
     }
 
     @Nullable
