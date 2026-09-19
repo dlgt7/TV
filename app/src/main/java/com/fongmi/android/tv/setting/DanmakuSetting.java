@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import androidx.media3.ui.danmaku.DanmakuConfig;
 
 import com.fongmi.android.tv.api.config.VodConfig;
+import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.github.catvod.utils.Prefers;
 
@@ -314,7 +315,44 @@ public class DanmakuSetting {
     public static String getEffectiveApiUrl() {
         String userUrl = getApiUrl();
         if (!TextUtils.isEmpty(userUrl)) return userUrl;
-        return VodConfig.get().getConfig().getDanmaku();
+        String configUrl = VodConfig.get().getConfig().getDanmaku();
+        if (!TextUtils.isEmpty(configUrl)) return configUrl;
+        return getDanmakuSpiderApiUrl();
+    }
+
+    private static String getDanmakuSpiderApiUrl() {
+        try {
+            for (Site site : VodConfig.get().getSites()) {
+                if (!"csp_DanmakuSpider".equals(site.getApi())) continue;
+                String ext = site.getExt();
+                if (TextUtils.isEmpty(ext) || !ext.startsWith("{")) continue;
+                org.json.JSONObject obj = new org.json.JSONObject(ext);
+                if (!obj.has("apiUrl")) continue;
+                org.json.JSONArray arr = obj.getJSONArray("apiUrl");
+                if (arr.length() == 0) continue;
+                String entry = arr.optString(0, "");
+                String url = entry.contains("|") ? entry.substring(0, entry.indexOf("|")) : entry;
+                return TextUtils.isEmpty(url) ? "" : url;
+            }
+        } catch (Throwable ignored) {}
+        return "";
+    }
+
+    public static boolean hasDanmakuSpider() {
+        try {
+            for (Site site : VodConfig.get().getSites()) {
+                if ("csp_DanmakuSpider".equals(site.getApi())) return true;
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    public static boolean shouldLoad() {
+        return isLoad() || hasDanmakuSpider();
+    }
+
+    public static boolean shouldAutoSearch() {
+        return (isAuto() || hasDanmakuSpider()) && !TextUtils.isEmpty(getEffectiveApiUrl());
     }
 
     public static void resetAppearance() {
