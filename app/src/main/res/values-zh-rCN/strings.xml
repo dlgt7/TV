@@ -206,6 +206,7 @@
     <string name="danmaku">弹幕</string>
     <string name="danmaku_select">选择弹幕</string>
     <string name="danmaku_setting">弹幕设置</string>
+    <string name="danmaku_style_setting">弹幕样式</string>
     <string name="danmaku_text_size">字体缩放</string>
     <string name="danmaku_transparency">透明度</string>
     <string name="danmaku_text_bold">粗体</string>
