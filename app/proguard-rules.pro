@@ -80,3 +80,9 @@
 -keep class com.google.zxing.qrcode.QRCodeReader { *; }
 -keep class com.google.zxing.qrcode.QRCodeWriter { *; }
 -keep class com.google.zxing.qrcode.decoder.ErrorCorrectionLevel { *; }
+# TBS X5 SDK
+-keep class com.tencent.smtt.** { *; }
+-keep class com.tencent.tbs.** { *; }
+-dontwarn com.tencent.smtt.**
+-dontwarn com.tencent.tbs.**
+-dontwarn dalvik.system.VMStack
