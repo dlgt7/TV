@@ -126,7 +126,9 @@ dependencies {
     implementation 'androidx.media3:media3-database:1.11.1'
     implementation 'androidx.media3:media3-datasource:1.11.1'
     implementation 'androidx.media3:media3-datasource-okhttp:1.11.1'
-    implementation 'androidx.media3:media3-datasource-rtmp:1.11.1'
+    implementation('androidx.media3:media3-datasource-rtmp:1.11.1') {
+        exclude group: 'io.antmedia', module: 'rtmp-client'
+    }
     implementation 'androidx.media3:media3-exoplayer:1.11.1'
     implementation 'androidx.media3:media3-exoplayer-dash:1.11.1'
     implementation 'androidx.media3:media3-exoplayer-hls:1.11.1'
