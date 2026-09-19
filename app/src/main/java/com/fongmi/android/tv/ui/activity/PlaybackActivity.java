@@ -290,7 +290,9 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void addSeekListener() {
-        getSeekView().getTimeBar().addListener(new TimeBar.OnScrubListener() {
+        TimeBar timeBar = getSeekView().getTimeBar();
+        if (timeBar == null) return;
+        timeBar.addListener(new TimeBar.OnScrubListener() {
             @Override
             public void onScrubStart(@NonNull TimeBar timeBar, long position) {
                 PlaybackActivity.this.setScrubbing(true);
@@ -330,6 +332,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         long durationMs = mController == null ? C.TIME_UNSET : mController.getDuration();
         long incrementMs = getKeyTimeIncrementMs(durationMs);
         TimeBar timeBar = getSeekView().getTimeBar();
+        if (timeBar == null) return;
         timeBar.setKeyTimeIncrement(incrementMs);
     }
 
