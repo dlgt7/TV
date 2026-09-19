@@ -8,6 +8,7 @@ import androidx.media3.common.Player;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.Tracks;
 import androidx.media3.mpvplayer.MpvPlayer;
+import androidx.media3.ui.PlayerView;
 
 import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.player.effect.PlayerEffect;
@@ -61,7 +62,13 @@ public class MpvPlayerEngine implements PlayerEngine, Player.Listener {
     public void release() {
         player.removeListener(this);
         player.setAudioOutputListener(null);
+        player.bindPlayerView(null);
         player.release();
+    }
+
+    @Override
+    public void bindPlayerView(PlayerView playerView) {
+        player.bindPlayerView(playerView);
     }
 
     @Override
