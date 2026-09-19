@@ -105,7 +105,7 @@ public final class DanmakuPlayerViewController implements Player.Listener {
         BaseDanmaku item = danmakuContext.mDanmakuFactory.createDanmaku(BaseDanmaku.TYPE_SCROLL_RL, danmakuContext);
         if (item == null) return;
         item.text = text;
-        item.time = player != null ? player.getCurrentPosition() : 0L;
+        item.setTime(player != null ? player.getCurrentPosition() : 0L);
         item.textSize = 25f * (danmakuContext.getDisplayer().getDensity() - 0.6f);
         item.textColor = Color.WHITE;
         item.textShadowColor = Color.BLACK;
