@@ -41,6 +41,13 @@ jobs:
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> local.properties
           if [ -n "${{ secrets.SIGNING_CONFIG }}" ]; then
             echo "${{ secrets.SIGNING_CONFIG }}" | base64 -d > app/release.jks
+          else
+            keytool -genkeypair -v -keystore app/release.jks \
+              -alias androiddebugkey -storepass android -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+            sed -i 's/^keyAlias=.*/keyAlias=androiddebugkey/' local.properties
+            sed -i 's/^storePassword=.*/storePassword=android/' local.properties
           fi
 
       - name: Grant execute permission for gradlew
