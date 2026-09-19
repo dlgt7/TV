@@ -57,6 +57,7 @@ import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
 import com.fongmi.android.tv.ui.custom.CustomSelector;
 import com.fongmi.android.tv.ui.custom.CustomTitleView;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
+import com.fongmi.android.tv.ui.dialog.MenuDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.ui.presenter.FuncPresenter;
 import com.fongmi.android.tv.ui.presenter.HeaderPresenter;
@@ -83,7 +84,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener, ConfigListener {
+public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener, ConfigListener, MenuDialog.Listener {
 
     private ActivityHomeBinding mBinding;
     private ArrayObjectAdapter mHistoryAdapter;
@@ -446,8 +447,13 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void onHomeMenuKey() {
-        switch (Setting.getHomeMenuKey()) {
-            case 0: showDialog(); break;
+        int key = Setting.getHomeMenuKey();
+        if (key == 0) MenuDialog.create(this).show();
+        else handleMenuKey(key);
+    }
+
+    private void handleMenuKey(int position) {
+        switch (position) {
             case 1: SiteDialog.create().show(this); break;
             case 2: ConfigDialog.create().vod().show(this); break;
             case 3: LiveActivity.start(this); break;
@@ -457,6 +463,11 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             case 7: KeepActivity.start(this); break;
             case 8: SettingActivity.start(this); break;
         }
+    }
+
+    @Override
+    public void onMenuClick(int position) {
+        handleMenuKey(position + 1);
     }
 
     @Override
