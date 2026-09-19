@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.fongmi.android.tv.bean.Button;
 import com.fongmi.android.tv.databinding.AdapterButtonsBinding;
+import com.fongmi.android.tv.event.ConfigEvent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -70,6 +71,7 @@ public class ButtonsAdapter extends RecyclerView.Adapter<ButtonsAdapter.ViewHold
         Map<Integer, Button> map = new LinkedHashMap<>();
         if (!checked) map = Button.getMap(mItems);
         Button.save(map);
+        ConfigEvent.common();
         notifyItemRangeChanged(0, getItemCount());
         return true;
     }
@@ -106,6 +108,7 @@ public class ButtonsAdapter extends RecyclerView.Adapter<ButtonsAdapter.ViewHold
         List<Button> btns = new ArrayList<>();
         for (Button b : sortedItems) if (btnsMap.containsKey(b.getId())) btns.add(b);
         Button.save(Button.getMap(btns));
+        ConfigEvent.common();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
