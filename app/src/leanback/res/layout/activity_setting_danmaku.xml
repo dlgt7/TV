@@ -178,7 +178,7 @@
             <com.google.android.material.textview.MaterialTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="end"
+
                 android:text="@string/danmaku_style_setting"
                 android:textColor="@color/white"
                 android:textSize="18sp" />
