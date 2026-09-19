@@ -291,23 +291,42 @@ public final class DanmakuPlayerViewController implements Player.Listener {
         String trimmed = content.trim();
         try {
             if (trimmed.startsWith("[")) {
-                JSONArray arr = new JSONArray(trimmed);
-                for (int i = 0; i < arr.length(); i++) {
-                    Object o = arr.opt(i);
-                    if (o instanceof JSONArray) {
-                        JSONArray item = (JSONArray) o;
-                        String param = item.optDouble(0, 0) + "," + item.optInt(1, 1) + "," + item.optDouble(3, 25) + "," + item.optInt(2, 16777215);
-                        String text = item.optString(4, "");
-                        addDanmaku(result, param, text, density);
-                    } else if (o instanceof JSONObject) {
-                        JSONObject item = (JSONObject) o;
-                        String param = item.optDouble("time", item.optDouble("t", 0)) + "," + item.optInt("type", 1) + "," + item.optDouble("size", item.optDouble("fontSize", 25)) + "," + item.optInt("color", 16777215);
-                        String text = item.optString("text", item.optString("content", ""));
-                        addDanmaku(result, param, text, density);
+                parseJsonArray(new JSONArray(trimmed), result, density);
+            } else if (trimmed.startsWith("{")) {
+                JSONObject obj = new JSONObject(trimmed);
+                String[] keys = {"data", "comments", "danmaku", "danmakus", "list", "result", "body", "items", "rows"};
+                for (String key : keys) {
+                    if (obj.has(key) && obj.opt(key) instanceof JSONArray) {
+                        parseJsonArray(obj.getJSONArray(key), result, density);
+                        return;
+                    }
+                }
+                for (java.util.Iterator<String> it = obj.keys(); it.hasNext(); ) {
+                    Object val = obj.opt(it.next());
+                    if (val instanceof JSONArray) {
+                        parseJsonArray((JSONArray) val, result, density);
+                        return;
                     }
                 }
             }
         } catch (Throwable ignored) {}
+    }
+
+    private void parseJsonArray(JSONArray arr, Danmakus result, float density) {
+        for (int i = 0; i < arr.length(); i++) {
+            Object o = arr.opt(i);
+            if (o instanceof JSONArray) {
+                JSONArray item = (JSONArray) o;
+                String param = item.optDouble(0, 0) + "," + item.optInt(1, 1) + "," + item.optDouble(3, 25) + "," + item.optInt(2, 16777215);
+                String text = item.optString(4, "");
+                addDanmaku(result, param, text, density);
+            } else if (o instanceof JSONObject) {
+                JSONObject item = (JSONObject) o;
+                String param = item.optDouble("time", item.optDouble("t", 0)) + "," + item.optInt("type", 1) + "," + item.optDouble("size", item.optDouble("fontSize", 25)) + "," + item.optInt("color", 16777215);
+                String text = item.optString("text", item.optString("content", ""));
+                addDanmaku(result, param, text, density);
+            }
+        }
     }
 
     private void addDanmaku(Danmakus result, String param, String text, float density) {
