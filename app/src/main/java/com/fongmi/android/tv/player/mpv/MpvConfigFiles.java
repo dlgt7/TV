@@ -63,9 +63,11 @@ public final class MpvConfigFiles {
     public static void ensureAndroidFontsConfig(File cacheDir) {
         File config = Path.mpv(FONTS_CONF);
         String cache = escapeXml(cacheDir.getAbsolutePath());
+        String fontsDir = escapeXml(Path.font().getAbsolutePath());
         String content = "<fontconfig>\n"
                 + "  <dir>/system/fonts</dir>\n"
                 + "  <dir>/product/fonts</dir>\n"
+                + "  <dir>" + fontsDir + "</dir>\n"
                 + "  <cachedir>" + cache + "</cachedir>\n"
                 + "  <alias><family>serif</family><prefer><family>Noto Serif</family></prefer></alias>\n"
                 + "  <alias><family>sans-serif</family><prefer><family>Roboto</family><family>Noto Sans</family></prefer></alias>\n"

@@ -48,6 +48,17 @@ public class Config {
     @Ignore
     @SerializedName("danmaku")
     private String danmaku;
+    @Ignore
+    @SerializedName("assrt")
+    private String assrt;
+
+    public String getAssrt() {
+        return assrt == null ? "" : assrt;
+    }
+
+    public void setAssrt(String assrt) {
+        this.assrt = assrt;
+    }
 
     public static List<Config> arrayFrom(String str) {
         Type listType = TypeToken.getParameterized(List.class, Config.class).getType();

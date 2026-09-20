@@ -185,6 +185,9 @@
 
     <!-- Search -->
     <string name="search_keyword">关键字…</string>
+    <string name="subtitle_search">搜索字幕</string>
+    <string name="subtitle_search_api_title">Assrt</string>
+    <string name="subtitle_search_token_hint">Token</string>
     <string name="search_record">历史</string>
     <string name="search_suggest">建议</string>
     <string name="search_hot">热搜</string>

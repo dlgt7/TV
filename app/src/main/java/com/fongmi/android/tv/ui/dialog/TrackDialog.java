@@ -73,6 +73,10 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         return type == C.TRACK_TYPE_TEXT && player.isVod();
     }
 
+    private boolean hasSearch() {
+        return type == C.TRACK_TYPE_TEXT && player != null && player.isVod();
+    }
+
     private boolean hasText() {
         return type == C.TRACK_TYPE_TEXT && player.haveTrack(type);
     }
@@ -97,6 +101,7 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         binding.recycler.setVisibility(adapter.getItemCount() == 0 ? View.GONE : View.VISIBLE);
         binding.offset.setVisibility(hasText() || hasAudio() ? View.VISIBLE : View.GONE);
         binding.choose.setVisibility(hasChoose() ? View.VISIBLE : View.GONE);
+        binding.search.setVisibility(hasSearch() ? View.VISIBLE : View.GONE);
         binding.subtitle.setVisibility(hasText() ? View.VISIBLE : View.GONE);
     }
 
@@ -104,6 +109,7 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
     protected void initEvent() {
         binding.offset.setOnClickListener(this::onOffset);
         binding.choose.setOnClickListener(this::onChoose);
+        binding.search.setOnClickListener(this::onSearch);
         binding.subtitle.setOnClickListener(this::onSubtitle);
     }
 
@@ -117,8 +123,21 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         player.pause();
     }
 
+    private void onSearch(View view) {
+        FragmentActivity activity = requireActivity();
+        dismissNow();
+        SubtitleSearchDialog.create().player(player).show(activity);
+    }
+
     private void onSubtitle(View view) {
-        Listener listener = (Listener) requireActivity();
+        if (hasSearch()) {
+            onSearch(view);
+            return;
+        }
+        if (!(requireActivity() instanceof Listener listener)) {
+            dismiss();
+            return;
+        }
         App.post(listener::onSubtitleClick, 100);
         dismiss();
     }
