@@ -849,6 +849,7 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     @Override
     protected void onPlayingChanged(boolean isPlaying) {
         if (isPlaying || isPaused()) updatePlayControl(isPlaying);
+        if (!isPlaying && isPaused()) showControl();
     }
 
     private void updatePlayControl(boolean isPlaying) {
@@ -959,6 +960,8 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
 
     private void onPaused() {
         controller().pause();
+        // Single custom control layer on pause (Media3 transport chrome is disabled).
+        showControl();
     }
 
     private void onPlay() {
@@ -1056,9 +1059,15 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
 
     @Override
     public void onDoubleTap() {
+        if (isLock()) return;
         if (isVisible(mBinding.recycler)) hideUI();
-        if (isVisible(mBinding.control.getRoot())) hideControl();
-        else showControl();
+        if (player().isPlaying()) {
+            showControl();
+            onPaused();
+        } else {
+            hideControl();
+            onPlay();
+        }
     }
 
     @Override

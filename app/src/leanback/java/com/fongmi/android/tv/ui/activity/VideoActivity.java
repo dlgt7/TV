@@ -1227,6 +1227,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         } else if (isPaused()) {
             if (isFullscreen()) showInfo();
             else hideInfo();
+            showControl(getFocus2());
         }
     }
 
@@ -1293,6 +1294,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void onPaused() {
         controller().pause();
+        showControl(getFocus2());
     }
 
     private void onPlay() {
@@ -1397,10 +1399,15 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void onKeyCenter() {
-        if (player().isPlaying()) onPaused();
-        else if (player().isEmpty()) onRefresh();
-        else onPlay();
-        hideControl();
+        if (player().isPlaying()) {
+            onPaused();
+        } else if (player().isEmpty()) {
+            onRefresh();
+            hideControl();
+        } else {
+            onPlay();
+            hideControl();
+        }
     }
 
     @Override

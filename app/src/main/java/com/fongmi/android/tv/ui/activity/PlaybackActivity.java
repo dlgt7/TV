@@ -390,6 +390,9 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     private void configurePlayerView() {
         PlayerView playerView = getPlayerView();
+        // App overlay owns pause/transport UI; Media3 PlayerView must stay chrome-free.
+        playerView.setUseController(false);
+        playerView.setControllerAutoShow(false);
         playerView.setRender(PlayerSetting.getRender());
         playerView.setDanmakuOkHttpClient(OkHttp.player());
         playerView.setDanmakuEnabled(DanmakuSetting.isShow());

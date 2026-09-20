@@ -513,6 +513,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     @Override
     protected void onPlayingChanged(boolean isPlaying) {
         if (isPlaying || isPaused()) updatePlayControl(isPlaying);
+        if (!isPlaying && isPaused()) showControl(getFocus2());
     }
 
     private void updatePlayControl(boolean isPlaying) {
@@ -935,6 +936,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
 
     private void onPaused() {
         controller().pause();
+        showControl(getFocus2());
     }
 
     private void onPlay() {
@@ -1028,8 +1030,13 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     @Override
     public void onDoubleTap() {
         if (isVisible(mBinding.recycler)) hideUI();
-        else if (isVisible(mBinding.control.getRoot())) hideControl();
-        else onMenu();
+        if (player().isPlaying()) {
+            showControl(getFocus2());
+            onPaused();
+        } else {
+            hideControl();
+            onPlay();
+        }
     }
 
     @Override

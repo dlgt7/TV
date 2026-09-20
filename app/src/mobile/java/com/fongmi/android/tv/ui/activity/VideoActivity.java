@@ -1331,6 +1331,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
                 setR1Callback();
                 mVod.playbackEnded();
                 updatePlayControl(false);
+                showControl();
                 mClock.setCallback(null);
                 break;
         }
@@ -1339,6 +1340,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     @Override
     protected void onPlayingChanged(boolean isPlaying) {
         if (isPlaying || isPaused()) updatePlayControl(isPlaying);
+        if (!isPlaying && isPaused()) showControl();
     }
 
     private void updatePlayControl(boolean isPlaying) {
@@ -1433,6 +1435,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     private void onPaused() {
         controller().pause();
+        showControl();
     }
 
     private void onPlay() {
