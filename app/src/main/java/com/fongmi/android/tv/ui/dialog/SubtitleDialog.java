@@ -1,10 +1,14 @@
 package com.fongmi.android.tv.ui.dialog;
 
+import android.content.Intent;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -12,21 +16,24 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.media3.ui.SubtitleView;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.databinding.DialogSubtitleBinding;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.SubtitleSetting;
+import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.github.bassaer.library.MDColor;
-
-import androidx.annotation.Nullable;
 
 public final class SubtitleDialog extends BaseBottomSheetDialog implements ExternalFontDialog.Listener {
 
     private DialogSubtitleBinding binding;
     private SubtitleView subtitleView;
     private PlayerManager player;
+
+    private final ActivityResultLauncher<Intent> fontLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> FileChooser.getUri(result, this::importFont));
 
     public static SubtitleDialog create() {
         return new SubtitleDialog();
@@ -90,7 +97,15 @@ public final class SubtitleDialog extends BaseBottomSheetDialog implements Exter
 
     @Override
     public void onFontImportRequested() {
-        // Import fonts from settings for a stable file-picker host.
+        FileChooser.from(fontLauncher).show(new String[]{"font/*", "application/octet-stream", "*/*"});
+    }
+
+    private void importFont(android.net.Uri uri) {
+        if (uri == null) return;
+        String path = ExternalFont.importFrom(App.get(), uri);
+        if (TextUtils.isEmpty(path)) return;
+        SubtitleSetting.putFontPath(path);
+        applySubtitleStyle();
     }
 
     private void onUp(View view) {

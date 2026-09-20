@@ -53,6 +53,8 @@ public interface VodPlaybackHost {
 
     void clearPreload();
 
+    boolean preloadPlayback(Result result, long startPositionMs, History history, Episode episode);
+
     void requestSearch(List<Site> sites, String keyword);
 
     void prepareSource(Vod item);

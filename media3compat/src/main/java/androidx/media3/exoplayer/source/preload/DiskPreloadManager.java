@@ -1,5 +1,7 @@
 package androidx.media3.exoplayer.source.preload;
 
+import android.content.Context;
+
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PriorityTaskManager;
 import androidx.media3.datasource.DataSource;
@@ -7,36 +9,76 @@ import androidx.media3.datasource.cache.Cache;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RenderersFactory;
 
-/**
- * Compatibility implementation for the private disk preloader used upstream.
- *
- * <p>Playback remains fully functional when preloading is unavailable. The
- * class preserves the original API and can later be replaced by a cache writer
- * without changing application code.
- */
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/** Disk-backed Media3 preloader used in place of the private upstream implementation. */
 public final class DiskPreloadManager {
 
-    private DiskPreloadManager() {
+    private final Context context;
+    private final Cache cache;
+    private final DataSource.Factory dataSourceFactory;
+    private final RenderersFactory renderersFactory;
+
+    private DefaultPreloadManager manager;
+    private ExecutorService executor;
+
+    private DiskPreloadManager(Builder builder) {
+        this.context = builder.context.getApplicationContext();
+        this.cache = builder.cache;
+        this.dataSourceFactory = builder.dataSourceFactory;
+        this.renderersFactory = builder.renderersFactory;
     }
 
     public void start(ExoPlayer player, MediaItem mediaItem, Options options) {
-        // The player's normal CacheDataSource populates the same cache during playback.
+        release();
+        int threads = Math.clamp(options.maxThreads, 1, 10);
+        executor = Executors.newFixedThreadPool(threads);
+        manager = new DefaultPreloadManager.Builder(context, ranking ->
+                DefaultPreloadManager.PreloadStatus.specifiedRangeCached(options.durationMs))
+                .setCache(cache)
+                .setDataSourceFactory(dataSourceFactory)
+                .setRenderersFactory(renderersFactory)
+                .setCachingExecutor(executor)
+                .build();
+        manager.add(mediaItem, 0);
+        manager.invalidate();
     }
 
     public void release() {
+        if (manager != null) {
+            manager.release();
+            manager = null;
+        }
+        if (executor != null) {
+            executor.shutdownNow();
+            executor = null;
+        }
     }
 
     public static final class Builder {
 
-        public Builder(Cache cache, DataSource.Factory dataSourceFactory, RenderersFactory renderersFactory) {
+        private final Context context;
+        private final Cache cache;
+        private final DataSource.Factory dataSourceFactory;
+        private final RenderersFactory renderersFactory;
+        @SuppressWarnings("unused")
+        private PriorityTaskManager priorityTaskManager;
+
+        public Builder(Context context, Cache cache, DataSource.Factory dataSourceFactory, RenderersFactory renderersFactory) {
+            this.context = context;
+            this.cache = cache;
+            this.dataSourceFactory = dataSourceFactory;
+            this.renderersFactory = renderersFactory;
         }
 
         public Builder setPriorityTaskManager(PriorityTaskManager priorityTaskManager) {
+            this.priorityTaskManager = priorityTaskManager;
             return this;
         }
 
         public DiskPreloadManager build() {
-            return new DiskPreloadManager();
+            return new DiskPreloadManager(this);
         }
     }
 
@@ -46,7 +88,7 @@ public final class DiskPreloadManager {
         private final int maxThreads;
 
         private Options(long durationMs, int maxThreads) {
-            this.durationMs = durationMs;
+            this.durationMs = Math.max(0, durationMs);
             this.maxThreads = maxThreads;
         }
 

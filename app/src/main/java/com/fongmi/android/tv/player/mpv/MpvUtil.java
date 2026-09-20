@@ -9,6 +9,7 @@ import androidx.media3.mpvplayer.MpvPlayerConfig;
 import androidx.media3.ui.SubtitleView;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.fongmi.android.tv.player.track.LangUtil;
 import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.server.Server;
@@ -157,9 +158,7 @@ public final class MpvUtil {
         // Prefer a custom family name when the user picked one.
         String fontPath = com.fongmi.android.tv.setting.SubtitleSetting.getFontPath();
         if (!TextUtils.isEmpty(fontPath)) {
-            String name = new java.io.File(fontPath).getName();
-            int dot = name.lastIndexOf('.');
-            String family = dot > 0 ? name.substring(0, dot) : name;
+            String family = ExternalFont.getFamilyName(new File(fontPath));
             if (!TextUtils.isEmpty(family)) builder.addPostInitStringOption("sub-font", family);
         }
     }

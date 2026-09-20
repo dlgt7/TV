@@ -113,7 +113,20 @@ public class VodPlaybackController {
             host.clearPreload();
             return;
         }
-        preloadCache.store(request, result, episode);
+        result.getUrl().set(state.getQualityPosition());
+        if (host.preloadPlayback(result, getPreloadStartPositionMs(result), state.getHistory(), episode)) {
+            preloadCache.store(request, result, episode);
+        } else {
+            preloadCache.clear();
+            host.clearPreload();
+        }
+    }
+
+    private long getPreloadStartPositionMs(Result result) {
+        History history = state.getHistory();
+        long opening = history == null ? C.TIME_UNSET : history.getOpening();
+        long position = result.hasPosition() ? result.getPosition() : C.TIME_UNSET;
+        return Math.max(0, Math.max(opening, position));
     }
 
     private void maybePreloadNext() {
@@ -122,7 +135,9 @@ public class VodPlaybackController {
             host.clearPreload();
             return;
         }
-        Episode next = getRelativeEpisode(1);
+        History history = state.getHistory();
+        int offset = history != null && history.isRevPlay() ? -1 : 1;
+        Episode next = getRelativeEpisode(offset);
         if (next == null || next.isSelected()) {
             preloadCache.clear();
             host.clearPreload();

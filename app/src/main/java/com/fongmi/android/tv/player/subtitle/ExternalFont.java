@@ -50,11 +50,18 @@ public final class ExternalFont {
 
     @Nullable
     public static Entry getEntry(File file) {
-        if (file == null || !file.isFile()) return null;
+        if (file == null || !file.isFile() || file.length() <= 0 || file.length() > MAX_FILE_BYTES) return null;
+        String family = getFamilyName(file);
+        if (TextUtils.isEmpty(family)) return null;
         String name = file.getName();
         int dot = name.lastIndexOf('.');
         String display = dot > 0 ? name.substring(0, dot) : name;
-        return new Entry(file.getAbsolutePath(), display.isEmpty() ? name : display);
+        return new Entry(file.getAbsolutePath(), display.isEmpty() ? name : display, family);
+    }
+
+    @Nullable
+    public static String getFamilyName(File file) {
+        return FontFamilyParser.read(file);
     }
 
     @Nullable
@@ -83,6 +90,7 @@ public final class ExternalFont {
                 }
                 output.getFD().sync();
             }
+            if (TextUtils.isEmpty(getFamilyName(temp))) return null;
             File target = new File(dir, sanitizeName(display));
             if (!temp.renameTo(target)) {
                 try {
@@ -119,7 +127,7 @@ public final class ExternalFont {
         return TextUtils.isEmpty(value) ? ("font-" + Crypto.md5(String.valueOf(System.nanoTime())) + ".ttf") : value;
     }
 
-    public record Entry(String path, String name) {
+    public record Entry(String path, String name, String family) {
 
         public Typeface typeface() {
             try {

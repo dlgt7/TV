@@ -24,6 +24,12 @@ public interface PlayerEngine {
 
     void start(PlaySpec spec, long startPositionMs);
 
+    default void preload(PlaySpec spec, long startPositionMs) {
+    }
+
+    default void clearPreload() {
+    }
+
     default void stop() {
         getPlayer().stop();
     }
@@ -33,6 +39,10 @@ public interface PlayerEngine {
     boolean isVod();
 
     default void setSubtitleStyle() {
+    }
+
+    default void setVolumeGain(float gain) {
+        if (getPlayer().isCommandAvailable(Player.COMMAND_SET_VOLUME)) getPlayer().setVolume(Math.clamp(gain, 0f, 1f));
     }
 
     default boolean addSubtitle(Sub sub) {

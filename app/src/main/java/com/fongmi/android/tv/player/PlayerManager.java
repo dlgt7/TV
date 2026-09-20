@@ -47,6 +47,7 @@ public class PlayerManager implements ParseCallback {
     private PlayerEngine engine;
     private VideoSize videoSize;
     private ParseJob parseJob;
+    private PendingPreload pendingPreload;
     private PlaySpec spec;
     private Player player;
 
@@ -158,6 +159,24 @@ public class PlayerManager implements ParseCallback {
 
     public boolean isEmpty() {
         return spec == null || TextUtils.isEmpty(spec.getUrl());
+    }
+
+    public boolean canPreloadNext() {
+        return PlayerSetting.getVodEngine() == PlayerSetting.ENGINE_EXO
+                && engine != null
+                && engine.getType() == PlayerEngine.Type.EXO;
+    }
+
+    public boolean preload(PlaySpec spec, long startPositionMs) {
+        if (!canPreloadNext() || spec == null) return false;
+        pendingPreload = new PendingPreload(spec.checkUa(), Math.max(0, startPositionMs));
+        startPreloadIfReady();
+        return true;
+    }
+
+    public void clearPreload() {
+        pendingPreload = null;
+        if (engine != null) engine.clearPreload();
     }
 
     public boolean isPortrait() {
@@ -337,7 +356,7 @@ public class PlayerManager implements ParseCallback {
     public void setVolumeGain(float gain) {
         float value = Math.clamp(gain, 0f, 2f);
         PlayerSetting.putVolumeGain(value);
-        if (player != null && player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(value);
+        if (engine != null) engine.setVolumeGain(value);
     }
 
     public float getVolumeGain() {
@@ -345,8 +364,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     private void applyPersistedVolumeGain() {
-        float gain = PlayerSetting.getVolumeGain();
-        if (player != null && gain != 1f && player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(gain);
+        if (engine != null) engine.setVolumeGain(PlayerSetting.getVolumeGain());
     }
 
     public void play() {
@@ -518,6 +536,7 @@ public class PlayerManager implements ParseCallback {
     private void setMediaItem(long timeout, long startPositionMs) {
         if (spec == null || spec.getUrl() == null) return;
         ensureEngine(spec.checkUa());
+        pendingPreload = null;
         engine.start(spec, startPositionMs);
         setDanmakus(spec.getDanmakus());
         App.post(runnable, timeout);
@@ -531,6 +550,13 @@ public class PlayerManager implements ParseCallback {
 
     private void startCurrent(long startPositionMs) {
         setMediaItem(Constant.TIMEOUT_PLAY, startPositionMs);
+    }
+
+    private void startPreloadIfReady() {
+        PendingPreload preload = pendingPreload;
+        if (preload == null || player.getPlaybackState() != Player.STATE_READY) return;
+        pendingPreload = null;
+        engine.preload(preload.spec(), preload.startPositionMs());
     }
 
     private Danmaku getSelectedDanmaku(List<Danmaku> items) {
@@ -600,6 +626,7 @@ public class PlayerManager implements ParseCallback {
         @Override
         public void onPlaybackStateChanged(int state) {
             if (state == Player.STATE_READY || state == Player.STATE_ENDED) App.removeCallbacks(runnable);
+            if (state == Player.STATE_READY) startPreloadIfReady();
         }
 
         @Override
@@ -639,5 +666,8 @@ public class PlayerManager implements ParseCallback {
             }
         }
     };
+
+    private record PendingPreload(PlaySpec spec, long startPositionMs) {
+    }
 
 }

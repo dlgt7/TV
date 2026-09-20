@@ -36,6 +36,10 @@ public class CustomScroller extends RecyclerView.OnScrollListener {
         loadMore();
     }
 
+    public void checkMore(RecyclerView view) {
+        if (isBottom(view)) loadMore();
+    }
+
     private void loadMore() {
         if (isDisable() || isLoading() || callback == null) return;
         if (callback.onLoadMore(String.valueOf(page + 1))) {

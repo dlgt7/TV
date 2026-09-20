@@ -16,6 +16,7 @@ public class ExoPlayerEngine implements PlayerEngine {
     private final ErrorMsgProvider provider;
     private final Player.Listener listener;
     private final PreCache preCache;
+    private final ExoVolumeGain volumeGain;
     private ExoPlayer player;
     private PlaySpec spec;
     private int decode;
@@ -25,8 +26,10 @@ public class ExoPlayerEngine implements PlayerEngine {
         this.player = ExoUtil.buildPlayer(decode, listener);
         this.provider = new ErrorMsgProvider();
         this.preCache = new PreCache();
+        this.volumeGain = new ExoVolumeGain();
         this.listener = listener;
         this.decode = decode;
+        this.volumeGain.attach(player);
     }
 
     @Override
@@ -42,14 +45,23 @@ public class ExoPlayerEngine implements PlayerEngine {
     @Override
     public void release() {
         preCache.release();
+        volumeGain.release();
         player.release();
     }
 
     @Override
     public Player rebuild() {
         preCache.stop();
+        volumeGain.release();
         player.release();
-        return player = ExoUtil.buildPlayer(decode, listener);
+        player = ExoUtil.buildPlayer(decode, listener);
+        volumeGain.attach(player);
+        return player;
+    }
+
+    @Override
+    public void setVolumeGain(float gain) {
+        volumeGain.setGain(gain);
     }
 
     @Override
@@ -66,8 +78,17 @@ public class ExoPlayerEngine implements PlayerEngine {
     }
 
     @Override
+    public void preload(PlaySpec spec, long startPositionMs) {
+        if (spec != null) preCache.preload(MediaItemFactory.from(spec, decode));
+    }
+
+    @Override
+    public void clearPreload() {
+        preCache.clearPreload();
+    }
+
+    @Override
     public void stop() {
-        preCache.stop();
         player.stop();
     }
 

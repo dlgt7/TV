@@ -51,6 +51,7 @@ import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.impl.CustomTarget;
 import com.fongmi.android.tv.model.VideoViewModel;
+import com.fongmi.android.tv.player.media.PlaySpec;
 import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
@@ -497,6 +498,13 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void clearPreload() {
+        if (service() != null) player().clearPreload();
+    }
+
+    @Override
+    public boolean preloadPlayback(Result result, long startPositionMs, History history, Episode episode) {
+        if (service() == null) return false;
+        return player().preload(PlaySpec.from(result, getHistoryKey(), VodPlaybackMedia.metadata(history, episode)), startPositionMs);
     }
 
     private void onPreloadObserved(Result result) {
@@ -1376,8 +1384,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void onSeekEnd(long time) {
-        seekTo(time);
-        hideCenter();
+        if (seekTo(time)) hideCenter();
         mKeyDown.reset();
     }
 

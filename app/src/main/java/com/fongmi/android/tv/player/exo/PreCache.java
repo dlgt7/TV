@@ -5,13 +5,15 @@ import androidx.media3.common.PriorityTaskManager;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.preload.DiskPreloadManager;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.setting.PreloadSetting;
 
+/** Pre-caches the next episode into the same disk cache used by normal playback. */
 public class PreCache {
 
     private final PriorityTaskManager priorityTaskManager;
     private DiskPreloadManager manager;
-    private MediaItem mediaItem;
+    private MediaItem preloadedItem;
     private ExoPlayer player;
 
     public PreCache() {
@@ -19,44 +21,56 @@ public class PreCache {
     }
 
     public void start(ExoPlayer player, MediaItem mediaItem) {
-        this.mediaItem = mediaItem;
         this.player = player;
-        restart();
+        // Keep a matching preload alive until the following episode starts preloading. The normal
+        // CacheDataSource can consume its spans without relying on a private MediaSource hand-off.
+        if (preloadedItem != null && !preloadedItem.equals(mediaItem)) stopManager();
+    }
+
+    public void preload(MediaItem mediaItem) {
+        if (player == null || mediaItem == null || !PreloadSetting.isPreload() || !canPreload(mediaItem)) {
+            stopManager();
+            return;
+        }
+        if (mediaItem.equals(preloadedItem) && manager != null) return;
+        stopManager();
+        preloadedItem = mediaItem;
+        manager = createManager(mediaItem);
+        player.setPriorityTaskManager(priorityTaskManager);
+        manager.start(player, mediaItem, createOptions());
+    }
+
+    public void clearPreload() {
+        stopManager();
     }
 
     public void stop() {
         stopManager();
         player = null;
-        mediaItem = null;
     }
 
     public void release() {
         stop();
     }
 
-    private void restart() {
-        stopManager();
-        if (player == null || mediaItem == null) return;
-        if (!PreloadSetting.isPreload()) return;
-        if (!canPreload(mediaItem)) return;
-        manager = createManager(mediaItem);
-        player.setPriorityTaskManager(priorityTaskManager);
-        manager.start(player, mediaItem, createOptions());
-    }
-
     private void stopManager() {
-        if (manager == null) return;
-        manager.release();
+        if (manager != null) manager.release();
         manager = null;
+        preloadedItem = null;
         if (player != null) player.setPriorityTaskManager(null);
     }
 
     private DiskPreloadManager createManager(MediaItem mediaItem) {
-        return new DiskPreloadManager.Builder(MediaSourceFactory.getCache(), MediaSourceFactory.createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem)), ExoUtil.buildRenderersFactory()).setPriorityTaskManager(priorityTaskManager).build();
+        return new DiskPreloadManager.Builder(App.get(), MediaSourceFactory.getCache(), MediaSourceFactory.createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem)), ExoUtil.buildRenderersFactory())
+                .setPriorityTaskManager(priorityTaskManager)
+                .build();
     }
 
     private DiskPreloadManager.Options createOptions() {
-        return DiskPreloadManager.Options.builder().setDurationMs(PreloadSetting.getPreloadDurationMs()).setMaxThreads(PreloadSetting.getPreloadThreads()).build();
+        return DiskPreloadManager.Options.builder()
+                .setDurationMs(PreloadSetting.getPreloadDurationMs())
+                .setMaxThreads(PreloadSetting.getPreloadThreads())
+                .build();
     }
 
     private boolean canPreload(MediaItem mediaItem) {

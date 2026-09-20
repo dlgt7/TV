@@ -59,6 +59,11 @@ public class MpvPlayerEngine implements PlayerEngine {
     }
 
     @Override
+    public void setVolumeGain(float gain) {
+        if (player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(Math.clamp(gain, 0f, 2f));
+    }
+
+    @Override
     public boolean addSubtitle(Sub sub) {
         if (sub == null || sub.isEmpty() || player.getCurrentMediaItem() == null) return false;
         if (player.getPlaybackState() == Player.STATE_IDLE || player.getPlaybackState() == Player.STATE_ENDED) return false;
