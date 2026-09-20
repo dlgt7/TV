@@ -107,6 +107,15 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
         mBinding.ua.setOnClickListener(this::onUa);
         mBinding.subtitleAssrt.setOnClickListener(this::onSubtitleAssrt);
         mBinding.subtitleFont.setOnClickListener(this::onSubtitleFont);
+        mBinding.speed.setOnLongClickListener(this::onVolumeGain);
+    }
+
+    private boolean onVolumeGain(View view) {
+        float next = PlayerSetting.getVolumeGain() >= 1.5f ? 1f : 1.5f;
+        PlayerSetting.putVolumeGain(next);
+        mBinding.speedText.setText(format.format(PlayerSetting.getSpeed()));
+        com.fongmi.android.tv.utils.Notify.show(next == 1f ? R.string.player_volume_gain_off : R.string.player_volume_gain_on);
+        return true;
     }
 
     private void setVisible() {

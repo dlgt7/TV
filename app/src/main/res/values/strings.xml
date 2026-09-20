@@ -191,6 +191,9 @@
     <string name="subtitle_search_token_hint">Token</string>
     <string name="player_subtitle_assrt">Subtitle search token</string>
     <string name="player_subtitle_font">Subtitle font</string>
+    <string name="player_mpv_conf_precedence">User options in mpv.conf override Android defaults. App-required options (vo/hwdec/proxy) still win.</string>
+    <string name="player_volume_gain_on">Volume gain 1.5x</string>
+    <string name="player_volume_gain_off">Volume gain off</string>
     <string name="subtitle_font_default">System default</string>
     <string name="subtitle_font_import">Import font…</string>
     <string name="subtitle_font_none">Default</string>

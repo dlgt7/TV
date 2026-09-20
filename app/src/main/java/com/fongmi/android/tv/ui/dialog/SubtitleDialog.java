@@ -15,11 +15,14 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.databinding.DialogSubtitleBinding;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.setting.SubtitleSetting;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.github.bassaer.library.MDColor;
 
-public final class SubtitleDialog extends BaseBottomSheetDialog {
+import androidx.annotation.Nullable;
+
+public final class SubtitleDialog extends BaseBottomSheetDialog implements ExternalFontDialog.Listener {
 
     private DialogSubtitleBinding binding;
     private SubtitleView subtitleView;
@@ -71,6 +74,23 @@ public final class SubtitleDialog extends BaseBottomSheetDialog {
         binding.large.setOnClickListener(this::onLarge);
         binding.small.setOnClickListener(this::onSmall);
         binding.reset.setOnClickListener(this::onReset);
+        binding.reset.setOnLongClickListener(this::onFont);
+    }
+
+    private boolean onFont(View view) {
+        ExternalFontDialog.show(this);
+        return true;
+    }
+
+    @Override
+    public void onFontSelected(@Nullable String path) {
+        SubtitleSetting.putFontPath(path == null ? "" : path);
+        applySubtitleStyle();
+    }
+
+    @Override
+    public void onFontImportRequested() {
+        // Import fonts from settings for a stable file-picker host.
     }
 
     private void onUp(View view) {
@@ -105,6 +125,7 @@ public final class SubtitleDialog extends BaseBottomSheetDialog {
     }
 
     private void applySubtitleStyle() {
+        if (subtitleView != null) SubtitleSetting.applyStyle(subtitleView);
         if (player != null && !player.isReleased()) player.setSubtitleStyle();
     }
 

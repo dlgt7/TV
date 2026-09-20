@@ -37,4 +37,13 @@ public class SubtitleSetting {
     public static boolean hasCustomFont() {
         return !TextUtils.isEmpty(getFontPath());
     }
+
+    /** Apply persisted subtitle metrics to a Media3 SubtitleView (Exo and shared UI). */
+    public static void applyStyle(androidx.media3.ui.SubtitleView view) {
+        if (view == null) return;
+        float position = com.fongmi.android.tv.setting.PlayerSetting.getSubtitlePosition();
+        float textSize = com.fongmi.android.tv.setting.PlayerSetting.getSubtitleTextSize();
+        if (position != 0f) view.setBottomPosition(position);
+        if (textSize != 0f) view.setFractionalTextSize(textSize);
+    }
 }

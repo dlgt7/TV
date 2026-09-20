@@ -202,6 +202,14 @@ public class PlayerSetting {
         Prefers.put("subtitle_text_size", value);
     }
 
+    public static float getVolumeGain() {
+        return Math.clamp(Prefers.getFloat("volume_gain", 1f), 0f, 2f);
+    }
+
+    public static void putVolumeGain(float gain) {
+        Prefers.put("volume_gain", Math.clamp(gain, 0f, 2f));
+    }
+
     public static float getSubtitlePosition() {
         return Prefers.getFloat("subtitle_position");
     }

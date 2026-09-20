@@ -40,6 +40,7 @@ import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
+import com.fongmi.android.tv.ui.playback.PlaybackOverlayBinder;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.net.OkHttp;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -375,7 +376,16 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
                 if (shutter != null) shutter.setVisibility(View.INVISIBLE);
             }
         }
-        applyDanmaku();
+        syncPlaybackOverlays();
+    }
+
+    private void syncPlaybackOverlays() {
+        PlayerManager pm = mService == null ? null : player();
+        PlaybackOverlayBinder.sync(getPlayerView(), pm);
+        if (pm != null && !pm.isReleased()) {
+            pm.setSubtitleStyle();
+            pm.setVolumeGain(PlayerSetting.getVolumeGain());
+        }
     }
 
     private void detachSurface() {
@@ -394,14 +404,10 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         playerView.setUseController(false);
         playerView.setControllerAutoShow(false);
         playerView.setRender(PlayerSetting.getRender());
-        playerView.setDanmakuOkHttpClient(OkHttp.player());
-        playerView.setDanmakuEnabled(DanmakuSetting.isShow());
-        playerView.setDanmakuConfig(DanmakuSetting.getConfig());
         playerView.getSubtitleView().setStyle(getCaptionStyle());
         playerView.getSubtitleView().setApplyEmbeddedStyles(true);
         playerView.getSubtitleView().setApplyEmbeddedFontSizes(false);
-        if (PlayerSetting.getSubtitlePosition() != 0) playerView.getSubtitleView().setBottomPosition(PlayerSetting.getSubtitlePosition());
-        if (PlayerSetting.getSubtitleTextSize() != 0) playerView.getSubtitleView().setFractionalTextSize(PlayerSetting.getSubtitleTextSize());
+        PlaybackOverlayBinder.sync(playerView, mService == null ? null : player());
     }
 
     private CaptionStyleCompat getCaptionStyle() {
@@ -411,8 +417,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void applyDanmaku() {
-        if (mService == null || !isOwner()) return;
-        getPlayerView().setDanmakuSource(player().getSelectedDanmakuUri());
+        PlaybackOverlayBinder.applyDanmaku(getPlayerView(), mService == null ? null : player());
     }
 
     private void releasePlaybackService() {

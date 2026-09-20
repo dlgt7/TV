@@ -190,6 +190,9 @@
     <string name="subtitle_search_token_hint">Token</string>
     <string name="player_subtitle_assrt">字幕搜索 Token</string>
     <string name="player_subtitle_font">字幕字体</string>
+    <string name="player_mpv_conf_precedence">mpv.conf 中的用户选项优先于应用默认值；应用强制项（vo/hwdec/代理）仍会覆盖。</string>
+    <string name="player_volume_gain_on">音量增益 1.5x</string>
+    <string name="player_volume_gain_off">音量增益已关闭</string>
     <string name="subtitle_font_default">系统默认</string>
     <string name="subtitle_font_import">导入字体…</string>
     <string name="subtitle_font_none">默认</string>

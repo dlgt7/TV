@@ -14,7 +14,8 @@
         android:layout_height="wrap_content"
         android:hint="@string/player_mpv_conf"
         app:endIconDrawable="@drawable/ic_action_choose"
-        app:endIconMode="custom">
+        app:endIconMode="custom"
+        app:helperText="@string/player_mpv_conf_precedence">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/text"
@@ -24,7 +25,7 @@
             android:gravity="top|start"
             android:importantForAutofill="no"
             android:inputType="textMultiLine|textNoSuggestions"
-            android:maxLines="4" />
+            android:maxLines="6" />
 
     </com.google.android.material.textfield.TextInputLayout>
 </androidx.appcompat.widget.LinearLayoutCompat>

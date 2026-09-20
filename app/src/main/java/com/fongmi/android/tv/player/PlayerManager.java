@@ -330,6 +330,23 @@ public class PlayerManager implements ParseCallback {
 
     public void setSubtitleStyle() {
         if (engine != null) engine.setSubtitleStyle();
+        callback.onDanmakuConfigChanged(DanmakuSetting.getConfig());
+    }
+
+    /** 1.0 = normal; up to 2.0 for quiet sources. Applies to ExoPlayer and MPV. */
+    public void setVolumeGain(float gain) {
+        float value = Math.clamp(gain, 0f, 2f);
+        PlayerSetting.putVolumeGain(value);
+        if (player != null && player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(value);
+    }
+
+    public float getVolumeGain() {
+        return PlayerSetting.getVolumeGain();
+    }
+
+    private void applyPersistedVolumeGain() {
+        float gain = PlayerSetting.getVolumeGain();
+        if (player != null && gain != 1f && player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(gain);
     }
 
     public void play() {
@@ -461,6 +478,7 @@ public class PlayerManager implements ParseCallback {
 
     private void setPlayer(Player player) {
         this.player = player;
+        applyPersistedVolumeGain();
         callback.onPlayerRebuild(player);
     }
 

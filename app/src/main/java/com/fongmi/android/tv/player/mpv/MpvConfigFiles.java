@@ -21,7 +21,13 @@ public final class MpvConfigFiles {
     }
 
     public static String read() {
-        return Path.read(file());
+        String value = Path.read(file());
+        if (value != null && !value.trim().isEmpty()) return value;
+        return "# mpv.conf — user options override Android defaults.\n"
+                + "# App still forces vo/hwdec/proxy-url when needed for playback.\n"
+                + "# Example:\n"
+                + "# vo=gpu\n"
+                + "# hwdec=mediacodec-copy\n";
     }
 
     public static void write(String content) {
