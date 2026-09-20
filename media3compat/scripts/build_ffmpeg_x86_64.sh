@@ -24,7 +24,7 @@ CMAKE_HOME="${ANDROID_SDK}/cmake/3.22.1"
 TOOLCHAIN="${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64/bin"
 SOURCE_ROOT="${BUILD_CACHE}/ffmpeg-${FFMPEG_REVISION}"
 JNI_ROOT="${BUILD_CACHE}/media3-jni-${MEDIA3_REVISION}"
-NATIVE_BUILD="${BUILD_CACHE}/jni-build"
+NATIVE_BUILD="${BUILD_CACHE}/jni-build-${ABI}"
 BUILT_SO="${NATIVE_BUILD}/libffmpegJNI.so"
 
 case "${ABI}" in

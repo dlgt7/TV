@@ -1357,7 +1357,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void onSeekEnd(long time) {
-        if (seekTo(time)) hideCenter();
+        seekTo(time);
+        hideCenter();
         mKeyDown.reset();
     }
 
