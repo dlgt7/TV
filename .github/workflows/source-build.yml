@@ -71,7 +71,9 @@ jobs:
           cache: pip
           cache-dependency-path: chaquo/requirements.txt
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
 
       - name: Install Android native toolchains
         run: sdkmanager "ndk;26.1.10909125" "ndk;29.0.14206865" "cmake;3.22.1"
