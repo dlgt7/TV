@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
+import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.text.Cue;
 import androidx.media3.common.util.UnstableApi;
@@ -17,9 +18,12 @@ import androidx.media3.ui.SubtitleView;
 
 import com.fongmi.android.tv.player.engine.PlaybackRecoveryPolicy;
 import com.fongmi.android.tv.player.subtitle.ExternalFont;
+import com.fongmi.android.tv.player.subtitle.SecondarySubtitleTimeline;
 import com.fongmi.android.tv.setting.SubtitleSetting;
+import com.fongmi.android.tv.ui.activity.VideoActivity;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +58,7 @@ public final class SelfCheckActivity extends Activity {
         ExternalFont.Entry saved = SubtitleSetting.getFontEntry();
         checkRecoveryPolicy();
         checkRetryBackoff();
+        checkSecondarySubtitleTimeline();
         checkFontRoundTrip();
         checkCaptionStyle();
         checkFontRendering();
@@ -67,6 +72,8 @@ public final class SelfCheckActivity extends Activity {
         }
         Log.i(TAG, "RESULT passed=" + passed + " failed=" + failures.size());
         for (String failure : failures) Log.e(TAG, "FAILED " + failure);
+        String playUrl = getIntent().getStringExtra("playUrl");
+        if (playUrl != null && failures.isEmpty()) VideoActivity.start(this, playUrl);
         finish();
     }
 
@@ -125,6 +132,26 @@ public final class SelfCheckActivity extends Activity {
         // Must saturate rather than overflow into a negative delay.
         if (capped > 0 && capped <= 3000L) passed++;
         else failures.add("backoff_not_capped value=" + capped);
+    }
+
+    /** Verifies the public Media3 parser used by the dual-subtitle prototype. */
+    private void checkSecondarySubtitleTimeline() {
+        try {
+            String srt = "1\n00:00:01,000 --> 00:00:02,500\nFirst line\n\n"
+                    + "2\n00:00:03,000 --> 00:00:04,000\nSecond line\n\n";
+            SecondarySubtitleTimeline timeline = SecondarySubtitleTimeline.parse(
+                    srt.getBytes(StandardCharsets.UTF_8), MimeTypes.APPLICATION_SUBRIP);
+            expect("secondary_sample_count", timeline.sampleCount(), 2);
+            expect("secondary_before_empty", timeline.cuesAt(500).isEmpty(), true);
+            expect("secondary_first_count", timeline.cuesAt(1500).size(), 1);
+            expect("secondary_first_text", String.valueOf(timeline.cuesAt(1500).get(0).text), "First line");
+            expect("secondary_gap_empty", timeline.cuesAt(2750).isEmpty(), true);
+            expect("secondary_second_text", String.valueOf(timeline.cuesAt(3500).get(0).text), "Second line");
+            expect("secondary_after_empty", timeline.cuesAt(4500).isEmpty(), true);
+        } catch (Throwable e) {
+            failures.add("secondary_timeline_threw " + e);
+            Log.e(TAG, "secondary subtitle timeline check threw", e);
+        }
     }
 
     /**

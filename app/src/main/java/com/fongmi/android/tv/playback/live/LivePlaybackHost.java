@@ -31,9 +31,7 @@ public interface LivePlaybackHost {
         return LiveEpgPolicy.current(channel, getZoneId());
     }
 
-    void requestUrl(LivePlayRequest request);
-
-    void requestCatchupUrl(LivePlayRequest request);
+    void onCatchupRequested();
 
     void stopPlaybackForRefresh();
 

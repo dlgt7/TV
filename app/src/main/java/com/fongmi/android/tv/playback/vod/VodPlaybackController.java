@@ -26,15 +26,17 @@ public class VodPlaybackController {
     private final VodFallbackPolicy fallbackPolicy;
     private final VodPlaybackState state;
     private final VodPlaybackHost host;
+    private final VodDataSource dataSource;
     private final VodPreloadCache preloadCache;
     private History lastHistory;
 
-    public VodPlaybackController(VodPlaybackHost host, VodPlaybackState state) {
+    public VodPlaybackController(VodPlaybackHost host, VodDataSource dataSource, VodPlaybackState state) {
         this.historyPolicy = new VodHistoryPolicy();
         this.state = state;
         this.host = host;
+        this.dataSource = dataSource;
         this.preloadCache = new VodPreloadCache();
-        this.fallbackPolicy = new VodFallbackPolicy(this, state, host);
+        this.fallbackPolicy = new VodFallbackPolicy(this, state, host, dataSource);
     }
 
     public void reset() {
@@ -57,7 +59,7 @@ public class VodPlaybackController {
     }
 
     public void requestDetail() {
-        host.requestDetail(host.getVodKey(), host.getVodId());
+        dataSource.detailContent(host.getVodKey(), host.getVodId());
     }
 
     public void onDetailResult(Result result) {
@@ -146,7 +148,7 @@ public class VodPlaybackController {
         VodPlayRequest request = VodPlayRequest.create(host.getVodKey(), state.getFlag(), next);
         if (preloadCache.matchesRequest(request) && preloadCache.hasResult()) return;
         preloadCache.begin(request, next);
-        host.requestPreload(request);
+        dataSource.preloadContent(request);
     }
 
     private boolean canPreloadNext() {
@@ -416,7 +418,8 @@ public class VodPlaybackController {
         historyPolicy.updateEpisode(state.getHistory(), flag, episode);
         VodPlayRequest request = VodPlayRequest.create(host.getVodKey(), flag, episode);
         state.setPendingRequest(request);
-        host.requestPlayer(request);
+        dataSource.playerContent(request);
+        host.onPlaybackRequested(request);
     }
 
     private void seamless(Flag flag) {

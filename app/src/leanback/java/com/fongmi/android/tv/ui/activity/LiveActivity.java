@@ -44,7 +44,6 @@ import com.fongmi.android.tv.impl.LiveListener;
 import com.fongmi.android.tv.impl.PassListener;
 import com.fongmi.android.tv.model.LiveViewModel;
 import com.fongmi.android.tv.playback.PlaybackReset;
-import com.fongmi.android.tv.playback.live.LivePlayRequest;
 import com.fongmi.android.tv.playback.live.LivePlaybackController;
 import com.fongmi.android.tv.playback.live.LivePlaybackHost;
 import com.fongmi.android.tv.playback.live.LivePlaybackMedia;
@@ -239,7 +238,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     private void setViewModel() {
         mViewModel = new ViewModelProvider(this).get(LiveViewModel.class);
         mLive = mViewModel.createPlaybackController(this);
-        observeForever(mViewModel.url(), mObserveUrl);
+        observeWhenServiceReady(mViewModel.url(), mObserveUrl);
         mViewModel.xml().observe(this, this::setEpg);
         observeForever(mViewModel.epg(), mObserveEpg);
         mViewModel.live().observe(this, live -> {
@@ -753,13 +752,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     }
 
     @Override
-    public void requestUrl(LivePlayRequest request) {
-        mViewModel.getUrl(request.getChannel(), request.getPosition());
-    }
-
-    @Override
-    public void requestCatchupUrl(LivePlayRequest request) {
-        mViewModel.getUrl(request.getChannel(), request.getCatchupData(), request.getPosition());
+    public void onCatchupRequested() {
         hideUI();
     }
 

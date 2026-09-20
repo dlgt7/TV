@@ -16,10 +16,12 @@ public class LivePlaybackController {
     private final LiveFallbackPolicy fallbackPolicy;
     private final LivePlaybackState state;
     private final LivePlaybackHost host;
+    private final LiveDataSource dataSource;
 
-    public LivePlaybackController(LivePlaybackHost host, LivePlaybackState state) {
+    public LivePlaybackController(LivePlaybackHost host, LiveDataSource dataSource, LivePlaybackState state) {
         this.state = state;
         this.host = host;
+        this.dataSource = dataSource;
         this.navigationPolicy = new LiveNavigationPolicy(this, state, host);
         this.fallbackPolicy = new LiveFallbackPolicy(this, state, host);
     }
@@ -70,7 +72,7 @@ public class LivePlaybackController {
         LiveConfig.get().setKeep(channel);
         LivePlayRequest request = LivePlayRequest.live(channel, startPositionMs);
         state.setPendingRequest(request);
-        host.requestUrl(request);
+        dataSource.getUrl(request);
         host.showProgress();
         host.stopPlaybackForRefresh();
     }
@@ -132,7 +134,8 @@ public class LivePlaybackController {
         if (channel == null) return;
         LivePlayRequest request = LivePlayRequest.catchup(channel, data, startPositionMs);
         state.setPendingRequest(request);
-        host.requestCatchupUrl(request);
+        host.onCatchupRequested();
+        dataSource.getUrl(request);
         host.stopPlaybackForRefresh();
     }
 }

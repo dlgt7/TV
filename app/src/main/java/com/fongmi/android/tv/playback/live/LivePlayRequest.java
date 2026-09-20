@@ -42,6 +42,10 @@ public final class LivePlayRequest {
         return position;
     }
 
+    public boolean isCatchup() {
+        return data != null;
+    }
+
     public boolean matches(@Nullable Channel current) {
         return channel.equals(current) && line == current.getIndex();
     }

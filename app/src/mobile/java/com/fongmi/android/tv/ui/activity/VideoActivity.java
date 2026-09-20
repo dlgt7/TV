@@ -422,9 +422,9 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private void setViewModel() {
         mViewModel = new ViewModelProvider(this).get(VideoViewModel.class);
         observeForever(mViewModel.getResult(), mObserveDetail);
-        observeForever(mViewModel.getPlayer(), mObservePlayer);
+        observeWhenServiceReady(mViewModel.getPlayer(), mObservePlayer);
         observeForever(mViewModel.getSearch(), mObserveSearch);
-        observeForever(mViewModel.getPreload(), mObservePreload);
+        observeWhenServiceReady(mViewModel.getPreload(), mObservePreload);
         mVod = mViewModel.createPlaybackController(this);
     }
 
@@ -520,21 +520,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     }
 
     @Override
-    public void requestDetail(String key, String id) {
-        mViewModel.detailContent(key, id);
-    }
-
-    @Override
-    public void requestPlayer(VodPlayRequest request) {
+    public void onPlaybackRequested(VodPlayRequest request) {
         mBinding.control.title.setText(getString(R.string.detail_title, mBinding.name.getText(), request.getTitle()));
-        mViewModel.playerContent(request.getKey(), request.getFlag(), request.getId());
         mBinding.control.title.setSelected(true);
         showProgress();
-    }
-
-    @Override
-    public void requestPreload(VodPlayRequest request) {
-        mViewModel.preloadContent(request.getKey(), request.getFlag(), request.getId());
     }
 
     @Override
@@ -551,12 +540,6 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private void onPreloadObserved(Result result) {
         if (service() == null || result == null) return;
         mVod.onPreloadResult(result);
-    }
-
-    @Override
-    public void requestSearch(List<Site> sites, String keyword) {
-        mQuickAdapter.clear();
-        mViewModel.searchContent(sites, keyword, true);
     }
 
     @Override
@@ -725,6 +708,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     public void onSearchStarted(String keyword) {
+        mQuickAdapter.clear();
     }
 
     @Override
