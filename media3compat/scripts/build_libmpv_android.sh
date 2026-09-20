@@ -50,7 +50,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update >/dev/null
 apt-get install -y autoconf automake build-essential ca-certificates cmake git gperf \
     libtool nasm ninja-build pkg-config python3 python3-pip unzip wget xz-utils >/dev/null
-pip3 install --break-system-packages 'meson>=1.6.1' >/dev/null
+pip3 install --break-system-packages 'meson==1.11.2' >/dev/null
 git config --global --add safe.directory '*'
 if [[ ! -d deps/mpv ]]; then
     for attempt in 1 2 3; do
