@@ -8,6 +8,8 @@ import androidx.media3.exoplayer.source.preload.DiskPreloadManager;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.setting.PreloadSetting;
 
+import java.io.IOException;
+
 /** Pre-caches the next episode into the same disk cache used by normal playback. */
 public class PreCache {
 
@@ -22,14 +24,30 @@ public class PreCache {
 
     public void start(ExoPlayer player, MediaItem mediaItem) {
         this.player = player;
-        // Keep a matching preload alive until the following episode starts preloading. The normal
-        // CacheDataSource can consume its spans without relying on a private MediaSource hand-off.
+        // Keep matching cached spans alive. A non-matching request is cancelled without deleting
+        // already downloaded spans, so cache eviction remains controlled by SimpleCache.
         if (preloadedItem != null && !preloadedItem.equals(mediaItem)) stopManager();
     }
 
-    public void preload(MediaItem mediaItem) {
-        if (player == null || mediaItem == null || !PreloadSetting.isPreload() || !canPreload(mediaItem)) {
+    public void preload(MediaItem mediaItem, long startPositionMs) {
+        if (player == null || mediaItem == null) {
             stopManager();
+            return;
+        }
+        if (!PreloadSetting.isPreload()) {
+            stopManager();
+            PreloadDiagnostics.skipped(mediaItem, "disabled");
+            return;
+        }
+        if (!canPreload(mediaItem)) {
+            stopManager();
+            PreloadDiagnostics.skipped(mediaItem, "unsupported_scheme");
+            return;
+        }
+        PreloadPolicy.Decision decision = PreloadPolicy.evaluate(App.get());
+        if (!decision.allowed()) {
+            stopManager();
+            PreloadDiagnostics.skipped(mediaItem, decision.reason());
             return;
         }
         if (mediaItem.equals(preloadedItem) && manager != null) return;
@@ -37,7 +55,9 @@ public class PreCache {
         preloadedItem = mediaItem;
         manager = createManager(mediaItem);
         player.setPriorityTaskManager(priorityTaskManager);
-        manager.start(player, mediaItem, createOptions());
+        DiskPreloadManager.Options options = createOptions(startPositionMs);
+        PreloadDiagnostics.started(mediaItem, startPositionMs, PreloadSetting.getPreloadDurationMs());
+        manager.start(player, mediaItem, options);
     }
 
     public void clearPreload() {
@@ -63,11 +83,13 @@ public class PreCache {
     private DiskPreloadManager createManager(MediaItem mediaItem) {
         return new DiskPreloadManager.Builder(App.get(), MediaSourceFactory.getCache(), MediaSourceFactory.createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem)), ExoUtil.buildRenderersFactory())
                 .setPriorityTaskManager(priorityTaskManager)
+                .setListener(new PreloadListener())
                 .build();
     }
 
-    private DiskPreloadManager.Options createOptions() {
+    private DiskPreloadManager.Options createOptions(long startPositionMs) {
         return DiskPreloadManager.Options.builder()
+                .setStartPositionMs(startPositionMs)
                 .setDurationMs(PreloadSetting.getPreloadDurationMs())
                 .setMaxThreads(PreloadSetting.getPreloadThreads())
                 .build();
@@ -77,5 +99,29 @@ public class PreCache {
         if (mediaItem.localConfiguration == null) return false;
         String scheme = mediaItem.localConfiguration.uri.getScheme();
         return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+    }
+
+    private final class PreloadListener implements DiskPreloadManager.Listener {
+
+        @Override
+        public void onProgress(MediaItem mediaItem, long contentLength, long bytesDownloaded, float percentageDownloaded) {
+            PreloadDiagnostics.progress(mediaItem, bytesDownloaded, percentageDownloaded);
+        }
+
+        @Override
+        public void onCompleted(MediaItem mediaItem, long bytesDownloaded) {
+            long cachedBytes = PreloadDiagnostics.cachedBytes(mediaItem);
+            PreloadDiagnostics.completed(mediaItem, Math.max(0, cachedBytes));
+        }
+
+        @Override
+        public void onCancelled(MediaItem mediaItem) {
+            PreloadDiagnostics.cancelled(mediaItem);
+        }
+
+        @Override
+        public void onError(MediaItem mediaItem, IOException error) {
+            PreloadDiagnostics.failed(mediaItem, error);
+        }
     }
 }

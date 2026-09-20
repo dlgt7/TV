@@ -35,6 +35,7 @@ import com.fongmi.android.tv.ui.dialog.UaDialog;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Task;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
@@ -81,7 +82,12 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
         if (TextUtils.isEmpty(token)) token = SubtitleSetting.getEffectiveToken();
         mBinding.subtitleAssrtText.setText(TextUtils.isEmpty(token) ? ResUtil.getString(R.string.subtitle_font_none) : maskToken(token));
         String font = SubtitleSetting.getFontPath();
-        mBinding.subtitleFontText.setText(TextUtils.isEmpty(font) ? ResUtil.getString(R.string.subtitle_font_default) : new File(font).getName());
+        if (TextUtils.isEmpty(font)) {
+            mBinding.subtitleFontText.setText(ResUtil.getString(R.string.subtitle_font_default));
+        } else {
+            ExternalFont.Entry entry = SubtitleSetting.getFontEntry();
+            mBinding.subtitleFontText.setText(entry == null ? new File(font).getName() : entry.name());
+        }
     }
 
     private static String maskToken(String token) {
@@ -147,11 +153,13 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
 
     private void importFont(Uri uri) {
         if (uri == null || getContext() == null) return;
-        String path = ExternalFont.importFrom(App.get(), uri);
-        if (!TextUtils.isEmpty(path)) {
-            SubtitleSetting.putFontPath(path);
-        }
-        bindSubtitleLabels();
+        Task.execute(() -> {
+            String path = ExternalFont.importFrom(App.get(), uri);
+            if (!TextUtils.isEmpty(path)) SubtitleSetting.putFontPath(path);
+            App.post(() -> {
+                if (isAdded()) bindSubtitleLabels();
+            });
+        });
     }
 
     @Override
@@ -161,8 +169,8 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
     }
 
     @Override
-    public void onFontSelected(@Nullable String path) {
-        SubtitleSetting.putFontPath(path == null ? "" : path);
+    public void onFontSelected(@Nullable ExternalFont.Entry entry) {
+        SubtitleSetting.putFontSelection(entry);
         bindSubtitleLabels();
     }
 

@@ -24,6 +24,7 @@ import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.SubtitleSetting;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Task;
 import com.fongmi.android.tv.utils.Util;
 import com.github.bassaer.library.MDColor;
 
@@ -90,8 +91,8 @@ public final class SubtitleDialog extends BaseBottomSheetDialog implements Exter
     }
 
     @Override
-    public void onFontSelected(@Nullable String path) {
-        SubtitleSetting.putFontPath(path == null ? "" : path);
+    public void onFontSelected(@Nullable ExternalFont.Entry entry) {
+        SubtitleSetting.putFontSelection(entry);
         applySubtitleStyle();
     }
 
@@ -102,10 +103,14 @@ public final class SubtitleDialog extends BaseBottomSheetDialog implements Exter
 
     private void importFont(android.net.Uri uri) {
         if (uri == null) return;
-        String path = ExternalFont.importFrom(App.get(), uri);
-        if (TextUtils.isEmpty(path)) return;
-        SubtitleSetting.putFontPath(path);
-        applySubtitleStyle();
+        Task.execute(() -> {
+            String path = ExternalFont.importFrom(App.get(), uri);
+            if (TextUtils.isEmpty(path)) return;
+            SubtitleSetting.putFontPath(path);
+            App.post(() -> {
+                if (isAdded()) applySubtitleStyle();
+            });
+        });
     }
 
     private void onUp(View view) {

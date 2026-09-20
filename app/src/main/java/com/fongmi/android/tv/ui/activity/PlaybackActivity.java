@@ -2,17 +2,14 @@ package com.fongmi.android.tv.ui.activity;
 
 import android.app.PendingIntent;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.accessibility.CaptioningManager;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -39,6 +36,7 @@ import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.setting.SubtitleSetting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.playback.PlaybackOverlayBinder;
 import com.fongmi.android.tv.utils.ResUtil;
@@ -412,9 +410,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private CaptionStyleCompat getCaptionStyle() {
-        CaptioningManager manager = (CaptioningManager) getSystemService(Context.CAPTIONING_SERVICE);
-        if (PlayerSetting.isCaption() && manager != null) return CaptionStyleCompat.createFromCaptionStyle(manager.getUserStyle());
-        return new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
+        return SubtitleSetting.captionStyle(this);
     }
 
     private void applyDanmaku() {

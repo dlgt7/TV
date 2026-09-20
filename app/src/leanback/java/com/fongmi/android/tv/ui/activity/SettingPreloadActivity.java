@@ -14,6 +14,7 @@ import com.fongmi.android.tv.setting.PreloadSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.dialog.PreloadDialog;
+import com.fongmi.android.tv.ui.dialog.PreloadDiagnosticsDialog;
 import com.fongmi.android.tv.utils.FileUtil;
 
 public class SettingPreloadActivity extends BaseActivity {
@@ -41,10 +42,13 @@ public class SettingPreloadActivity extends BaseActivity {
         mBinding.preloadSize.setOnClickListener(view -> PreloadDialog.show(this, PreloadDialog.SIZE));
         mBinding.preloadTime.setOnClickListener(view -> PreloadDialog.show(this, PreloadDialog.TIME));
         mBinding.preloadThread.setOnClickListener(view -> PreloadDialog.show(this, PreloadDialog.THREADS));
+        mBinding.preloadMetered.setOnClickListener(this::setMetered);
+        mBinding.preloadDiagnostics.setOnClickListener(view -> PreloadDiagnosticsDialog.show(this));
     }
 
     private void refresh() {
         mBinding.preloadText.setText(Setting.getSwitch(PreloadSetting.isPreload()));
+        mBinding.preloadMeteredText.setText(Setting.getSwitch(PreloadSetting.isPreloadOnMetered()));
         setPreloadThreadsText();
         setPreloadSizeText();
         setPreloadTimeText();
@@ -56,6 +60,13 @@ public class SettingPreloadActivity extends BaseActivity {
         mBinding.preloadSize.setVisibility(preload ? View.VISIBLE : View.GONE);
         mBinding.preloadTime.setVisibility(preload ? View.VISIBLE : View.GONE);
         mBinding.preloadThread.setVisibility(preload && !PlayerSetting.isMpv() ? View.VISIBLE : View.GONE);
+        mBinding.preloadMetered.setVisibility(preload ? View.VISIBLE : View.GONE);
+        mBinding.preloadDiagnostics.setVisibility(preload ? View.VISIBLE : View.GONE);
+    }
+
+    private void setMetered(View view) {
+        PreloadSetting.putPreloadOnMetered(!PreloadSetting.isPreloadOnMetered());
+        mBinding.preloadMeteredText.setText(Setting.getSwitch(PreloadSetting.isPreloadOnMetered()));
     }
 
     private void setPreload(View view) {

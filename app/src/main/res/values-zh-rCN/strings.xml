@@ -171,6 +171,9 @@
     <string name="player_preload_size">预载容量</string>
     <string name="player_preload_time">预载时间</string>
     <string name="player_preload_time_value">%1$d 秒</string>
+    <string name="player_preload_metered">按流量计费网络也预载</string>
+    <string name="player_preload_diagnostics">预载诊断</string>
+    <string name="player_preload_diagnostics_reset">重置</string>
     <string name="player_mpv_conf">mpv.conf</string>
     <string name="player_mpv_gpu_next">gpu-next</string>
     <string name="player_mpv_vulkan">vulkan</string>

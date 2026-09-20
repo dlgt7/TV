@@ -1,35 +1,24 @@
 package com.fongmi.android.tv.player.exo;
 
-import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
-import androidx.media3.exoplayer.ExoPlayer;
 
 import com.fongmi.android.tv.player.engine.PlayerEngine;
-import com.fongmi.android.tv.player.media.MediaItemFactory;
 import com.fongmi.android.tv.player.media.PlaySpec;
 
-import java.util.concurrent.TimeUnit;
-
+/** EXO engine facade; per-player resources are owned by {@link ExoPlayerSession}. */
 public class ExoPlayerEngine implements PlayerEngine {
 
     private final ErrorMsgProvider provider;
     private final Player.Listener listener;
-    private final PreCache preCache;
-    private final ExoVolumeGain volumeGain;
-    private ExoPlayer player;
-    private PlaySpec spec;
+    private ExoPlayerSession session;
     private int decode;
 
     public ExoPlayerEngine(int decode, Player.Listener listener) {
-        decode = decode == SOFT ? SOFT : HARD;
-        this.player = ExoUtil.buildPlayer(decode, listener);
-        this.provider = new ErrorMsgProvider();
-        this.preCache = new PreCache();
-        this.volumeGain = new ExoVolumeGain();
+        this.decode = normalizeDecode(decode);
         this.listener = listener;
-        this.decode = decode;
-        this.volumeGain.attach(player);
+        this.provider = new ErrorMsgProvider();
+        this.session = new ExoPlayerSession(this.decode, listener);
     }
 
     @Override
@@ -39,101 +28,78 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     @Override
     public Player getPlayer() {
-        return player;
+        return session.player();
     }
 
     @Override
     public void release() {
-        preCache.release();
-        volumeGain.release();
-        player.release();
+        session.release();
     }
 
     @Override
     public Player rebuild() {
-        preCache.stop();
-        volumeGain.release();
-        player.release();
-        player = ExoUtil.buildPlayer(decode, listener);
-        volumeGain.attach(player);
-        return player;
+        session.release();
+        session = new ExoPlayerSession(decode, listener);
+        return session.player();
     }
 
     @Override
     public void setVolumeGain(float gain) {
-        volumeGain.setGain(gain);
+        session.setVolumeGain(gain);
     }
 
     @Override
     public boolean setDecode(int decode) {
-        // EXO only has soft/hard; HARD_PERFORMANCE is an MPV-only path.
-        this.decode = decode == SOFT ? SOFT : HARD;
+        this.decode = normalizeDecode(decode);
         return true;
     }
 
     @Override
     public void start(PlaySpec spec, long startPositionMs) {
-        this.spec = spec;
-        startInternal(startPositionMs);
+        session.start(spec, startPositionMs);
     }
 
     @Override
     public void preload(PlaySpec spec, long startPositionMs) {
-        if (spec != null) preCache.preload(MediaItemFactory.from(spec, decode));
+        session.preload(spec, startPositionMs);
     }
 
     @Override
     public void clearPreload() {
-        preCache.clearPreload();
+        session.clearPreload();
     }
 
     @Override
     public void stop() {
-        player.stop();
+        session.stop();
+    }
+
+    @Override
+    public void resetErrorBudget() {
+        session.resetErrorBudget();
     }
 
     @Override
     public boolean isLive() {
-        return player.getDuration() < TimeUnit.MINUTES.toMillis(1) || player.isCurrentMediaItemLive();
+        return session.isLive();
     }
 
     @Override
     public boolean isVod() {
-        return player.getDuration() > TimeUnit.MINUTES.toMillis(1) && !player.isCurrentMediaItemLive();
+        return session.isVod();
     }
 
     @Override
-    public String getErrorMessage(PlaybackException e) {
-        return provider.get(e);
+    public String getErrorMessage(PlaybackException error) {
+        return provider.get(error);
     }
 
     @Override
-    public ErrorAction handleError(PlaybackException e) {
-        return switch (e.errorCode) {
-            case PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW -> seekToDefaultPosition();
-            case PlaybackException.ERROR_CODE_DECODER_INIT_FAILED, PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED, PlaybackException.ERROR_CODE_DECODING_FAILED -> ErrorAction.DECODE;
-            case PlaybackException.ERROR_CODE_IO_UNSPECIFIED, PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED, PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED, PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED, PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED -> retryFormat(e.errorCode);
-            default -> ErrorAction.FATAL;
-        };
+    public ErrorAction handleError(PlaybackException error) {
+        return session.handleError(error);
     }
 
-    private void startInternal(long position) {
-        MediaItem item = MediaItemFactory.from(spec, decode);
-        player.setMediaItem(item, position);
-        preCache.start(player, item);
-        player.prepare();
-        player.play();
-    }
-
-    private ErrorAction seekToDefaultPosition() {
-        player.seekToDefaultPosition();
-        player.prepare();
-        return ErrorAction.RECOVERED;
-    }
-
-    private ErrorAction retryFormat(int errorCode) {
-        spec.setFormat(ExoUtil.getMimeType(errorCode));
-        startInternal(player.getCurrentPosition());
-        return ErrorAction.RECOVERED;
+    private static int normalizeDecode(int decode) {
+        return decode == SOFT ? SOFT : HARD;
     }
 }

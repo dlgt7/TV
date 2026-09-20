@@ -9,5 +9,13 @@
             android:name=".debug.MpvSmokeActivity"
             android:exported="true"
             android:screenOrientation="landscape" />
+        <activity
+            android:name=".debug.PreloadSmokeActivity"
+            android:exported="true"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".debug.SelfCheckActivity"
+            android:exported="true"
+            android:screenOrientation="landscape" />
     </application>
 </manifest>

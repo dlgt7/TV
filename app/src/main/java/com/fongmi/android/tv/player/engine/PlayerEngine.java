@@ -30,6 +30,14 @@ public interface PlayerEngine {
     default void clearPreload() {
     }
 
+    /**
+     * Clears the automatic-recovery budget. Called once playback actually reaches a healthy state,
+     * so a stream that hiccups, recovers, and later hiccups again gets a fresh retry allowance
+     * instead of immediately reporting a fatal error.
+     */
+    default void resetErrorBudget() {
+    }
+
     default void stop() {
         getPlayer().stop();
     }

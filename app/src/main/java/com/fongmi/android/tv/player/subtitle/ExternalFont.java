@@ -43,20 +43,29 @@ public final class ExternalFont {
         if (files == null) return List.of();
         return Arrays.stream(files)
                 .sorted((first, second) -> first.getName().compareToIgnoreCase(second.getName()))
-                .map(ExternalFont::getEntry)
-                .filter(item -> item != null)
+                .flatMap(file -> getEntries(file).stream())
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Nullable
     public static Entry getEntry(File file) {
-        if (file == null || !file.isFile() || file.length() <= 0 || file.length() > MAX_FILE_BYTES) return null;
-        String family = getFamilyName(file);
-        if (TextUtils.isEmpty(family)) return null;
-        String name = file.getName();
-        int dot = name.lastIndexOf('.');
-        String display = dot > 0 ? name.substring(0, dot) : name;
-        return new Entry(file.getAbsolutePath(), display.isEmpty() ? name : display, family);
+        List<Entry> entries = getEntries(file);
+        return entries.isEmpty() ? null : entries.get(0);
+    }
+
+    public static List<Entry> getEntries(File file) {
+        if (file == null || !file.isFile() || file.length() <= 0 || file.length() > MAX_FILE_BYTES) return List.of();
+        String fileName = file.getName();
+        int dot = fileName.lastIndexOf('.');
+        String display = dot > 0 ? fileName.substring(0, dot) : fileName;
+        List<FontFamilyParser.Face> faces = FontFamilyParser.readFaces(file);
+        List<Entry> entries = new ArrayList<>(faces.size());
+        for (FontFamilyParser.Face face : faces) {
+            String label = faces.size() > 1 ? display + " · " + face.family() : display;
+            if (face.variable() && !face.instances().isEmpty()) label += " (" + String.join(", ", face.instances()) + ")";
+            entries.add(new Entry(file.getAbsolutePath(), label, face.family(), face.index(), face.variable(), face.instances()));
+        }
+        return entries;
     }
 
     @Nullable
@@ -73,7 +82,10 @@ public final class ExternalFont {
         try (InputStream input = context.getContentResolver().openInputStream(uri)) {
             if (input == null) return null;
             String display = FileUtil.getDisplayName(uri);
-            if (!isSupportedName(display)) {
+            if (TextUtils.isEmpty(display)) {
+                // Some pickers hand back a content URI with no name to derive one from.
+                display = "font-" + Crypto.md5(String.valueOf(uri)) + ".ttf";
+            } else if (!isSupportedName(display)) {
                 // Allow octet-stream pickers that drop the real extension.
                 display = display + ".ttf";
             }
@@ -90,7 +102,7 @@ public final class ExternalFont {
                 }
                 output.getFD().sync();
             }
-            if (TextUtils.isEmpty(getFamilyName(temp))) return null;
+            if (FontFamilyParser.readFaces(temp).isEmpty()) return null;
             File target = new File(dir, sanitizeName(display));
             if (!temp.renameTo(target)) {
                 try {
@@ -127,11 +139,15 @@ public final class ExternalFont {
         return TextUtils.isEmpty(value) ? ("font-" + Crypto.md5(String.valueOf(System.nanoTime())) + ".ttf") : value;
     }
 
-    public record Entry(String path, String name, String family) {
+    public record Entry(String path, String name, String family, int faceIndex, boolean variable, List<String> instances) {
 
         public Typeface typeface() {
             try {
-                return Typeface.createFromFile(new File(path));
+                File file = new File(path);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    return new Typeface.Builder(file).setTtcIndex(faceIndex).build();
+                }
+                return Typeface.createFromFile(file);
             } catch (Exception e) {
                 return Typeface.DEFAULT;
             }

@@ -31,6 +31,7 @@ import com.fongmi.android.tv.ui.dialog.SubtitleApiDialog;
 import com.fongmi.android.tv.ui.dialog.UaDialog;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Task;
 
 import java.text.DecimalFormat;
 
@@ -103,7 +104,12 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
         if (TextUtils.isEmpty(token)) token = SubtitleSetting.getEffectiveToken();
         mBinding.subtitleAssrtText.setText(TextUtils.isEmpty(token) ? ResUtil.getString(R.string.subtitle_font_none) : maskToken(token));
         String font = SubtitleSetting.getFontPath();
-        mBinding.subtitleFontText.setText(TextUtils.isEmpty(font) ? ResUtil.getString(R.string.subtitle_font_default) : new java.io.File(font).getName());
+        if (TextUtils.isEmpty(font)) {
+            mBinding.subtitleFontText.setText(ResUtil.getString(R.string.subtitle_font_default));
+        } else {
+            ExternalFont.Entry entry = SubtitleSetting.getFontEntry();
+            mBinding.subtitleFontText.setText(entry == null ? new java.io.File(font).getName() : entry.name());
+        }
     }
 
     private static String maskToken(String token) {
@@ -126,8 +132,8 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
     }
 
     @Override
-    public void onFontSelected(@Nullable String path) {
-        SubtitleSetting.putFontPath(path == null ? "" : path);
+    public void onFontSelected(@Nullable ExternalFont.Entry entry) {
+        SubtitleSetting.putFontSelection(entry);
         bindSubtitleLabels();
     }
 
@@ -138,9 +144,13 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
 
     private void importFont(android.net.Uri uri) {
         if (uri == null) return;
-        String path = ExternalFont.importFrom(App.get(), uri);
-        if (!TextUtils.isEmpty(path)) SubtitleSetting.putFontPath(path);
-        bindSubtitleLabels();
+        Task.execute(() -> {
+            String path = ExternalFont.importFrom(App.get(), uri);
+            if (!TextUtils.isEmpty(path)) SubtitleSetting.putFontPath(path);
+            App.post(() -> {
+                if (!isFinishing() && !isDestroyed()) bindSubtitleLabels();
+            });
+        });
     }
 
     private void setVisible() {

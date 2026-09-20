@@ -21,6 +21,15 @@ public class PreloadSetting {
         Prefers.put("preload", preload);
     }
 
+    /** Allow background preload while the active network is metered. Off by default. */
+    public static boolean isPreloadOnMetered() {
+        return Prefers.getBoolean("preload_metered");
+    }
+
+    public static void putPreloadOnMetered(boolean metered) {
+        Prefers.put("preload_metered", metered);
+    }
+
     public static int getPreloadThreads() {
         return Math.clamp(Prefers.getInt("preload_threads", MIN_THREADS), MIN_THREADS, MAX_THREADS);
     }

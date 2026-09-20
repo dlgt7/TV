@@ -9,7 +9,6 @@ import androidx.media3.mpvplayer.MpvPlayerConfig;
 import androidx.media3.ui.SubtitleView;
 
 import com.fongmi.android.tv.App;
-import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.fongmi.android.tv.player.track.LangUtil;
 import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.server.Server;
@@ -154,13 +153,11 @@ public final class MpvUtil {
 
     private static void addSubtitleStyleOptions(MpvPlayerConfig.Builder builder) {
         builder.addAndroidSubtitleOptions(App.get(), PlayerSetting.isCaption(), getSubtitlePosition(), getSubtitleScale());
-        // External fonts live under Path.font(); fonts.conf already lists that directory.
-        // Prefer a custom family name when the user picked one.
-        String fontPath = com.fongmi.android.tv.setting.SubtitleSetting.getFontPath();
-        if (!TextUtils.isEmpty(fontPath)) {
-            String family = ExternalFont.getFamilyName(new File(fontPath));
-            if (!TextUtils.isEmpty(family)) builder.addPostInitStringOption("sub-font", family);
-        }
+        // External fonts live under Path.font(); fonts.conf already lists that directory. The stored
+        // family is authoritative because libass/fontconfig resolve it by name, and re-parsing a TTC
+        // would only ever yield the collection's first face.
+        String family = com.fongmi.android.tv.setting.SubtitleSetting.getFontFamily();
+        if (!TextUtils.isEmpty(family)) builder.addPostInitStringOption("sub-font", family);
     }
 
     private static String getDefaultUserAgent() {

@@ -68,6 +68,7 @@ public class PlayerManager implements ParseCallback {
         this.decode = PlayerSetting.getDecode(false, preferredEngine);
         this.engine = PlayerEngineFactory.create(decode, preferredEngine, listener);
         this.player = engine.getPlayer();
+        applyPersistedVolumeGain();
         this.pendingStartPositionMs = C.TIME_UNSET;
         this.danmakuConfig = DanmakuSetting.getConfig();
         this.danmakuEnabled = DanmakuSetting.isShow();
@@ -432,11 +433,29 @@ public class PlayerManager implements ParseCallback {
         TrackUtil.reset(player);
     }
 
+    /** User-initiated decode switch: persists the choice so it survives restarts. */
     public void toggleDecode() {
+        applyDecodeToggle(true);
+    }
+
+    /**
+     * Automatic fallback after a decode error. Deliberately does NOT persist.
+     * <p>
+     * A one-off, transient hardware-decoder failure (e.g. the codec was momentarily held by another
+     * app, or a single stream is unsupported) must not be written back as a standing preference.
+     * If it were, every later stream in this scene would be pinned to software decode until the user
+     * manually toggled it back — a silent, permanent quality regression. Codec-level fallback within
+     * a session is already handled by {@code DefaultRenderersFactory.setEnableDecoderFallback(true)}.
+     */
+    private void toggleDecodeTransient() {
+        applyDecodeToggle(false);
+    }
+
+    private void applyDecodeToggle(boolean persist) {
         decode = engine.getType() == PlayerEngine.Type.MPV
                 ? (decode + 1) % (PlayerEngine.HARD_PERFORMANCE + 1)
                 : (isHard() ? PlayerEngine.SOFT : PlayerEngine.HARD);
-        PlayerSetting.putDecode(liveMode, getEngine(), decode);
+        if (persist) PlayerSetting.putDecode(liveMode, getEngine(), decode);
         boolean rebuild = engine.setDecode(decode);
         callback.onDecodeChanged();
         if (!rebuild) return;
@@ -449,7 +468,7 @@ public class PlayerManager implements ParseCallback {
             callback.onError(engine.getErrorMessage(e));
         } else {
             Notify.show(R.string.error_decode_fallback);
-            toggleDecode();
+            toggleDecodeTransient();
         }
     }
 
@@ -626,7 +645,10 @@ public class PlayerManager implements ParseCallback {
         @Override
         public void onPlaybackStateChanged(int state) {
             if (state == Player.STATE_READY || state == Player.STATE_ENDED) App.removeCallbacks(runnable);
-            if (state == Player.STATE_READY) startPreloadIfReady();
+            if (state == Player.STATE_READY) {
+                engine.resetErrorBudget();
+                startPreloadIfReady();
+            }
         }
 
         @Override
