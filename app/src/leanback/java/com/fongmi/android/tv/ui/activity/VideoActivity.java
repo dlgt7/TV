@@ -105,6 +105,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private ViewGroup.LayoutParams mFrameParams;
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
+    private Observer<Result> mObservePreload;
     private Observer<Result> mObserveSearch;
     private EpisodeAdapter mEpisodeAdapter;
     private QualityAdapter mQualityAdapter;
@@ -276,6 +277,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mKeyDown = CustomKeyDownVod.create(this);
         mObserveDetail = this::onDetailObserved;
         mObservePlayer = this::onPlayerObserved;
+        mObservePreload = this::onPreloadObserved;
         mObserveSearch = this::onSearchObserved;
         mR1 = this::hideControl;
         mR2 = this::updateFocus;
@@ -379,6 +381,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mViewModel = new ViewModelProvider(this).get(VideoViewModel.class);
         observeForever(mViewModel.getResult(), mObserveDetail);
         observeForever(mViewModel.getPlayer(), mObservePlayer);
+        observeForever(mViewModel.getPreload(), mObservePreload);
         observeForever(mViewModel.getSearch(), mObserveSearch);
         mVod = mViewModel.createPlaybackController(this);
     }
@@ -485,6 +488,20 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mViewModel.playerContent(request.getKey(), request.getFlag(), request.getId());
         mBinding.widget.title.setSelected(true);
         showProgress();
+    }
+
+    @Override
+    public void requestPreload(VodPlayRequest request) {
+        mViewModel.preloadContent(request.getKey(), request.getFlag(), request.getId());
+    }
+
+    @Override
+    public void clearPreload() {
+    }
+
+    private void onPreloadObserved(Result result) {
+        if (service() == null || result == null) return;
+        mVod.onPreloadResult(result);
     }
 
     @Override

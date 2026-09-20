@@ -119,6 +119,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private ViewGroup.LayoutParams mFrameParams;
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
+    private Observer<Result> mObservePreload;
     private Observer<Result> mObserveSearch;
     private EpisodeAdapter mEpisodeAdapter;
     private QualityAdapter mQualityAdapter;
@@ -302,6 +303,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mObserveDetail = this::onDetailObserved;
         mObservePlayer = this::onPlayerObserved;
         mObserveSearch = this::onSearchObserved;
+        mObservePreload = this::onPreloadObserved;
         mClock = Clock.create();
         mR1 = this::hideControl;
         mR2 = this::setTraffic;
@@ -421,6 +423,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         observeForever(mViewModel.getResult(), mObserveDetail);
         observeForever(mViewModel.getPlayer(), mObservePlayer);
         observeForever(mViewModel.getSearch(), mObserveSearch);
+        observeForever(mViewModel.getPreload(), mObservePreload);
         mVod = mViewModel.createPlaybackController(this);
     }
 
@@ -526,6 +529,21 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mViewModel.playerContent(request.getKey(), request.getFlag(), request.getId());
         mBinding.control.title.setSelected(true);
         showProgress();
+    }
+
+    @Override
+    public void requestPreload(VodPlayRequest request) {
+        mViewModel.preloadContent(request.getKey(), request.getFlag(), request.getId());
+    }
+
+    @Override
+    public void clearPreload() {
+        // Preload LiveData is overwritten on the next request; cache lives in the controller.
+    }
+
+    private void onPreloadObserved(Result result) {
+        if (service() == null || result == null) return;
+        mVod.onPreloadResult(result);
     }
 
     @Override

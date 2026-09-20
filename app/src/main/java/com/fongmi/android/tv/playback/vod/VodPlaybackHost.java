@@ -49,6 +49,10 @@ public interface VodPlaybackHost {
 
     void requestPlayer(VodPlayRequest request);
 
+    void requestPreload(VodPlayRequest request);
+
+    void clearPreload();
+
     void requestSearch(List<Site> sites, String keyword);
 
     void prepareSource(Vod item);

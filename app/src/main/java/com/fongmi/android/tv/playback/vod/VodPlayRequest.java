@@ -44,6 +44,10 @@ public final class VodPlayRequest {
         return TextUtils.equals(this.key, key) && flag != null && episode != null && TextUtils.equals(this.flag, flag.getFlag()) && TextUtils.equals(this.id, episode.getUrl());
     }
 
+    public boolean matches(VodPlayRequest other) {
+        return other != null && TextUtils.equals(key, other.key) && TextUtils.equals(flag, other.flag) && TextUtils.equals(id, other.id);
+    }
+
     public boolean accepts(Result result) {
         return result != null && (result.getFlag().isEmpty() || TextUtils.equals(flag, result.getFlag()));
     }

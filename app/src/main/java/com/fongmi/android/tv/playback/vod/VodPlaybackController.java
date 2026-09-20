@@ -11,6 +11,9 @@ import com.fongmi.android.tv.bean.Parse;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Vod;
 
+import com.fongmi.android.tv.setting.PreloadSetting;
+import com.fongmi.android.tv.setting.Setting;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -23,16 +26,20 @@ public class VodPlaybackController {
     private final VodFallbackPolicy fallbackPolicy;
     private final VodPlaybackState state;
     private final VodPlaybackHost host;
+    private final VodPreloadCache preloadCache;
     private History lastHistory;
 
     public VodPlaybackController(VodPlaybackHost host, VodPlaybackState state) {
         this.historyPolicy = new VodHistoryPolicy();
         this.state = state;
         this.host = host;
+        this.preloadCache = new VodPreloadCache();
         this.fallbackPolicy = new VodFallbackPolicy(this, state, host);
     }
 
     public void reset() {
+        preloadCache.clear();
+        host.clearPreload();
         state.reset();
     }
 
@@ -87,7 +94,54 @@ public class VodPlaybackController {
         VodPlayRequest request = state.getPendingRequest();
         if (request == null) request = currentRequest();
         if (cannotApply(result, request)) return;
+        preloadCache.clear();
         applyPlayerResult(result, request);
+        maybePreloadNext();
+    }
+
+    public void onPreloadResult(Result result) {
+        if (result == null || !preloadCache.isPending()) return;
+        VodPlayRequest request = preloadCache.getRequest();
+        Episode episode = preloadCache.getEpisode();
+        if (request == null || episode == null) {
+            preloadCache.clear();
+            return;
+        }
+        if (result.hasMsg() || result.needParse() || result.isUseParse() || result.getDrm() != null
+                || result.getRealUrl().isEmpty() || !request.accepts(result)) {
+            preloadCache.clear();
+            host.clearPreload();
+            return;
+        }
+        preloadCache.store(request, result, episode);
+    }
+
+    private void maybePreloadNext() {
+        if (!canPreloadNext()) {
+            preloadCache.clear();
+            host.clearPreload();
+            return;
+        }
+        Episode next = getRelativeEpisode(1);
+        if (next == null || next.isSelected()) {
+            preloadCache.clear();
+            host.clearPreload();
+            return;
+        }
+        VodPlayRequest request = VodPlayRequest.create(host.getVodKey(), state.getFlag(), next);
+        if (preloadCache.matchesRequest(request) && preloadCache.hasResult()) return;
+        preloadCache.begin(request, next);
+        host.requestPreload(request);
+    }
+
+    private boolean canPreloadNext() {
+        return PreloadSetting.isPreload()
+                && !Setting.isIncognito()
+                && state.hasEpisode()
+                && state.isUseParse() == false
+                && state.getPendingRequest() == null
+                && state.getPlayingRequest() != null
+                && !host.isHostFinishing();
     }
 
     private void applyPlayerResult(Result result, VodPlayRequest request) {
@@ -136,6 +190,22 @@ public class VodPlaybackController {
         host.renderEpisodeSelection(item);
         if (host.isFullscreenForPlayback()) host.showEpisodeReady(item);
         restartPlayback();
+    }
+
+    private void restartPlayback() {
+        host.stopPlaybackForRefresh();
+        if (!state.hasEpisode()) return;
+        Flag flag = state.getFlag();
+        Episode episode = state.getEpisode();
+        VodPlayRequest request = VodPlayRequest.create(host.getVodKey(), flag, episode);
+        Result cached = preloadCache.consumeIfMatches(request, episode);
+        if (cached != null) {
+            historyPolicy.updateEpisode(state.getHistory(), flag, episode);
+            state.setPendingRequest(request);
+            onPlayerResult(cached);
+            return;
+        }
+        requestPlayer(flag, episode);
     }
 
     public void selectQuality(Result result) {
@@ -203,12 +273,6 @@ public class VodPlaybackController {
     public void refresh() {
         saveCurrentHistory();
         restartPlayback();
-    }
-
-    private void restartPlayback() {
-        host.stopPlaybackForRefresh();
-        if (!state.hasEpisode()) return;
-        requestPlayer(state.getFlag(), state.getEpisode());
     }
 
     public void nextEpisode(boolean notify) {
