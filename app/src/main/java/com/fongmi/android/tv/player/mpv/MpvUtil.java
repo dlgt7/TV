@@ -23,7 +23,6 @@ import java.util.Map;
 public final class MpvUtil {
 
     private static final String ASSET_CA_FILE = "cacert.pem";
-    private static final int VULKAN_1_2 = 0x00402000;
     private static final double DEFAULT_SUB_POS = 100.0;
     private static final double DEFAULT_SUB_SCALE = 1.0;
     private static final double MIN_SUB_SCALE = 0.5;
@@ -49,10 +48,6 @@ public final class MpvUtil {
         } catch (Throwable e) {
             return false;
         }
-    }
-
-    public static boolean isVulkanSupported() {
-        return App.get().getPackageManager().hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, VULKAN_1_2);
     }
 
     public static MpvPlayer buildPlayer(int decode, Player.Listener listener) {
@@ -171,10 +166,6 @@ public final class MpvUtil {
         return Util.constrainValue(DEFAULT_SUB_POS - position * 100.0, MIN_SUB_POS, MAX_SUB_POS);
     }
 
-    /**
-     * Vulkan VO requires both Android Vulkan hardware AND libmpv compiled with vulkan support.
-     * Current libmpv build does not include vulkan; this will return false until rebuilt with it.
-     */
     public static boolean isVulkanSupported() {
         return isVulkanAvailable();
     }
