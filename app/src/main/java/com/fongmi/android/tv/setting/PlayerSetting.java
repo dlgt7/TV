@@ -28,7 +28,13 @@ public class PlayerSetting {
     }
 
     public static void putEngine(int engine) {
-        Prefers.put("player_config_engine", Math.clamp(engine, ENGINE_EXO, ENGINE_MPV));
+        engine = Math.clamp(engine, ENGINE_EXO, ENGINE_MPV);
+        // Settings UI toggles this key; playback reads scene keys (or legacy "player_engine").
+        // Keep all of them in sync so switching engine in settings actually applies.
+        Prefers.put("player_config_engine", engine);
+        Prefers.put("player_engine", engine);
+        putEngine("player_engine_vod", engine);
+        putEngine("player_engine_live", engine);
     }
 
     public static int getVodEngine() {
@@ -40,16 +46,23 @@ public class PlayerSetting {
     }
 
     private static int getEngine(String key) {
-        int legacy = Prefers.getInt("player_engine", ENGINE_EXO);
-        return Math.clamp(Prefers.getInt(key, legacy), ENGINE_EXO, ENGINE_MPV);
+        int fallback = Prefers.getInt("player_config_engine", Prefers.getInt("player_engine", ENGINE_EXO));
+        return Math.clamp(Prefers.getInt(key, fallback), ENGINE_EXO, ENGINE_MPV);
     }
 
     public static void putVodEngine(int engine) {
         putEngine("player_engine_vod", engine);
+        syncGlobalEngine(engine);
     }
 
     public static void putLiveEngine(int engine) {
         putEngine("player_engine_live", engine);
+        syncGlobalEngine(engine);
+    }
+
+    private static void syncGlobalEngine(int engine) {
+        Prefers.put("player_config_engine", engine);
+        Prefers.put("player_engine", engine);
     }
 
     private static void putEngine(String key, int engine) {

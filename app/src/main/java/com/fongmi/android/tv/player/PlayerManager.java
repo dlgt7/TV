@@ -246,8 +246,9 @@ public class PlayerManager implements ParseCallback {
         int targetDecode = PlayerSetting.getDecode(liveMode, target);
         boolean engineChanged = preferredEngine != target;
         preferredEngine = target;
-        if (decode == targetDecode) return;
+        if (!engineChanged && decode == targetDecode) return;
         decode = targetDecode;
+        // Engine change is applied on next ensureEngine/start; only rebuild same engine for decode.
         if (engineChanged || engine == null) return;
         if (engine.setDecode(decode)) setPlayer(engine.rebuild());
     }

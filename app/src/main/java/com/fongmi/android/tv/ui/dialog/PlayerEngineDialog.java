@@ -83,8 +83,9 @@ public final class PlayerEngineDialog extends BaseBottomSheetDialog {
         PlaybackActivity activity = getPlaybackActivity();
         boolean changed = engine != getCurrentEngine(player);
         if (changed && activity != null) activity.hideDebugView();
-        if (player == null) PlayerSetting.putEngine(engine);
-        else player.setEngine(engine);
+        // Always persist so settings + live/vod paths stay aligned.
+        PlayerSetting.putEngine(engine);
+        if (player != null) player.setEngine(engine);
         setText(target, player);
         dismiss();
     }

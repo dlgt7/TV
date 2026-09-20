@@ -89,6 +89,7 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
 
     private void setEngine(View view) {
         int index = (PlayerSetting.getEngine() + 1) % engine.length;
+        // putEngine now syncs vod/live engine prefs so the next playback uses the switch.
         PlayerSetting.putEngine(index);
         setPlaybackModeText();
         setVisible();
