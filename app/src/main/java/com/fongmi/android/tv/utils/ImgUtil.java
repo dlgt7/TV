@@ -27,7 +27,7 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.impl.CustomTarget;
 import com.fongmi.android.tv.server.Server;
-import com.github.catvod.utils.Util;
+import com.github.catvod.utils.Crypto;
 import com.github.catvod.utils.Json;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -107,7 +107,7 @@ public class ImgUtil {
     public static String cache(String url) {
         if (!isData(url)) return url;
         if (url.length() > MAX_DATA_URI_LENGTH) return "";
-        String key = Util.md5(url);
+        String key = Crypto.md5(url);
         if (TextUtils.isEmpty(key)) return "";
         if (CACHE.asMap().computeIfAbsent(key, ignored -> decode(url)) == null) return "";
         String address = Server.get().getAddress("/image/" + key);
