@@ -54,7 +54,8 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     @Override
     public boolean setDecode(int decode) {
-        this.decode = decode;
+        // EXO only has soft/hard; HARD_PERFORMANCE is an MPV-only path.
+        this.decode = decode == SOFT ? SOFT : HARD;
         return true;
     }
 

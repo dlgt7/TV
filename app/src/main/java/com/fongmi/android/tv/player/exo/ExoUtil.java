@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 public class ExoUtil {
 
     public static ExoPlayer buildPlayer(int decode, Player.Listener listener) {
+        decode = decode == PlayerEngine.SOFT ? PlayerEngine.SOFT : PlayerEngine.HARD;
         ExoPlayer player = new ExoPlayer.Builder(App.get()).setTrackSelector(buildTrackSelector()).setRenderersFactory(buildPlaybackRenderersFactory(decode)).setMediaSourceFactory(buildMediaSourceFactory()).build();
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());
         player.setAudioAttributes(AudioAttributes.DEFAULT, true);
@@ -64,6 +65,15 @@ public class ExoUtil {
         return decode == PlayerEngine.HARD ? DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
     }
 
+    /**
+     * EXO soft decode must prefer Android software codecs (c2.android / OMX.google).
+     * This project's Media3 FFmpeg extension is audio-only, so software video comes from
+     * platform software decoders via MediaCodecSelector.PREFER_SOFTWARE.
+     */
+    private static MediaCodecSelector buildMediaCodecSelector(int decode) {
+        return decode == PlayerEngine.SOFT ? MediaCodecSelector.PREFER_SOFTWARE : MediaCodecSelector.DEFAULT;
+    }
+
     private static TrackSelector buildTrackSelector() {
         DefaultTrackSelector trackSelector = new DefaultTrackSelector(App.get());
         DefaultTrackSelector.Parameters.Builder builder = trackSelector.buildUponParameters();
@@ -75,15 +85,16 @@ public class ExoUtil {
     }
 
     private static RenderersFactory buildPlaybackRenderersFactory(int decode) {
-        return buildRenderersFactory(getRenderMode(decode), PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer());
+        return buildRenderersFactory(getRenderMode(decode), PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer(), decode);
     }
 
     static RenderersFactory buildRenderersFactory() {
-        return buildRenderersFactory(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER, PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer());
+        return buildRenderersFactory(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER, PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer(), PlayerEngine.HARD);
     }
 
-    private static RenderersFactory buildRenderersFactory(int renderMode, boolean audioPrefer, boolean videoPrefer) {
+    private static RenderersFactory buildRenderersFactory(int renderMode, boolean audioPrefer, boolean videoPrefer, int decode) {
         boolean preferByDecode = renderMode == DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
+        MediaCodecSelector codecSelector = buildMediaCodecSelector(decode);
         DefaultRenderersFactory factory = new DefaultRenderersFactory(App.get()) {
             @Override
             protected AudioSink buildAudioSink(@NonNull Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams) {
@@ -101,7 +112,7 @@ public class ExoUtil {
                         preferByDecode || videoPrefer
                                 ? EXTENSION_RENDERER_MODE_PREFER
                                 : EXTENSION_RENDERER_MODE_ON,
-                        mediaCodecSelector, enableDecoderFallback, eventHandler, eventListener,
+                        codecSelector, enableDecoderFallback, eventHandler, eventListener,
                         allowedVideoJoiningTimeMs, out);
             }
 
@@ -116,7 +127,7 @@ public class ExoUtil {
                         preferByDecode || audioPrefer
                                 ? EXTENSION_RENDERER_MODE_PREFER
                                 : EXTENSION_RENDERER_MODE_ON,
-                        mediaCodecSelector, enableDecoderFallback, audioSink, eventHandler,
+                        codecSelector, enableDecoderFallback, audioSink, eventHandler,
                         eventListener, out);
             }
         };
