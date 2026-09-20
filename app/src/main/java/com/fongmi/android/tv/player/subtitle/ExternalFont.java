@@ -58,15 +58,18 @@ public final class ExternalFont {
     }
 
     @Nullable
-    public static String importFrom(App app, android.net.Uri uri) {
-        if (uri == null) return null;
+    public static String importFrom(android.content.Context context, android.net.Uri uri) {
+        if (context == null || uri == null) return null;
         File dir = getDirectory();
         if (dir != null && !dir.isDirectory() && !dir.mkdirs()) return null;
         File temp = null;
-        try (InputStream input = app.getContentResolver().openInputStream(uri)) {
+        try (InputStream input = context.getContentResolver().openInputStream(uri)) {
             if (input == null) return null;
             String display = FileUtil.getDisplayName(uri);
-            if (!isSupportedName(display)) return null;
+            if (!isSupportedName(display)) {
+                // Allow octet-stream pickers that drop the real extension.
+                display = display + ".ttf";
+            }
             temp = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX, dir);
             try (FileOutputStream output = new FileOutputStream(temp)) {
                 byte[] buffer = new byte[COPY_BUFFER_SIZE];

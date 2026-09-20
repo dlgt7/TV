@@ -188,6 +188,11 @@
     <string name="subtitle_search">搜尋字幕</string>
     <string name="subtitle_search_api_title">Assrt</string>
     <string name="subtitle_search_token_hint">Token</string>
+    <string name="player_subtitle_assrt">字幕搜尋 Token</string>
+    <string name="player_subtitle_font">字幕字型</string>
+    <string name="subtitle_font_default">系統預設</string>
+    <string name="subtitle_font_import">匯入字型…</string>
+    <string name="subtitle_font_none">預設</string>
     <string name="search_record">歷史</string>
     <string name="search_suggest">建議</string>
     <string name="search_hot">熱搜</string>

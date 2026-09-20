@@ -74,7 +74,8 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
     }
 
     private boolean hasSearch() {
-        return type == C.TRACK_TYPE_TEXT && player != null && player.isVod();
+        // Search is useful for both live and VOD text tracks.
+        return type == C.TRACK_TYPE_TEXT && player != null;
     }
 
     private boolean hasText() {
@@ -130,7 +131,8 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
     }
 
     private void onSubtitle(View view) {
-        if (hasSearch()) {
+        // VOD + text: open ASSRT search. Live text: also allow search.
+        if (type == C.TRACK_TYPE_TEXT && player != null) {
             onSearch(view);
             return;
         }

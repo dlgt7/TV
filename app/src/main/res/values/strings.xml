@@ -189,6 +189,11 @@
     <string name="subtitle_search">Search subtitle</string>
     <string name="subtitle_search_api_title">Assrt</string>
     <string name="subtitle_search_token_hint">Token</string>
+    <string name="player_subtitle_assrt">Subtitle search token</string>
+    <string name="player_subtitle_font">Subtitle font</string>
+    <string name="subtitle_font_default">System default</string>
+    <string name="subtitle_font_import">Import font…</string>
+    <string name="subtitle_font_none">Default</string>
     <string name="search_record">History</string>
     <string name="search_suggest">Suggest</string>
     <string name="search_hot">Hot</string>

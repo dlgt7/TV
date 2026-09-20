@@ -1,10 +1,9 @@
 package com.fongmi.android.tv.ui.dialog;
 
-import android.content.DialogInterface;
 import android.text.TextUtils;
-import android.view.inputmethod.EditorInfo;
 
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
@@ -21,6 +20,10 @@ public class SubtitleApiDialog extends BaseAlertDialog {
         new SubtitleApiDialog().show(fragment.getChildFragmentManager(), null);
     }
 
+    public static void show(FragmentActivity activity) {
+        new SubtitleApiDialog().show(activity.getSupportFragmentManager(), null);
+    }
+
     @Override
     protected ViewBinding getBinding() {
         return binding = DialogSubtitleApiBinding.inflate(getLayoutInflater());
@@ -33,29 +36,34 @@ public class SubtitleApiDialog extends BaseAlertDialog {
 
     @Override
     protected void initView() {
-        String text;
-        binding.text.setText(text = SubtitleSetting.getEffectiveToken());
+        String text = SubtitleSetting.getSearchToken();
+        if (TextUtils.isEmpty(text)) text = SubtitleSetting.getEffectiveToken();
+        binding.text.setText(text);
         binding.text.setSelection(TextUtils.isEmpty(text) ? 0 : text.length());
     }
 
     @Override
     protected void initEvent() {
         binding.text.setOnEditorActionListener((textView, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE) onPositive(null, 0);
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) onPositive(null, 0);
             return true;
         });
     }
 
-    private void onPositive(DialogInterface dialog, int which) {
+    private void onPositive(android.content.DialogInterface dialog, int which) {
         CharSequence text = binding.text.getText();
         String token = text == null ? "" : text.toString().trim();
-        getListener().setSubtitleToken(token);
+        SubtitleSetting.putSearchToken(token);
+        SubtitleListener listener = findListener();
+        if (listener != null) listener.setSubtitleToken(token);
         dismiss();
     }
 
-    private SubtitleListener getListener() {
+    private SubtitleListener findListener() {
         Fragment parent = getParentFragment();
         if (parent instanceof SubtitleListener) return (SubtitleListener) parent;
-        return (SubtitleListener) requireActivity();
+        FragmentActivity activity = getActivity();
+        if (activity instanceof SubtitleListener) return (SubtitleListener) activity;
+        return null;
     }
 }

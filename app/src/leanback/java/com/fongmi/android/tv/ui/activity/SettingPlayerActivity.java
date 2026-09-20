@@ -4,26 +4,37 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.View;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.ActivitySettingPlayerBinding;
 import com.fongmi.android.tv.impl.SpeedListener;
+import com.fongmi.android.tv.impl.SubtitleListener;
 import com.fongmi.android.tv.impl.UaListener;
 import com.fongmi.android.tv.player.mpv.MpvUtil;
+import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
+import com.fongmi.android.tv.setting.SubtitleSetting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
+import com.fongmi.android.tv.ui.dialog.ExternalFontDialog;
 import com.fongmi.android.tv.ui.dialog.MpvConfDialog;
 import com.fongmi.android.tv.ui.dialog.SpeedDialog;
+import com.fongmi.android.tv.ui.dialog.SubtitleApiDialog;
 import com.fongmi.android.tv.ui.dialog.UaDialog;
+import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.ResUtil;
 
 import java.text.DecimalFormat;
 
-public class SettingPlayerActivity extends BaseActivity implements UaListener, SpeedListener {
+public class SettingPlayerActivity extends BaseActivity implements UaListener, SpeedListener, SubtitleListener, ExternalFontDialog.Listener {
 
     private ActivitySettingPlayerBinding mBinding;
     private DecimalFormat format;
@@ -31,6 +42,8 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
     private String[] render;
     private String[] scale;
     private String[] engine;
+
+    private final ActivityResultLauncher<Intent> fontLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> FileChooser.getUri(result, this::importFont));
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingPlayerActivity.class));
@@ -54,6 +67,7 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
         mBinding.backgroundText.setText(Setting.getSwitch(PlayerSetting.isBackgroundOn()));
         mBinding.scaleText.setText((scale = ResUtil.getStringArray(R.array.select_scale))[PlayerSetting.getScale()]);
         mBinding.captionText.setText((caption = ResUtil.getStringArray(R.array.select_caption))[PlayerSetting.isCaption() ? 1 : 0]);
+        bindSubtitleLabels();
     }
 
     @Override
@@ -72,6 +86,53 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, S
         mBinding.preload.setOnClickListener(this::onPreloadSetting);
         mBinding.decode.setOnClickListener(this::onDecodeSetting);
         mBinding.ua.setOnClickListener(this::onUa);
+        mBinding.subtitleAssrt.setOnClickListener(this::onSubtitleAssrt);
+        mBinding.subtitleFont.setOnClickListener(this::onSubtitleFont);
+    }
+
+    private void bindSubtitleLabels() {
+        String token = SubtitleSetting.getSearchToken();
+        if (TextUtils.isEmpty(token)) token = SubtitleSetting.getEffectiveToken();
+        mBinding.subtitleAssrtText.setText(TextUtils.isEmpty(token) ? ResUtil.getString(R.string.subtitle_font_none) : maskToken(token));
+        String font = SubtitleSetting.getFontPath();
+        mBinding.subtitleFontText.setText(TextUtils.isEmpty(font) ? ResUtil.getString(R.string.subtitle_font_default) : new java.io.File(font).getName());
+    }
+
+    private static String maskToken(String token) {
+        if (token.length() <= 8) return token;
+        return token.substring(0, 4) + "…" + token.substring(token.length() - 4);
+    }
+
+    private void onSubtitleAssrt(View view) {
+        SubtitleApiDialog.show(this);
+    }
+
+    private void onSubtitleFont(View view) {
+        ExternalFontDialog.show(this);
+    }
+
+    @Override
+    public void setSubtitleToken(String token) {
+        SubtitleSetting.putSearchToken(token);
+        bindSubtitleLabels();
+    }
+
+    @Override
+    public void onFontSelected(@Nullable String path) {
+        SubtitleSetting.putFontPath(path == null ? "" : path);
+        bindSubtitleLabels();
+    }
+
+    @Override
+    public void onFontImportRequested() {
+        FileChooser.from(fontLauncher).show(new String[]{"font/*", "application/octet-stream", "*/*"});
+    }
+
+    private void importFont(android.net.Uri uri) {
+        if (uri == null) return;
+        String path = ExternalFont.importFrom(App.get(), uri);
+        if (!TextUtils.isEmpty(path)) SubtitleSetting.putFontPath(path);
+        bindSubtitleLabels();
     }
 
     private void setVisible() {

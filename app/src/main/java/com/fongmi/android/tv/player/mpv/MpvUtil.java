@@ -153,6 +153,15 @@ public final class MpvUtil {
 
     private static void addSubtitleStyleOptions(MpvPlayerConfig.Builder builder) {
         builder.addAndroidSubtitleOptions(App.get(), PlayerSetting.isCaption(), getSubtitlePosition(), getSubtitleScale());
+        // External fonts live under Path.font(); fonts.conf already lists that directory.
+        // Prefer a custom family name when the user picked one.
+        String fontPath = com.fongmi.android.tv.setting.SubtitleSetting.getFontPath();
+        if (!TextUtils.isEmpty(fontPath)) {
+            String name = new java.io.File(fontPath).getName();
+            int dot = name.lastIndexOf('.');
+            String family = dot > 0 ? name.substring(0, dot) : name;
+            if (!TextUtils.isEmpty(family)) builder.addPostInitStringOption("sub-font", family);
+        }
     }
 
     private static String getDefaultUserAgent() {
