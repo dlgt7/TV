@@ -4,7 +4,7 @@ set -euo pipefail
 sdk_dir=$1
 cache_dir=$2
 output_dir=$3
-requested_abis=${4:-arm64-v8a,armeabi-v7a,x86_64}
+requested_abis=${4:-arm64-v8a,armeabi-v7a}
 
 ndk_version=26.1.10909125
 media_revision=5fb306449733dd71595700c1227ad6087578c559

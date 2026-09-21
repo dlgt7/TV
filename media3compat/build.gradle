@@ -25,7 +25,7 @@ android {
 }
 
 def nativeAbis = providers.environmentVariable("FONGMI_NATIVE_ABIS")
-        .getOrElse("arm64-v8a,armeabi-v7a,x86_64").split(",") as List
+        .getOrElse("arm64-v8a,armeabi-v7a").split(",") as List
 def dav1dVersion = "media3-1.10.1-dav1d-54706fc6"
 def prepareDav1d = tasks.register("prepareDav1d") {
     def outputDir = layout.buildDirectory.dir("generated/dav1d/jniLibs")

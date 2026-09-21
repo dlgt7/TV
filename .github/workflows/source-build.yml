@@ -47,9 +47,6 @@ jobs:
           - abi: armeabi-v7a
             flavor: Armeabi_v7a
             apk_abi: armeabi_v7a
-          - abi: x86_64
-            flavor: X86_64
-            apk_abi: x86_64
     env:
       FONGMI_NATIVE_ABIS: ${{ matrix.abi }}
       CI_RELEASE_STORE_PASSWORD: ${{ secrets.CI_RELEASE_STORE_PASSWORD }}
@@ -158,7 +155,7 @@ jobs:
         working-directory: release-assets
         run: |
           find . -mindepth 2 -type f -name '*.apk' -exec mv -t . {} +
-          test "$(find . -maxdepth 1 -type f -name '*.apk' | wc -l)" -eq 6
+          test "$(find . -maxdepth 1 -type f -name '*.apk' | wc -l)" -eq 4
           sha256sum *.apk | sort -k2 > SHA256SUMS
           test -s SHA256SUMS
       - name: Publish GitHub Release

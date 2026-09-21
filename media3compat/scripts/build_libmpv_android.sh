@@ -4,7 +4,7 @@ set -euo pipefail
 sdk_dir=$1
 cache_dir=$2
 output_dir=$3
-requested_abis=${4:-arm64-v8a,armeabi-v7a,x86_64}
+requested_abis=${4:-arm64-v8a,armeabi-v7a}
 ndk_version=29.0.14206865
 source_revision=46ef59a1f093b30e774f463d5c5942a3ac8d22be
 build_revision="${source_revision}-surface-guard-v1"
