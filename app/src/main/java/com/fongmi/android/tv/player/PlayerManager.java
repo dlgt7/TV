@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaChapter;
 import androidx.media3.common.MediaEdition;
@@ -23,6 +24,7 @@ import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.bean.Track;
 import com.fongmi.android.tv.impl.ParseCallback;
+import com.fongmi.android.tv.player.engine.PlaybackCapabilities;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.engine.PlayerEngineFactory;
 import com.fongmi.android.tv.player.media.PlaySpec;
@@ -39,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PlayerManager implements ParseCallback {
 
@@ -50,6 +53,7 @@ public class PlayerManager implements ParseCallback {
     private PendingPreload pendingPreload;
     private PlaySpec spec;
     private Player player;
+    private Sub secondarySub;
 
     private DanmakuConfig danmakuConfig;
     private long pendingStartPositionMs;
@@ -59,6 +63,7 @@ public class PlayerManager implements ParseCallback {
     private int retry;
     private int decode;
     private int preferredEngine;
+    private long secondarySubtitleOffsetMs;
     private boolean liveMode;
 
     public PlayerManager(Callback callback) {
@@ -248,6 +253,10 @@ public class PlayerManager implements ParseCallback {
         return engine.getType() == PlayerEngine.Type.MPV ? PlayerSetting.ENGINE_MPV : PlayerSetting.ENGINE_EXO;
     }
 
+    public PlaybackCapabilities getCapabilities() {
+        return PlaybackCapabilities.forEngine(engine.getType());
+    }
+
     public void setEngine(int targetEngine) {
         targetEngine = Math.clamp(targetEngine, PlayerSetting.ENGINE_EXO, PlayerSetting.ENGINE_MPV);
         if (preferredEngine == targetEngine) return;
@@ -290,6 +299,29 @@ public class PlayerManager implements ParseCallback {
         if (spec != null) spec.setSub(sub);
         if (engine.addSubtitle(sub)) play();
         else startCurrent();
+    }
+
+    @Nullable
+    public Sub getSecondarySub() {
+        return secondarySub;
+    }
+
+    public void setSecondarySub(@Nullable Sub sub) {
+        secondarySub = sub == null || sub.isEmpty() ? null : sub;
+        secondarySubtitleOffsetMs = 0;
+        callback.onSecondarySubtitleChanged(secondarySub);
+    }
+
+    public void clearSecondarySub() {
+        setSecondarySub(null);
+    }
+
+    public long getSecondarySubtitleOffsetMs() {
+        return secondarySubtitleOffsetMs;
+    }
+
+    public void setSecondarySubtitleOffsetMs(long offsetMs) {
+        secondarySubtitleOffsetMs = Math.clamp(offsetMs, -TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10));
     }
 
     public void setFormat(String format) {
@@ -350,6 +382,7 @@ public class PlayerManager implements ParseCallback {
 
     public void setSubtitleStyle() {
         if (engine != null) engine.setSubtitleStyle();
+        callback.onSubtitleStyleChanged();
         callback.onDanmakuConfigChanged(DanmakuSetting.getConfig());
     }
 
@@ -427,6 +460,7 @@ public class PlayerManager implements ParseCallback {
 
     public void clear() {
         spec = null;
+        clearSecondarySub();
     }
 
     public void resetTrack() {
@@ -531,6 +565,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void start(PlaySpec spec, long timeout, long startPositionMs) {
+        if (this.spec != spec) clearSecondarySub();
         this.spec = spec;
         setMediaItem(timeout, startPositionMs);
     }
@@ -541,6 +576,7 @@ public class PlayerManager implements ParseCallback {
 
     public void parse(String key, Result result, boolean useParse, MediaMetadata metadata, long startPositionMs) {
         stopParse();
+        clearSecondarySub();
         pendingStartPositionMs = startPositionMs;
         spec = PlaySpec.fromParse(result, key, metadata);
         parseJob = ParseJob.create(this).start(result, useParse);
@@ -638,6 +674,10 @@ public class PlayerManager implements ParseCallback {
         void onDanmakuEnabledChanged(boolean enabled);
 
         void onDanmakuSent(String text);
+
+        void onSecondarySubtitleChanged(@Nullable Sub sub);
+
+        void onSubtitleStyleChanged();
     }
 
     private final Player.Listener listener = new Player.Listener() {

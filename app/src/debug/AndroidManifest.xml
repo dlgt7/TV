@@ -17,5 +17,9 @@
             android:name=".debug.SelfCheckActivity"
             android:exported="true"
             android:screenOrientation="landscape" />
+        <activity
+            android:name=".debug.DualSubtitleSmokeActivity"
+            android:exported="true"
+            android:screenOrientation="landscape" />
     </application>
 </manifest>

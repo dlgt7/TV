@@ -190,6 +190,7 @@
     <!-- Search -->
     <string name="search_keyword">Keywords…</string>
     <string name="subtitle_search">Search subtitle</string>
+    <string name="subtitle_secondary">Secondary subtitle (long press to clear)</string>
     <string name="subtitle_search_api_title">Assrt</string>
     <string name="subtitle_search_token_hint">Token</string>
     <string name="player_subtitle_assrt">Subtitle search token</string>

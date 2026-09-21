@@ -16,7 +16,9 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.media3.ui.CaptionStyleCompat;
 import androidx.media3.ui.SubtitleView;
 
+import com.fongmi.android.tv.player.engine.PlaybackCapabilities;
 import com.fongmi.android.tv.player.engine.PlaybackRecoveryPolicy;
+import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.fongmi.android.tv.player.subtitle.SecondarySubtitleTimeline;
 import com.fongmi.android.tv.setting.SubtitleSetting;
@@ -58,6 +60,7 @@ public final class SelfCheckActivity extends Activity {
         ExternalFont.Entry saved = SubtitleSetting.getFontEntry();
         checkRecoveryPolicy();
         checkRetryBackoff();
+        checkPlaybackCapabilities();
         checkSecondarySubtitleTimeline();
         checkFontRoundTrip();
         checkCaptionStyle();
@@ -132,6 +135,17 @@ public final class SelfCheckActivity extends Activity {
         // Must saturate rather than overflow into a negative delay.
         if (capped > 0 && capped <= 3000L) passed++;
         else failures.add("backoff_not_capped value=" + capped);
+    }
+
+    private void checkPlaybackCapabilities() {
+        PlaybackCapabilities exo = PlaybackCapabilities.forEngine(PlayerEngine.Type.EXO);
+        PlaybackCapabilities mpv = PlaybackCapabilities.forEngine(PlayerEngine.Type.MPV);
+        expect("cap_exo_gain", exo.volumeGain(), true);
+        expect("cap_mpv_gain", mpv.volumeGain(), true);
+        expect("cap_exo_secondary", exo.secondarySubtitle(), true);
+        expect("cap_mpv_secondary", mpv.secondarySubtitle(), true);
+        expect("cap_eq_not_faked", exo.audioEqualizer() || mpv.audioEqualizer(), false);
+        expect("cap_video_fx_not_faked", exo.videoShaders() || mpv.videoShaders(), false);
     }
 
     /** Verifies the public Media3 parser used by the dual-subtitle prototype. */

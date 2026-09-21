@@ -189,6 +189,7 @@
     <!-- Search -->
     <string name="search_keyword">關鍵字…</string>
     <string name="subtitle_search">搜尋字幕</string>
+    <string name="subtitle_secondary">第二字幕（長按清除）</string>
     <string name="subtitle_search_api_title">Assrt</string>
     <string name="subtitle_search_token_hint">Token</string>
     <string name="player_subtitle_assrt">字幕搜尋 Token</string>

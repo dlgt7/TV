@@ -29,6 +29,7 @@ import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.BuildConfig;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Result;
+import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.browse.BrowseTree;
 import com.fongmi.android.tv.event.ActionEvent;
 import com.fongmi.android.tv.event.ConfigEvent;
@@ -517,6 +518,16 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         playerCallbacks.forEach(callback -> callback.onDanmakuSent(text));
     }
 
+    @Override
+    public void onSecondarySubtitleChanged(@Nullable Sub sub) {
+        playerCallbacks.forEach(callback -> callback.onSecondarySubtitleChanged(sub));
+    }
+
+    @Override
+    public void onSubtitleStyleChanged() {
+        playerCallbacks.forEach(PlayerCallback::onSubtitleStyleChanged);
+    }
+
     private final Player.Listener listener = new Player.Listener() {
         @Override
         public void onPlaybackStateChanged(int state) {
@@ -609,6 +620,12 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         }
 
         default void onDanmakuSent(String text) {
+        }
+
+        default void onSecondarySubtitleChanged(@Nullable Sub sub) {
+        }
+
+        default void onSubtitleStyleChanged() {
         }
     }
 

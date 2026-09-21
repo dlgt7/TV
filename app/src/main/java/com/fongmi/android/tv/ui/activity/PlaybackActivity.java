@@ -31,7 +31,9 @@ import androidx.media3.ui.danmaku.DanmakuConfig;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Result;
+import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.subtitle.SecondarySubtitleOverlay;
 import com.fongmi.android.tv.player.media.PlaySpec;
 import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.service.PlaybackService;
@@ -55,6 +57,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private ListenableFuture<MediaController> mControllerFuture;
     private MediaController mController;
     private PlaybackService mService;
+    private SecondarySubtitleOverlay secondarySubtitleOverlay;
     private boolean initialized;
     private boolean audioOnly;
     private boolean scrubbing;
@@ -411,6 +414,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private void syncPlaybackOverlays() {
         PlayerManager pm = mService == null ? null : player();
         PlaybackOverlayBinder.sync(getPlayerView(), pm);
+        if (secondarySubtitleOverlay != null) secondarySubtitleOverlay.bind(pm);
         if (pm != null && !pm.isReleased()) {
             pm.setSubtitleStyle();
             pm.setVolumeGain(PlayerSetting.getVolumeGain());
@@ -436,6 +440,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         playerView.getSubtitleView().setStyle(getCaptionStyle());
         playerView.getSubtitleView().setApplyEmbeddedStyles(true);
         playerView.getSubtitleView().setApplyEmbeddedFontSizes(false);
+        secondarySubtitleOverlay = new SecondarySubtitleOverlay(playerView);
         PlaybackOverlayBinder.sync(playerView, mService == null ? null : player());
     }
 
@@ -552,6 +557,16 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         public void onDanmakuSent(String text) {
             if (isOwner()) getPlayerView().sendDanmaku(text);
         }
+
+        @Override
+        public void onSecondarySubtitleChanged(Sub sub) {
+            if (isOwner() && secondarySubtitleOverlay != null) secondarySubtitleOverlay.setSubtitle(sub);
+        }
+
+        @Override
+        public void onSubtitleStyleChanged() {
+            if (isOwner() && secondarySubtitleOverlay != null) secondarySubtitleOverlay.applyStyle();
+        }
     };
 
     @Override
@@ -602,6 +617,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     @Override
     protected void onStart() {
         super.onStart();
+        if (secondarySubtitleOverlay != null) secondarySubtitleOverlay.setActive(true);
         activateService();
     }
 
@@ -625,6 +641,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     @Override
     protected void onStop() {
+        if (secondarySubtitleOverlay != null) secondarySubtitleOverlay.setActive(false);
         super.onStop();
         if (!isOwner() || mService == null) return;
         if (stopPlaybackOnBackground() && mService != null) {
@@ -643,6 +660,8 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     @Override
     protected void onDestroy() {
         clearForeverObservers();
+        if (secondarySubtitleOverlay != null) secondarySubtitleOverlay.release();
+        secondarySubtitleOverlay = null;
         super.onDestroy();
         releasePlaybackService();
     }

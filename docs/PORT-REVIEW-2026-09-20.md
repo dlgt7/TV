@@ -351,13 +351,14 @@ Media3 1.10.1 的公开 `DefaultPreloadManager`、`PreloadManagerListener` 与
 - 补齐 `PlaybackActivity` 生命周期分发：依赖播放服务的 LiveData 结果会在 Activity 至少为 `STARTED` 且服务已绑定后再投递；重定向及退出时即使 `MediaController` 尚未连接也会暂停底层播放器。
 - 新增 `LiveDataSource`、`VodDataSource` 边界，将 URL/detail/player/preload/search 加载从 Activity host 中移出；保留 fork 的磁盘预载缓存、反向播放和标题更新行为。
 - QuickJS proxy 参数编码改用 Android `Uri.encode`，避免已废弃 `URLEncoder.encode(String)` 的平台默认字符集行为。
-- 新增 `SecondarySubtitleTimeline`：使用公开 Media3 `DefaultSubtitleParserFactory` 实现第二字幕流的解析与时间轴查询原型；尚未伪造私有 libass/双 TextRenderer 能力，UI 双层渲染留待下一里程碑。
-- 高成本 EQ/声道混音/归一化/限幅及视频 shader 效果仍保持独立项目，不在未建立性能基线时默认启用。
+- 新增 `SecondarySubtitleTimeline` 与 `SecondarySubtitleOverlay`：使用公开 Media3 `DefaultSubtitleParserFactory` 解析独立外部字幕，通过第二个 `SubtitleView` 按播放位置渲染；手机与电视字幕轨弹窗均可选择第二字幕，长按按钮可清除。该实现不伪造私有 libass/双 TextRenderer 能力，复杂 ASS 排版仍以公开解析器能力为限。
+- 新增 `PlaybackCapabilities` 显式能力契约：音量增益和公开 API 第二字幕对 EXO/MPV 可用；高成本 EQ/声道混音/归一化/限幅及视频 shader 明确标记为不支持，保持独立项目，不在未建立性能基线时默认启用。
 
 验证结果：
 
 - Mobile/Leanback arm64 debug、release 均构建成功；release 包含 lintVital、R8、签名及打包。
-- 手机与电视 `SelfCheckActivity`：**46/46 PASS**，新增 7 项第二字幕 SRT 时间轴测试。
+- 手机与电视 `SelfCheckActivity`：**52/52 PASS**，覆盖第二字幕 SRT 时间轴与公开能力契约。
+- `DualSubtitleSmokeActivity` 在手机 EXO、电视 MPV 均为 `passed=true loaded=1 failed=0 rendered=1`；手机截图确认主/第二字幕同时分层显示，电视确认独立第二字幕显示且 MPV 已加载并选中主字幕轨。
 - 两端五场景预载 E2E 全部 PASS（forward/reverse/retained/cancelled/failure）。
 - 本地服务器实测：普通及 suffix Range 返回 206，多 Range 返回 416；目录穿越、根目录删除、文件名穿越和 Zip Slip 均被拒绝，正常上传成功。
 - 本地 30 秒 MP4：手机 EXO 与电视 MPV 均发起实际 GET；电视确认 mediacodec 硬解和 `playback restart complete`；生命周期前后台压力测试未见 fatal error。

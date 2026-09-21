@@ -82,6 +82,10 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         return type == C.TRACK_TYPE_TEXT && player.haveTrack(type);
     }
 
+    private boolean hasSecondarySubtitle() {
+        return type == C.TRACK_TYPE_TEXT && player != null && player.getCapabilities().secondarySubtitle();
+    }
+
     private boolean hasAudio() {
         return type == C.TRACK_TYPE_AUDIO && player.haveTrack(type);
     }
@@ -103,6 +107,8 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         binding.offset.setVisibility(hasText() || hasAudio() ? View.VISIBLE : View.GONE);
         binding.choose.setVisibility(hasChoose() ? View.VISIBLE : View.GONE);
         binding.search.setVisibility(hasSearch() ? View.VISIBLE : View.GONE);
+        binding.secondary.setVisibility(hasSecondarySubtitle() ? View.VISIBLE : View.GONE);
+        binding.secondary.setSelected(player != null && player.getSecondarySub() != null);
         binding.subtitle.setVisibility(hasText() ? View.VISIBLE : View.GONE);
     }
 
@@ -111,6 +117,8 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         binding.offset.setOnClickListener(this::onOffset);
         binding.choose.setOnClickListener(this::onChoose);
         binding.search.setOnClickListener(this::onSearch);
+        binding.secondary.setOnClickListener(this::onSecondarySubtitle);
+        binding.secondary.setOnLongClickListener(this::onClearSecondarySubtitle);
         binding.subtitle.setOnClickListener(this::onSubtitle);
     }
 
@@ -128,6 +136,17 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         FragmentActivity activity = requireActivity();
         dismissNow();
         SubtitleSearchDialog.create().player(player).show(activity);
+    }
+
+    private void onSecondarySubtitle(View view) {
+        FileChooser.from(secondaryLauncher).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, "text/*", "application/octet-stream"});
+        player.pause();
+    }
+
+    private boolean onClearSecondarySubtitle(View view) {
+        player.clearSecondarySub();
+        dismiss();
+        return true;
     }
 
     private void onSubtitle(View view) {
@@ -171,11 +190,25 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         dismiss();
     }
 
-    private final ActivityResultLauncher<Intent> launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> FileChooser.getUri(result, this::setSubtitle));
+    private final ActivityResultLauncher<Intent> launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (player != null) player.play();
+        FileChooser.getUri(result, this::setSubtitle);
+    });
+    private final ActivityResultLauncher<Intent> secondaryLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (player != null) player.play();
+        FileChooser.getUri(result, this::setSecondarySubtitle);
+    });
 
     private void setSubtitle(Uri uri) {
         if (!isAdded()) return;
         player.setSub(Sub.from(FileUtil.getDisplayName(uri), uri.toString()));
+        dismiss();
+    }
+
+    private void setSecondarySubtitle(Uri uri) {
+        if (!isAdded()) return;
+        player.setSecondarySub(Sub.from(FileUtil.getDisplayName(uri), uri.toString()));
+        player.play();
         dismiss();
     }
 
