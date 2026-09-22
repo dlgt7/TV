@@ -55,6 +55,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # airplay third_party: libplist + ffmpeg are git submodules required by CMake
+          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
