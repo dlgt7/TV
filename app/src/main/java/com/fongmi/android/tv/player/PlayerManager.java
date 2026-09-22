@@ -260,6 +260,11 @@ public class PlayerManager implements ParseCallback {
     }
 
     public String getDecodeText() {
+        // EXO only toggles software vs hardware MediaCodec. "兼容硬解/性能硬解" are MPV
+        // (mediacodec-copy / mediacodec_embed) labels and must not be shown on EXO.
+        if (getEngine() == PlayerSetting.ENGINE_EXO) {
+            return ResUtil.getString(decode == PlayerEngine.SOFT ? R.string.decode_soft : R.string.decode_hard);
+        }
         return ResUtil.getStringArray(R.array.select_decode)[decode];
     }
 

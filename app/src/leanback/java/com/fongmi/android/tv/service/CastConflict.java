@@ -1,17 +1,11 @@
 package com.fongmi.android.tv.service;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.os.IBinder;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.ui.activity.AirPlayCastActivity;
 import com.fongmi.android.tv.ui.activity.CastActivity;
-
-import io.github.jqssun.airplay.service.AirPlayService;
 
 /** Mutual exclusion between AirPlay UI and DLNA CastActivity. */
 public final class CastConflict {
@@ -43,27 +37,8 @@ public final class CastConflict {
     }
 
     private static void stopAirPlaySession(Context app) {
-        Intent intent = new Intent(app, AirPlayService.class);
-        ServiceConnection connection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder binder) {
-                try {
-                    ((AirPlayService.LocalBinder) binder).getService().stopLocalSession("dlna");
-                } catch (Exception ignored) {
-                }
-                try {
-                    app.unbindService(this);
-                } catch (Exception ignored) {
-                }
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-            }
-        };
-        try {
-            app.bindService(intent, connection, Context.BIND_AUTO_CREATE);
-        } catch (Exception ignored) {
-        }
+        // Only yield the local A/V session to DLNA. ACTION_STOP_SERVER would unregister
+        // AirPlay/NSD and the TV vanishes from the Apple picker after one DLNA cast.
+        AirPlayServer.stopLocalSession(app, "dlna");
     }
 }

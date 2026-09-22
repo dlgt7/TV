@@ -264,6 +264,9 @@
     <string name="times">倍</string>
     <string name="lines">行</string>
 
+    <string name="decode_soft">软解</string>
+    <string name="decode_hard">硬解</string>
+
     <string-array name="select_decode">
         <item>软解</item>
         <item>兼容硬解</item>

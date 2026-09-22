@@ -18,6 +18,7 @@ import com.fongmi.android.tv.dlna.CastAction;
 import com.fongmi.android.tv.dlna.DLNAAvTransportImpl;
 import com.fongmi.android.tv.dlna.DLNARenderingControlImpl;
 import com.fongmi.android.tv.dlna.DLNAServiceConfiguration;
+import com.fongmi.android.tv.dlna.DlnaMulticastLock;
 import com.fongmi.android.tv.dlna.RenderState;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.setting.DlnaSetting;
@@ -60,6 +61,9 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
 
     private static Runnable pendingApply;
     private static Runnable pendingStart;
+    private static Runnable alivePulse;
+
+    private static final long ALIVE_PULSE_MS = 60_000L;
 
     public static void start(Context context) {
         if (!DlnaSetting.isEnabled()) return;
@@ -101,12 +105,27 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
             return;
         }
         try {
+            DlnaMulticastLock.acquire(this);
             upnpService.startup();
             upnpStarted = true;
             registerLocalDevice();
-        } catch (RuntimeException ignored) {
+            scheduleAlivePulse();
+        } catch (Throwable e) {
+            android.util.Log.e("DlnaRenderer", "DLNA renderer startup failed", e);
             stopSelf();
         }
+    }
+
+    private void scheduleAlivePulse() {
+        if (alivePulse != null) App.removeCallbacks(alivePulse);
+        alivePulse = new Runnable() {
+            @Override
+            public void run() {
+                republish();
+                App.post(this, ALIVE_PULSE_MS);
+            }
+        };
+        App.post(alivePulse, ALIVE_PULSE_MS);
     }
 
     private void registerLocalDevice() {
@@ -119,7 +138,13 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
         try {
             LocalDevice device = new LocalDevice(identity, type, details, new LocalService[]{avTransport, connManager, renderControl});
             upnpService.getRegistry().addDevice(device);
-        } catch (Exception ignored) {
+            android.util.Log.i("DlnaRenderer", "MediaRenderer registered udn=" + identity.getUdn()
+                    + " name=" + DlnaSetting.getDisplayName()
+                    + " iface=" + com.fongmi.android.tv.setting.DlnaSetting.resolveInterfaceName());
+        } catch (Throwable e) {
+            // Never swallow: a failed LocalDevice means zero SSDP advertisement and the TV
+            // is invisible as a DLNA renderer (only AirPlay/mDNS shows up).
+            android.util.Log.e("DlnaRenderer", "MediaRenderer registration failed", e);
         }
     }
 
@@ -127,6 +152,7 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     private LocalService<DLNAAvTransportImpl> createAvTransport() {
         avTransportImpl = new DLNAAvTransportImpl(this);
         LocalService<DLNAAvTransportImpl> service = new AnnotationLocalServiceBinder().read(DLNAAvTransportImpl.class);
+        if (service == null) throw new IllegalStateException("AVTransport LocalService null — missing @UpnpService?");
         service.setManager(new LastChangeAwareServiceManager<>(service, new AVTransportLastChangeParser()) {
             @Override
             protected DLNAAvTransportImpl createServiceInstance() {
@@ -139,6 +165,7 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     @SuppressWarnings("unchecked")
     private LocalService<ConnectionManagerService> createConnectionManager() {
         LocalService<ConnectionManagerService> service = new AnnotationLocalServiceBinder().read(ConnectionManagerService.class);
+        if (service == null) throw new IllegalStateException("ConnectionManager LocalService null");
         service.setManager(new DefaultServiceManager<>(service, ConnectionManagerService.class));
         return service;
     }
@@ -147,6 +174,7 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     private LocalService<DLNARenderingControlImpl> createRenderingControl() {
         renderingControlImpl = new DLNARenderingControlImpl(this);
         LocalService<DLNARenderingControlImpl> service = new AnnotationLocalServiceBinder().read(DLNARenderingControlImpl.class);
+        if (service == null) throw new IllegalStateException("RenderingControl LocalService null — missing @UpnpService?");
         service.setManager(new LastChangeAwareServiceManager<>(service, new RenderingControlLastChangeParser()) {
             @Override
             protected DLNARenderingControlImpl createServiceInstance() {
@@ -163,9 +191,14 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
 
     @Override
     public void onDestroy() {
+        if (alivePulse != null) {
+            App.removeCallbacks(alivePulse);
+            alivePulse = null;
+        }
         unbindPlaybackService();
         if (!upnpStarted) {
             shutdownPartiallyInitializedService();
+            DlnaMulticastLock.release();
             return;
         }
         try {
@@ -173,6 +206,8 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
             super.onDestroy();
         } catch (NullPointerException ignored) {
             shutdownPartiallyInitializedService();
+        } finally {
+            DlnaMulticastLock.release();
         }
     }
 
@@ -225,10 +260,27 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     public void setDlnaActive(boolean active) {
         isDlnaActive = active;
         if (avTransportImpl != null) avTransportImpl.setDlnaActive(active);
-        if (active) bindPlaybackService();
-        else {
+        if (active) {
+            DlnaMulticastLock.acquire(this);
+            bindPlaybackService();
+            republish();
+        } else {
             if (avTransportImpl != null) avTransportImpl.reset();
             unbindPlaybackService();
+            // Controllers drop a device after a session (byebye/cache). Re-send ssdp:alive
+            // so the next scan can see us again without restarting the whole stack.
+            republish();
+        }
+    }
+
+    /** Re-send SSDP alive for the MediaRenderer (does not recreate the UPnP stack). */
+    public void republish() {
+        if (!upnpStarted) return;
+        try {
+            upnpService.getRegistry().advertiseLocalDevices();
+            android.util.Log.i("DlnaRenderer", "republish alive isDlnaActive=" + isDlnaActive);
+        } catch (Throwable e) {
+            android.util.Log.w("DlnaRenderer", "republish failed", e);
         }
     }
 

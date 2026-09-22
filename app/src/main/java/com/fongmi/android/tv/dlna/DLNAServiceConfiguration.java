@@ -18,13 +18,22 @@ public class DLNAServiceConfiguration extends AndroidUpnpServiceConfiguration {
 
     private final boolean bindPreferredOnly;
 
+    /** jUPnP stream server port; 0 means "any free port" but some controllers ignore ephemeral LOCATIONs. */
+    private static final int DEFAULT_STREAM_PORT = 49152;
+
     public DLNAServiceConfiguration() {
         this(false);
     }
 
     public DLNAServiceConfiguration(boolean bindPreferredOnly) {
-        super(bindPreferredOnly ? DlnaSetting.getHttpPort() : 0, 0);
+        super(resolveListenPort(bindPreferredOnly), 0);
         this.bindPreferredOnly = bindPreferredOnly;
+    }
+
+    private static int resolveListenPort(boolean bindPreferredOnly) {
+        if (!bindPreferredOnly) return 0;
+        int port = DlnaSetting.getHttpPort();
+        return port > 0 ? port : DEFAULT_STREAM_PORT;
     }
 
     @Override

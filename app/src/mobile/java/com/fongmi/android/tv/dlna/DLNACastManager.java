@@ -12,7 +12,7 @@ import com.fongmi.android.tv.service.DLNACastService;
 
 import org.jupnp.android.AndroidUpnpService;
 import org.jupnp.controlpoint.ControlPoint;
-import org.jupnp.model.message.header.STAllHeader;
+import org.jupnp.model.message.header.DeviceTypeHeader;
 import org.jupnp.model.meta.RemoteDevice;
 import org.jupnp.model.meta.RemoteService;
 import org.jupnp.model.types.UDADeviceType;
@@ -70,7 +70,8 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
     }
 
     public void init(Context context) {
-        if (bound) {
+        if (bound && upnpService != null) {
+            upnpService.getRegistry().addListener(this);
             search();
         } else {
             bind(context.getApplicationContext());
@@ -78,7 +79,11 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
     }
 
     public void search() {
-        if (upnpService != null) upnpService.getControlPoint().search(new STAllHeader());
+        if (upnpService == null) return;
+        ControlPoint cp = upnpService.getControlPoint();
+        // Target MediaRenderer directly: ST_ALL waits for every device on the LAN and
+        // makes the cast dialog feel stuck before the first renderer shows up.
+        cp.search(new DeviceTypeHeader(RENDERER_TYPE));
     }
 
     public List<Device> getRegistered() {
@@ -101,6 +106,18 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
     }
 
     public void release(Context context) {
+        // Keep the UPnP stack bound across dialog dismissals. Unbinding tears down jUPnP
+        // (slow) and the next cast dialog had to rebind + re-search before any device
+        // appeared. Only drop the listener; full unbind happens on process death.
+        detachListenerOnly();
+    }
+
+    private void detachListenerOnly() {
+        if (upnpService != null) upnpService.getRegistry().removeListener(this);
+    }
+
+    /** Full teardown — used when the process is going away or the stack must restart. */
+    public void shutdown(Context context) {
         detach();
         unbind(context.getApplicationContext());
     }

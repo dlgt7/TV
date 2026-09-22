@@ -265,6 +265,9 @@
     <string name="times">times</string>
     <string name="lines">lines</string>
 
+    <string name="decode_soft">Soft</string>
+    <string name="decode_hard">Hardware</string>
+
     <string-array name="select_decode">
         <item>Soft</item>
         <item>Hard compatible</item>

@@ -467,20 +467,15 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     fun stopServer() {
+        // Heavy native teardown must not block the main thread — that is what made
+        // AirPlay disconnect feel multi-second. Flip UI state first, then destroy.
         audioRenderer.detachEngine()
-        if (nativeHandle != 0L) {
-            NativeBridge.nativeStop(nativeHandle)
-            NativeBridge.nativeDestroy(nativeHandle)
-            nativeHandle = 0L
-        }
-        dacpController?.reset()
-        nsdManager?.release()
+        val handle = nativeHandle
+        nativeHandle = 0L
+        val nsd = nsdManager
         nsdManager = null
-        wakeLock?.release()
+        val wake = wakeLock
         wakeLock = null
-        videoRenderer.release()
-        airPlayVideoPlayer.stop()
-        mediaSession?.isActive = false
         _audioOnly.value = false
         _videoPlaybackActive.value = false
         _mirroringActive.value = false
@@ -493,11 +488,28 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _durationMs.value = 0
         _serverState.value = ServerState.STOPPED
         _connectionCount.value = 0
-        _refreshDacpPlayer()
+        mediaSession?.isActive = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         foregroundStarted = false
-        stopSelf()
-        log("Server stopped")
+        lifecycleScope.launch {
+            try {
+                airPlayVideoPlayer.stop()
+                videoRenderer.release()
+                dacpController?.reset()
+                if (handle != 0L) {
+                    NativeBridge.nativeStop(handle)
+                    NativeBridge.nativeDestroy(handle)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "stopServer teardown", e)
+            } finally {
+                nsd?.release()
+                wake?.release()
+                _refreshDacpPlayer()
+                log("Server stopped")
+                stopSelf()
+            }
+        }
     }
 
     fun setVideoSurface(surface: Surface) {

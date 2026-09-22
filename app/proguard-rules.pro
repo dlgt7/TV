@@ -45,6 +45,15 @@
 -dontwarn org.jupnp.**
 -keep class org.jupnp.** { *; }
 -keep class javax.xml.** { *; }
+# AnnotationLocalServiceBinder reads @UpnpService/@UpnpAction via reflection.
+# Without keepattributes, R8 strips them and MediaRenderer never registers —
+# the TV then only appears as AirPlay (mDNS) and never as DLNA.
+-keepattributes *Annotation*
+-keepattributes InnerClasses,EnclosingMethod,Signature
+-keep class com.fongmi.android.tv.dlna.** { *; }
+-keep class * extends org.jupnp.support.avtransport.AbstractAVTransportService { *; }
+-keep class * extends org.jupnp.support.renderingcontrol.AbstractAudioRenderingControl { *; }
+-keep class org.jupnp.support.connectionmanager.ConnectionManagerService { *; }
 
 # Nano
 -keep class fi.iki.elonen.** { *; }

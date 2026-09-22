@@ -3,11 +3,19 @@ package com.fongmi.android.tv.dlna;
 import android.content.Context;
 import android.media.AudioManager;
 
+import org.jupnp.binding.annotations.UpnpService;
+import org.jupnp.binding.annotations.UpnpServiceId;
+import org.jupnp.binding.annotations.UpnpServiceType;
 import org.jupnp.model.types.UnsignedIntegerFourBytes;
 import org.jupnp.model.types.UnsignedIntegerTwoBytes;
+import org.jupnp.support.lastchange.LastChange;
 import org.jupnp.support.model.Channel;
 import org.jupnp.support.renderingcontrol.AbstractAudioRenderingControl;
 
+@UpnpService(
+        serviceId = @UpnpServiceId("RenderingControl"),
+        serviceType = @UpnpServiceType(value = "RenderingControl", version = 1),
+        stringConvertibleTypes = LastChange.class)
 public class DLNARenderingControlImpl extends AbstractAudioRenderingControl {
 
     private final Context context;

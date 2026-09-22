@@ -12,6 +12,9 @@ import com.fongmi.android.tv.service.CastConflict;
 import com.fongmi.android.tv.ui.activity.CastActivity;
 import com.google.gson.reflect.TypeToken;
 
+import org.jupnp.binding.annotations.UpnpService;
+import org.jupnp.binding.annotations.UpnpServiceId;
+import org.jupnp.binding.annotations.UpnpServiceType;
 import org.jupnp.model.types.UnsignedIntegerFourBytes;
 import org.jupnp.support.avtransport.AbstractAVTransportService;
 import org.jupnp.support.avtransport.lastchange.AVTransportVariable;
@@ -36,6 +39,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+// Explicit @UpnpService on the concrete type. stringConvertibleTypes MUST be repeated:
+// it replaces (not merges with) the inherited annotation on AbstractAVTransportService,
+// and without LastChange the binder throws "Could not detect datatype ... LastChange".
+@UpnpService(
+        serviceId = @UpnpServiceId("AVTransport"),
+        serviceType = @UpnpServiceType(value = "AVTransport", version = 1),
+        stringConvertibleTypes = org.jupnp.support.lastchange.LastChange.class)
 public class DLNAAvTransportImpl extends AbstractAVTransportService {
 
     private final Context context;

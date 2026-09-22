@@ -6,6 +6,8 @@ import org.jupnp.model.message.StreamResponseMessage;
 import org.jupnp.model.message.UpnpHeaders;
 import org.jupnp.model.message.UpnpMessage;
 import org.jupnp.model.message.UpnpRequest;
+import org.jupnp.model.message.header.HostHeader;
+import org.jupnp.model.message.header.UpnpHeader;
 import org.jupnp.protocol.ProtocolFactory;
 import org.jupnp.transport.Router;
 import org.jupnp.transport.spi.InitializationException;
@@ -32,7 +34,8 @@ import java.util.Objects;
 public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServer.Configuration> {
 
     private static final int ACCEPT_BACKLOG = 50;
-    private static final int SOCKET_TIMEOUT_MS = 30_000;
+    /** Short read timeout: stalled clients must not pin connection workers for 30s. */
+    private static final int SOCKET_TIMEOUT_MS = 8_000;
 
     private final Configuration configuration;
     private ServerSocket serverSocket;
@@ -80,7 +83,17 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
             try {
                 Socket socket = serverSocket.accept();
                 socket.setSoTimeout(SOCKET_TIMEOUT_MS);
-                router.received(new SocketUpnpStream(router.getProtocolFactory(), socket));
+                // One connection must never block accept()/the sync pool: a controller that
+                // opens a socket and stalls would make the next discovery's GET /desc hang
+                // and the device disappear from the cast list after the first session.
+                Thread worker = new Thread(() -> {
+                    try {
+                        router.received(new SocketUpnpStream(router.getProtocolFactory(), socket));
+                    } catch (Throwable ignored) {
+                    }
+                }, "dlna-http-conn");
+                worker.setDaemon(true);
+                worker.start();
             } catch (SocketException e) {
                 break;
             } catch (IOException ignored) {
@@ -164,9 +177,41 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
         }
 
         private StreamRequestMessage buildRequestMessage(String method, String rawUri, Map<String, List<String>> headers) {
-            StreamRequestMessage msg = new StreamRequestMessage(UpnpRequest.Method.getByHttpName(method), URI.create(rawUri));
+            // jUPnP Registry.getResource() REJECTS absolute URIs and matches path+query only
+            // (e.g. /dev/<udn>/desc). Keep the request-target relative.
+            String target = rawUri == null ? "/" : rawUri.trim();
+            int scheme = target.indexOf("://");
+            if (scheme > 0) {
+                int pathStart = target.indexOf('/', scheme + 3);
+                target = pathStart < 0 ? "/" : target.substring(pathStart);
+            }
+            if (target.isEmpty()) target = "/";
+            if (!target.startsWith("/")) target = "/" + target;
+            StreamRequestMessage msg = new StreamRequestMessage(UpnpRequest.Method.getByHttpName(method), URI.create(target));
             msg.setConnection(new SocketConnection(socket));
-            msg.setHeaders(new UpnpHeaders(headers));
+            UpnpHeaders upnpHeaders = new UpnpHeaders();
+            for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) continue;
+                for (String value : entry.getValue()) {
+                    if (value != null) upnpHeaders.add(entry.getKey(), value);
+                }
+            }
+            // ReceivingRetrieval requires a *typed* Host header. A raw multi-map "host"
+            // key is not always parsed into HostHeader, which yields 412 and makes every
+            // control point drop the MediaRenderer.
+            List<String> hostValues = headers.get("host");
+            String hostValue = (hostValues == null || hostValues.isEmpty()) ? null : hostValues.get(0);
+            try {
+                HostHeader hostHeader = new HostHeader();
+                hostHeader.setString(hostValue != null && !hostValue.isEmpty()
+                        ? hostValue
+                        : socket.getLocalAddress().getHostAddress() + ":" + socket.getLocalPort());
+                upnpHeaders.add(UpnpHeader.Type.HOST, hostHeader);
+            } catch (Exception e) {
+                upnpHeaders.add(UpnpHeader.Type.HOST, new HostHeader(socket.getLocalPort()));
+            }
+            msg.setHeaders(upnpHeaders);
+            android.util.Log.i("DlnaHttp", method + " " + target + " host=" + hostValue);
             return msg;
         }
 

@@ -24,6 +24,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -123,7 +124,9 @@ public class SmbClientHelper implements AutoCloseable {
 
     public List<String> listShareNames() throws IOException {
         ensureSession();
-        Set<String> found = new LinkedHashSet<>();
+        // SMB share names are case-insensitive. Probing both "share" and "Share" must
+        // not surface two rows for the same share — keep the first spelling we saw.
+        Map<String, String> found = new java.util.LinkedHashMap<>();
         String configured = cleanShare(storage.getShare());
         List<String> candidates = new ArrayList<>();
         if (!TextUtils.isEmpty(configured)) candidates.add(configured);
@@ -134,10 +137,12 @@ public class SmbClientHelper implements AutoCloseable {
         }
         for (String name : candidates) {
             if (Thread.currentThread().isInterrupted()) break;
+            String key = name.toLowerCase(Locale.US);
+            if (found.containsKey(key)) continue;
             try {
                 Share s = session.connectShare(name);
                 try {
-                    if (s instanceof DiskShare) found.add(name);
+                    if (s instanceof DiskShare) found.put(key, name);
                 } finally {
                     try {
                         s.close();
@@ -150,14 +155,14 @@ public class SmbClientHelper implements AutoCloseable {
                     String upper = msg.toUpperCase(Locale.US);
                     // Share exists but current account cannot access it.
                     if (upper.contains("STATUS_ACCESS_DENIED") || upper.contains("0xC0000022")) {
-                        found.add(name);
+                        found.put(key, name);
                     }
                 }
             }
         }
-        List<String> result = new ArrayList<>(found);
+        List<String> result = new ArrayList<>(found.values());
         Collections.sort(result, String.CASE_INSENSITIVE_ORDER);
-        Log.i(TAG, "SMB shares found count=" + result.size());
+        Log.i(TAG, "SMB shares found count=" + result.size() + " names=" + result);
         return result;
     }
 

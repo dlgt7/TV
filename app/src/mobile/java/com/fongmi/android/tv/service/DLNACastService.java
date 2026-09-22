@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.service;
 
 import com.fongmi.android.tv.dlna.DLNAServiceConfiguration;
+import com.fongmi.android.tv.dlna.DlnaMulticastLock;
 
 import org.jupnp.UpnpServiceConfiguration;
 import org.jupnp.android.AndroidUpnpServiceImpl;
@@ -12,7 +13,14 @@ public class DLNACastService extends AndroidUpnpServiceImpl {
     @Override
     public void onCreate() {
         super.onCreate();
+        DlnaMulticastLock.acquire(this);
         upnpService.startup();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        DlnaMulticastLock.release();
     }
 
     @Override

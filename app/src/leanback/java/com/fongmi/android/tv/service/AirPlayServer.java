@@ -62,6 +62,44 @@ public class AirPlayServer {
         app.stopService(new Intent(app, AirPlayService.class));
     }
 
+    /**
+     * Stop only the current AirPlay A/V session (DLNA took over the shared player).
+     * Must NOT tear down NSD / the server — that makes the TV disappear from
+     * the Apple/AirPlay picker until the service is started again.
+     */
+    public static void stopLocalSession(Context context, String reason) {
+        Context app = context.getApplicationContext();
+        if (bridged != null) {
+            try {
+                bridged.stopLocalSession(reason);
+            } catch (Exception ignored) {
+            }
+            return;
+        }
+        // Bind without BIND_AUTO_CREATE: never spawn the FGS just to stop a session.
+        ServiceConnection oneShot = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder binder) {
+                try {
+                    ((AirPlayService.LocalBinder) binder).getService().stopLocalSession(reason);
+                } catch (Exception ignored) {
+                }
+                try {
+                    app.unbindService(this);
+                } catch (Exception ignored) {
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+            }
+        };
+        try {
+            app.bindService(new Intent(app, AirPlayService.class), oneShot, 0);
+        } catch (Exception ignored) {
+        }
+    }
+
     public static void apply(Context context) {
         Context app = context.getApplicationContext();
         cancelPending();

@@ -7,9 +7,9 @@
 *.properties
 lib-*.aar
 /Release
-/docs
 release-local.keystore
 __pycache__
 .workbuddy-ai
 .workbuddy
 .pi
+*.apk

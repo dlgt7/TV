@@ -69,13 +69,15 @@ public class HomeGridView extends VerticalGridView {
         addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
             @Override
             public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
-                if (position == 0) post(HomeGridView.this::pinTopRow);
+                // Only pin after a free-scroll settles. Pinning on every D-pad selection
+                // fights Leanback's fling and makes row scrolling feel sticky.
+                if (position == 0 && !freeScroll) post(HomeGridView.this::pinTopRow);
             }
         });
         addOnScrollListener(new OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                if (newState == SCROLL_STATE_IDLE && getSelectedPosition() == 0) pinTopRow();
+                if (newState == SCROLL_STATE_IDLE && !freeScroll && getSelectedPosition() == 0) pinTopRow();
             }
         });
     }

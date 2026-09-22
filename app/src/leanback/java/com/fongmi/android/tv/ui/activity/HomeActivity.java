@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.leanback.widget.ArrayObjectAdapter;
-import androidx.leanback.widget.BaseGridView;
 import androidx.leanback.widget.FocusHighlight;
 import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
@@ -186,9 +185,8 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16, FocusHighlight.ZOOM_FACTOR_SMALL, HorizontalGridView.FOCUS_SCROLL_ALIGNED), HistoryPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
-        mBinding.recycler.setWindowAlignment(BaseGridView.WINDOW_ALIGN_NO_EDGE);
-        mBinding.recycler.setWindowAlignmentOffsetPercent(BaseGridView.WINDOW_ALIGN_OFFSET_PERCENT_DISABLED);
-        mBinding.recycler.setItemAlignmentOffsetPercent(BaseGridView.ITEM_ALIGN_OFFSET_PERCENT_DISABLED);
+        // Keep Leanback's default window/item alignment. WINDOW_ALIGN_NO_EDGE made
+        // D-pad row scrolling feel loose and janky versus earlier releases.
     }
 
     private void setViewModel() {
@@ -535,7 +533,10 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     protected void onDestroy() {
         CastNetworkWatcher.unregister(this);
-        DLNARendererService.stop(this);
+        // Keep DLNARendererService running so the TV stays discoverable after the user
+        // leaves HomeActivity. Stopping it here meant: cast once → exit/finish home →
+        // second scan finds nothing. Settings toggle still stops the service via apply().
+        if (!DlnaSetting.isEnabled()) DLNARendererService.stop(this);
         LiveConfig.get().clear();
         VodConfig.get().clear();
         BackupManager.backup();
