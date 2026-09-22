@@ -122,10 +122,20 @@ jobs:
             :lib-ui:publishToMavenLocal --stacktrace
 
       - name: Build television and mobile APKs from source
+        env:
+          # APK packaging reads large, uncompressed native libraries into the Gradle heap.
+          # The project-wide 2 GiB default is occasionally insufficient on hosted runners.
+          CI_GRADLE_JVMARGS: -Xmx4096m -Dfile.encoding=UTF-8 --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
         run: |
+          # Separate invocations prevent two 80+ MiB APK packaging workers from peaking together.
           ./gradlew \
             :app:assembleLeanback${{ matrix.flavor }}Release \
-            :app:assembleMobile${{ matrix.flavor }}Release --stacktrace --max-workers=2
+            --stacktrace --max-workers=2 --no-daemon \
+            -Dorg.gradle.jvmargs="$CI_GRADLE_JVMARGS"
+          ./gradlew \
+            :app:assembleMobile${{ matrix.flavor }}Release \
+            --stacktrace --max-workers=2 --no-daemon \
+            -Dorg.gradle.jvmargs="$CI_GRADLE_JVMARGS"
 
       - name: Verify source-built player libraries
         run: |

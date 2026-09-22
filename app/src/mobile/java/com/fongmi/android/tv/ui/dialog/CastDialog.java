@@ -238,8 +238,7 @@ public class CastDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
         super.onDestroyView();
         App.removeCallbacks(showEmpty);
         DLNACastManager.get().setDeviceListener(null);
-        // Do not tear down jUPnP here — next open reuses the bound stack and searches
-        // immediately, which is what made cast connect/disconnect feel sluggish.
+        DLNACastManager.get().release(requireContext());
         scanTask.stop();
     }
 

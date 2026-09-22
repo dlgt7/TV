@@ -18,6 +18,7 @@ import org.jupnp.transport.spi.UpnpStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -30,15 +31,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServer.Configuration> {
 
     private static final int ACCEPT_BACKLOG = 50;
+    private static final int MAX_WORKERS = 8;
+    private static final int MAX_QUEUED_CONNECTIONS = 32;
+    private static final int MAX_REQUEST_LINE_BYTES = 8 * 1024;
+    private static final int MAX_HEADER_BYTES = 32 * 1024;
+    private static final int MAX_HEADER_COUNT = 100;
+    private static final int MAX_BODY_BYTES = 1024 * 1024;
     /** Short read timeout: stalled clients must not pin connection workers for 30s. */
     private static final int SOCKET_TIMEOUT_MS = 8_000;
 
     private final Configuration configuration;
+    private final Set<Socket> activeSockets = ConcurrentHashMap.newKeySet();
     private ServerSocket serverSocket;
+    private ThreadPoolExecutor workers;
     private volatile boolean stopped;
     private Router router;
 
@@ -54,12 +69,51 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
     @Override
     public void init(InetAddress bindAddress, Router router) throws InitializationException {
         this.router = router;
+        AtomicInteger workerId = new AtomicInteger();
+        workers = new ThreadPoolExecutor(
+                MAX_WORKERS,
+                MAX_WORKERS,
+                30L,
+                TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(MAX_QUEUED_CONNECTIONS),
+                runnable -> {
+                    Thread thread = new Thread(runnable, "dlna-http-" + workerId.incrementAndGet());
+                    thread.setDaemon(true);
+                    return thread;
+                },
+                new ThreadPoolExecutor.AbortPolicy());
+        workers.allowCoreThreadTimeOut(true);
         try {
-            serverSocket = new ServerSocket();
-            serverSocket.setReuseAddress(true);
-            serverSocket.bind(new InetSocketAddress(bindAddress, configuration.getListenPort()), ACCEPT_BACKLOG);
+            serverSocket = bind(bindAddress, configuration.getListenPort());
+        } catch (BindException e) {
+            if (!configuration.fallbackToEphemeral() || configuration.getListenPort() == 0) {
+                workers.shutdownNow();
+                throw new InitializationException("Could not bind HTTP server socket on " + bindAddress, e);
+            }
+            try {
+                serverSocket = bind(bindAddress, 0);
+            } catch (IOException fallbackError) {
+                workers.shutdownNow();
+                throw new InitializationException("Could not bind fallback HTTP server socket on " + bindAddress, fallbackError);
+            }
         } catch (IOException e) {
+            workers.shutdownNow();
             throw new InitializationException("Could not bind HTTP server socket on " + bindAddress, e);
+        }
+    }
+
+    private ServerSocket bind(InetAddress address, int port) throws IOException {
+        ServerSocket socket = new ServerSocket();
+        socket.setReuseAddress(true);
+        try {
+            socket.bind(new InetSocketAddress(address, port), ACCEPT_BACKLOG);
+            return socket;
+        } catch (IOException e) {
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+            }
+            throw e;
         }
     }
 
@@ -75,6 +129,9 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
             if (serverSocket != null) serverSocket.close();
         } catch (IOException ignored) {
         }
+        for (Socket socket : activeSockets) closeQuietly(socket);
+        activeSockets.clear();
+        if (workers != null) workers.shutdownNow();
     }
 
     @Override
@@ -83,17 +140,22 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
             try {
                 Socket socket = serverSocket.accept();
                 socket.setSoTimeout(SOCKET_TIMEOUT_MS);
-                // One connection must never block accept()/the sync pool: a controller that
-                // opens a socket and stalls would make the next discovery's GET /desc hang
-                // and the device disappear from the cast list after the first session.
-                Thread worker = new Thread(() -> {
-                    try {
-                        router.received(new SocketUpnpStream(router.getProtocolFactory(), socket));
-                    } catch (Throwable ignored) {
-                    }
-                }, "dlna-http-conn");
-                worker.setDaemon(true);
-                worker.start();
+                activeSockets.add(socket);
+                // A bounded pool prevents stalled or hostile LAN clients from creating an
+                // unbounded number of threads while still allowing independent SOAP calls.
+                try {
+                    workers.execute(() -> {
+                        try {
+                            router.received(new SocketUpnpStream(router.getProtocolFactory(), socket, () -> activeSockets.remove(socket)));
+                        } catch (RuntimeException e) {
+                            activeSockets.remove(socket);
+                            closeQuietly(socket);
+                        }
+                    });
+                } catch (RuntimeException rejected) {
+                    activeSockets.remove(socket);
+                    closeQuietly(socket);
+                }
             } catch (SocketException e) {
                 break;
             } catch (IOException ignored) {
@@ -101,16 +163,25 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
         }
     }
 
+    private static void closeQuietly(Socket socket) {
+        try {
+            socket.close();
+        } catch (IOException ignored) {
+        }
+    }
+
     private static class SocketUpnpStream extends UpnpStream {
 
         private final Socket socket;
+        private final Runnable onClosed;
 
-        SocketUpnpStream(ProtocolFactory protocolFactory, Socket socket) {
+        SocketUpnpStream(ProtocolFactory protocolFactory, Socket socket, Runnable onClosed) {
             super(protocolFactory);
             this.socket = socket;
+            this.onClosed = onClosed;
         }
 
-        private String readLine(InputStream is) throws IOException {
+        private String readLine(InputStream is, int maxBytes) throws IOException {
             StringBuilder sb = new StringBuilder();
             int prev = -1;
             int b;
@@ -119,6 +190,7 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
                     sb.deleteCharAt(sb.length() - 1);
                     return sb.toString();
                 }
+                if (sb.length() >= maxBytes) throw new IOException("HTTP line too long");
                 sb.append((char) b);
                 prev = b;
             }
@@ -141,7 +213,7 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
         public void run() {
             try {
                 InputStream is = socket.getInputStream();
-                String requestLine = readLine(is);
+                String requestLine = readLine(is, MAX_REQUEST_LINE_BYTES);
                 String[] parts = requestLine.split(" ", 3);
                 if (requestLine.isEmpty() || parts.length < 2) {
                     socket.close();
@@ -158,19 +230,21 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
             } catch (Exception e) {
                 responseException(e);
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException ignored) {
-                }
+                closeQuietly(socket);
+                onClosed.run();
             }
         }
 
         private Map<String, List<String>> readHeaders(InputStream is) throws IOException {
             Map<String, List<String>> headers = new HashMap<>();
+            int totalBytes = 0;
+            int count = 0;
             String line;
-            while (!(line = readLine(is)).isEmpty()) {
+            while (!(line = readLine(is, MAX_HEADER_BYTES)).isEmpty()) {
+                totalBytes += line.length();
+                if (totalBytes > MAX_HEADER_BYTES || ++count > MAX_HEADER_COUNT) throw new IOException("HTTP headers too large");
                 int colon = line.indexOf(':');
-                if (colon < 0) continue;
+                if (colon <= 0) continue;
                 headers.computeIfAbsent(line.substring(0, colon).trim().toLowerCase(), k -> new ArrayList<>()).add(line.substring(colon + 1).trim());
             }
             return headers;
@@ -191,7 +265,7 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
             msg.setConnection(new SocketConnection(socket));
             UpnpHeaders upnpHeaders = new UpnpHeaders();
             for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
-                if (entry.getKey() == null || entry.getValue() == null) continue;
+                if (entry.getKey() == null || entry.getValue() == null || "host".equals(entry.getKey())) continue;
                 for (String value : entry.getValue()) {
                     if (value != null) upnpHeaders.add(entry.getKey(), value);
                 }
@@ -211,15 +285,16 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
                 upnpHeaders.add(UpnpHeader.Type.HOST, new HostHeader(socket.getLocalPort()));
             }
             msg.setHeaders(upnpHeaders);
-            android.util.Log.i("DlnaHttp", method + " " + target + " host=" + hostValue);
             return msg;
         }
 
         private void readBodyInto(InputStream is, StreamRequestMessage msg, Map<String, List<String>> headers) throws IOException {
             List<String> length = headers.getOrDefault("content-length", List.of());
             if (length == null || length.isEmpty()) return;
-            int len = Integer.parseInt(length.get(0).trim());
-            if (len <= 0) return;
+            long declared = Long.parseLong(length.get(0).trim());
+            if (declared <= 0) return;
+            if (declared > MAX_BODY_BYTES) throw new IOException("HTTP body too large");
+            int len = (int) declared;
             byte[] body = new byte[len];
             int offset = 0, read;
             while (offset < len && (read = is.read(body, offset, len - offset)) != -1) offset += read;
@@ -237,7 +312,7 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
             }
             writeStatusLine(os, msg.getOperation().getStatusCode(), msg.getOperation().getStatusMessage());
             for (Map.Entry<String, List<String>> e : msg.getHeaders().entrySet()) {
-                if (e.getKey() == null) continue;
+                if (e.getKey() == null || "content-length".equalsIgnoreCase(e.getKey())) continue;
                 for (String v : e.getValue()) writeHeader(os, e.getKey(), v);
             }
             byte[] body = msg.hasBody() ? msg.getBodyBytes() : null;
@@ -265,7 +340,7 @@ public class SocketHttpStreamServer implements StreamServer<SocketHttpStreamServ
         }
     }
 
-    public record Configuration(int listenPort) implements StreamServerConfiguration {
+    public record Configuration(int listenPort, boolean fallbackToEphemeral) implements StreamServerConfiguration {
 
         @Override
         public int getListenPort() {

@@ -52,11 +52,15 @@ import java.net.NetworkInterface
 import java.security.SecureRandom
 import java.util.Collections
 import kotlin.math.abs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class VideoPlaybackInfo(
     val positionMs: Long = 0,
@@ -73,6 +77,11 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private var nsdManager: NsdServiceManager? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var foregroundStarted = false
+    private val teardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var teardownRunning = false
+    private var outputsReleased = false
+    private var pendingStart: Pair<String, Boolean>? = null
+    private var destroying = false
 
     val videoRenderer = VideoRenderer()
     val audioRenderer = AudioRenderer()
@@ -321,10 +330,11 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         when (intent?.action) {
             ACTION_STOP_SERVER -> {
                 stopServer()
-                stopSelf(startId)
                 return START_NOT_STICKY
             }
-            ACTION_START_SERVER -> {
+            ACTION_START_SERVER, null -> {
+                // START_STICKY restarts are delivered with a null intent. Recreate the native
+                // server instead of leaving only an empty foreground notification alive.
                 if (!prefs.getBoolean(Prefs.SERVER_ENABLED, Prefs.DEF_SERVER_ENABLED)) {
                     stopServer()
                     stopSelf(startId)
@@ -332,6 +342,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
                 }
                 val name = prefs.getString(Prefs.SERVER_NAME, Prefs.DEF_SERVER_NAME) ?: Prefs.DEF_SERVER_NAME
                 startServer(name, ensureServiceStarted = false)
+                if (teardownRunning) return START_STICKY
                 if (_serverState.value != ServerState.RUNNING) {
                     stopSelf(startId)
                     return START_NOT_STICKY
@@ -346,7 +357,14 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     private fun startServer(name: String, ensureServiceStarted: Boolean) {
+        if (teardownRunning) {
+            // Native UxPlay state is process-global. Never create a new handle until the old
+            // one has completed nativeStop/nativeDestroy.
+            pendingStart = name to ensureServiceStarted
+            return
+        }
         if (_serverState.value == ServerState.RUNNING) return
+        outputsReleased = false
         val effectiveName = name.ifBlank { Prefs.DEF_SERVER_NAME }
 
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -467,9 +485,23 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     fun stopServer() {
-        // Heavy native teardown must not block the main thread — that is what made
-        // AirPlay disconnect feel multi-second. Flip UI state first, then destroy.
-        audioRenderer.detachEngine()
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            Handler(Looper.getMainLooper()).post(::stopServer)
+            return
+        }
+        if (teardownRunning) return
+        if (destroying && outputsReleased && nativeHandle == 0L && nsdManager == null && wakeLock == null) return
+
+        // Flip visible state and release Java players on the main looper, but move the slow
+        // process-global native stop/destroy off it. startServer queues while this is active.
+        teardownRunning = true
+        if (!outputsReleased) {
+            audioRenderer.detachEngine()
+            airPlayVideoPlayer.stop()
+            videoRenderer.release()
+            dacpController?.reset()
+            outputsReleased = true
+        }
         val handle = nativeHandle
         nativeHandle = 0L
         val nsd = nsdManager
@@ -491,23 +523,26 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         mediaSession?.isActive = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         foregroundStarted = false
-        lifecycleScope.launch {
+        teardownScope.launch {
             try {
-                airPlayVideoPlayer.stop()
-                videoRenderer.release()
-                dacpController?.reset()
-                if (handle != 0L) {
-                    NativeBridge.nativeStop(handle)
-                    NativeBridge.nativeDestroy(handle)
+                withContext(Dispatchers.IO) {
+                    if (handle != 0L) {
+                        NativeBridge.nativeStop(handle)
+                        NativeBridge.nativeDestroy(handle)
+                    }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "stopServer teardown", e)
             } finally {
                 nsd?.release()
                 wake?.release()
-                _refreshDacpPlayer()
+                teardownRunning = false
+                if (!destroying) _refreshDacpPlayer()
                 log("Server stopped")
-                stopSelf()
+                val restart = if (destroying) null else pendingStart
+                pendingStart = null
+                if (restart != null) startServer(restart.first, restart.second)
+                else if (!destroying) stopSelf()
             }
         }
     }
@@ -604,6 +639,8 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     override fun onDestroy() {
+        destroying = true
+        pendingStart = null
         stopServer()
         dacpPlayer.release()
         mediaReceiver?.let {

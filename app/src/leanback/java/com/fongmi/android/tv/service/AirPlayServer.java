@@ -59,7 +59,9 @@ public class AirPlayServer {
     public static void stop(Context context) {
         Context app = context.getApplicationContext();
         unbindBridge(app);
-        app.stopService(new Intent(app, AirPlayService.class));
+        // Let the service complete nativeStop/nativeDestroy before it stops itself. Calling
+        // stopService() destroys LifecycleService immediately and can cancel async teardown.
+        ContextCompat.startForegroundService(app, new Intent(app, AirPlayService.class).setAction(AirPlayService.ACTION_STOP_SERVER));
     }
 
     /**

@@ -27,10 +27,17 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
 
     private static final UDADeviceType RENDERER_TYPE = new UDADeviceType("MediaRenderer", 1);
     private static final UDAServiceType AVT_TYPE = new UDAServiceType("AVTransport", 1);
+    private static final long IDLE_SHUTDOWN_MS = 60_000L;
 
     private AndroidUpnpService upnpService;
     private DeviceListener deviceListener;
+    private Context appContext;
     private boolean bound;
+
+    private final Runnable idleShutdown = () -> {
+        Context context = appContext;
+        if (context != null && deviceListener == null) shutdown(context);
+    };
 
     public static DLNACastManager get() {
         return Loader.INSTANCE;
@@ -70,12 +77,19 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
     }
 
     public void init(Context context) {
-        if (bound && upnpService != null) {
-            upnpService.getRegistry().addListener(this);
-            search();
-        } else {
-            bind(context.getApplicationContext());
+        appContext = context.getApplicationContext();
+        App.removeCallbacks(idleShutdown);
+        if (bound) {
+            // A disconnected binding is automatically reconnected by Android. Calling
+            // bindService again here would add another binding reference and leak the stack.
+            if (upnpService != null) {
+                upnpService.getRegistry().removeListener(this);
+                upnpService.getRegistry().addListener(this);
+                search();
+            }
+            return;
         }
+        bind(appContext);
     }
 
     public void search() {
@@ -106,10 +120,12 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
     }
 
     public void release(Context context) {
-        // Keep the UPnP stack bound across dialog dismissals. Unbinding tears down jUPnP
-        // (slow) and the next cast dialog had to rebind + re-search before any device
-        // appeared. Only drop the listener; full unbind happens on process death.
+        // Reuse the warm registry for quick reopen, but do not retain a service and Wi-Fi
+        // multicast lock for the rest of the process after one visit to the cast dialog.
+        appContext = context.getApplicationContext();
         detachListenerOnly();
+        App.removeCallbacks(idleShutdown);
+        App.post(idleShutdown, IDLE_SHUTDOWN_MS);
     }
 
     private void detachListenerOnly() {
@@ -118,8 +134,10 @@ public class DLNACastManager extends DefaultRegistryListener implements ServiceC
 
     /** Full teardown — used when the process is going away or the stack must restart. */
     public void shutdown(Context context) {
+        App.removeCallbacks(idleShutdown);
         detach();
         unbind(context.getApplicationContext());
+        appContext = null;
     }
 
     private void bind(Context context) {

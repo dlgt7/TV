@@ -35,6 +35,7 @@ import com.fongmi.android.tv.player.subtitle.ExternalFont;
 import com.fongmi.android.tv.player.subtitle.SecondarySubtitleTimeline;
 import com.fongmi.android.tv.player.util.PngTsUnwrap;
 import com.fongmi.android.tv.setting.AudioSetting;
+import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.SubtitleSetting;
 import com.fongmi.android.tv.setting.VideoSetting;
 import com.fongmi.android.tv.ui.activity.VideoActivity;
@@ -83,6 +84,7 @@ public final class SelfCheckActivity extends Activity {
         checkRetryBackoff();
         checkPlaybackCapabilities();
         checkEngineRoutingAndCacheIsolation();
+        checkPlayerSettingBounds();
         checkSafeLocalPath();
         checkActionResult();
         checkLineQuality();
@@ -195,6 +197,30 @@ public final class SelfCheckActivity extends Activity {
         expect("cache_authorization_sensitive", MediaSourceFactory.hasSensitiveHeaders(Map.of("Authorization", "Bearer test")), true);
         expect("cache_cookie_sensitive", MediaSourceFactory.hasSensitiveHeaders(Map.of("Cookie", "sid=test")), true);
         expect("cache_referer_allowed", MediaSourceFactory.hasSensitiveHeaders(Map.of("Referer", "https://example.test/")), false);
+    }
+
+    private void checkPlayerSettingBounds() {
+        int buffer = PlayerSetting.getBuffer();
+        int http = PlayerSetting.getHttp();
+        int latency = PlayerSetting.getLiveLatency();
+        try {
+            PlayerSetting.putBuffer(-10);
+            expect("setting_buffer_min", PlayerSetting.getBuffer(), 1);
+            PlayerSetting.putBuffer(100);
+            expect("setting_buffer_max", PlayerSetting.getBuffer(), 15);
+            PlayerSetting.putHttp(-1);
+            expect("setting_http_min", PlayerSetting.getHttp(), 0);
+            PlayerSetting.putHttp(9);
+            expect("setting_http_max", PlayerSetting.getHttp(), 1);
+            PlayerSetting.putLiveLatency(-1);
+            expect("setting_latency_min", PlayerSetting.getLiveLatency(), PlayerSetting.LIVE_LATENCY_SMOOTH);
+            PlayerSetting.putLiveLatency(9);
+            expect("setting_latency_max", PlayerSetting.getLiveLatency(), PlayerSetting.LIVE_LATENCY_LOW);
+        } finally {
+            PlayerSetting.putBuffer(buffer);
+            PlayerSetting.putHttp(http);
+            PlayerSetting.putLiveLatency(latency);
+        }
     }
 
     private void checkSafeLocalPath() {

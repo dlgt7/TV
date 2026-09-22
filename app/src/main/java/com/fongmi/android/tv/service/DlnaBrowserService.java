@@ -19,7 +19,7 @@ public class DlnaBrowserService extends AndroidUpnpServiceImpl {
         // startup(). Binding first leaves getRouter() null; registry/control point still look
         // usable, so clients proceed and later onDestroy() crashes. Always start here.
         try {
-            com.fongmi.android.tv.dlna.DlnaMulticastLock.acquire(this);
+            com.fongmi.android.tv.dlna.DlnaMulticastLock.acquire(this, this);
             upnpService.startup();
             upnpStarted = true;
         } catch (RuntimeException ignored) {
@@ -31,7 +31,7 @@ public class DlnaBrowserService extends AndroidUpnpServiceImpl {
     public void onDestroy() {
         if (!upnpStarted) {
             shutdownPartiallyInitializedService();
-            com.fongmi.android.tv.dlna.DlnaMulticastLock.release();
+            com.fongmi.android.tv.dlna.DlnaMulticastLock.release(this);
             return;
         }
         try {
@@ -41,7 +41,7 @@ public class DlnaBrowserService extends AndroidUpnpServiceImpl {
         } catch (NullPointerException ignored) {
             shutdownPartiallyInitializedService();
         } finally {
-            com.fongmi.android.tv.dlna.DlnaMulticastLock.release();
+            com.fongmi.android.tv.dlna.DlnaMulticastLock.release(this);
         }
     }
 

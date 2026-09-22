@@ -53,7 +53,8 @@ public class DLNAServiceConfiguration extends AndroidUpnpServiceConfiguration {
     @Override
     @SuppressWarnings("rawtypes")
     public StreamServer createStreamServer(NetworkAddressFactory networkAddressFactory) {
-        return new SocketHttpStreamServer(new SocketHttpStreamServer.Configuration(networkAddressFactory.getStreamListenPort()));
+        boolean fallbackToEphemeral = bindPreferredOnly && DlnaSetting.getHttpPort() == 0;
+        return new SocketHttpStreamServer(new SocketHttpStreamServer.Configuration(networkAddressFactory.getStreamListenPort(), fallbackToEphemeral));
     }
 
     @Override

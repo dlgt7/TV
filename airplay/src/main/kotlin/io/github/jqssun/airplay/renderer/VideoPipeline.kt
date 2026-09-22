@@ -250,8 +250,18 @@ class VideoPipeline {
             EGL14.eglTerminate(eglDisplay)
         }
         eglDisplay = EGL14.EGL_NO_DISPLAY
+        eglContext = EGL14.EGL_NO_CONTEXT
+        eglConfig = null
         window = EGL14.EGL_NO_SURFACE
         pbuffer = EGL14.EGL_NO_SURFACE
+        pendingDisplay = null
+        displayDirty = false
+        frameAvailable = false
+        hasFrame = false
+        oesTex = 0
+        program = 0
+        winW = 0
+        winH = 0
     }
 
     companion object {

@@ -62,6 +62,16 @@ public final class CastNetworkWatcher {
         }
     }
 
+    /**
+     * Keep the process-wide callback while any cast/discovery feature is enabled. The DLNA
+     * renderer outlives HomeActivity, so tying this callback to that Activity leaves the
+     * persistent service bound to a stale interface after Wi-Fi/Ethernet changes.
+     */
+    public static synchronized void unregisterIfUnused(Context context) {
+        if (DlnaSetting.isEnabled() || AirPlaySetting.isEnabled() || Setting.isDlnaLibrary()) return;
+        unregister(context);
+    }
+
     public static synchronized void unregister(Context context) {
         if (callback == null) return;
         HANDLER.removeCallbacks(APPLY);
@@ -70,7 +80,7 @@ public final class CastNetworkWatcher {
         if (cm != null) {
             try {
                 cm.unregisterNetworkCallback(callback);
-            } catch (Exception ignored) {
+            } catch (RuntimeException ignored) {
             }
         }
         callback = null;

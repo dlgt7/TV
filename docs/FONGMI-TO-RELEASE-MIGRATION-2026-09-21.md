@@ -1,9 +1,12 @@
 # fongmi → release 功能与播放器优化迁移方案
 
-日期：2026-09-21  
-目标分支：`release`  
+日期：2026-09-21（最后复核：2026-09-23）
+
+目标分支：`release`
+
 供体分支：`origin/fongmi`（`bdecc5c223062f436df692b827de451ece37167a`）
-状态：**36 项提交已逐项处置；最新优化批次正在重新构建和设备回归，网络协议与投屏端到端回归待完成**
+
+状态：**36 项提交已逐项处置；生命周期加固已通过 ARM64 构建和双设备自检，真实网络协议与投屏媒体端到端回归待完成**
 
 ## 1. 结论
 
@@ -21,7 +24,7 @@
 | 项目 | 值 |
 |---|---|
 | 共同祖先 | `96c33f3a7bc62b4a34fc64854fab50c5a5ae3153` |
-| `release` 已推送基线 | `7433602ca68e51da271910f1058ba4bc1b63f65d` |
+| `release` 审计起点（已推送） | `db5c4c489292228f26d7615012bec60a7c7fae12`（`v5.5.6-source.8`） |
 | `origin/fongmi` 头 | `bdecc5c223062f436df692b827de451ece37167a` |
 | 非供体分支 | `upstream/fongmi`（另一条 179 提交历史，不纳入本次处置） |
 | GitHub 比较状态 | `diverged` |
@@ -323,20 +326,20 @@ git push origin --delete fongmi
 
 ## 9. 当前验证状态
 
-截至 2026-09-22：
+截至 2026-09-23：
 
 - 已按上表完成 36 个 `origin/fongmi` 独有提交的逐 SHA 处置，并以 `release` 为唯一基线完成语义迁移。
 - 已迁移并加固 SMB/WebDAV、DLNA 媒体库、AirPlay、投屏冲突管理与网络重绑定；凭据采用 Android Keystore/AES-GCM，危险 HTTP/SMB 降级需要显式授权。
 - AirPlay ARM64 原生库已用 NDK 29、OpenSSL 3.4.4 固定 SHA-256 构建；Leanback release APK 已确认包含可加载的 ARM64 `libairplay_native.so`。
 - 修复了两个仅在 release/R8 下暴露的问题：JNI 回调被混淆，以及 app 使用旧 NDK strip 工具导致 NDK 29 `libc++_shared.so` 无法加载。
-- 最新优化头 `9a89e678b` 已重新通过全部四个 ARM64 任务：
+- 历史优化头 `9a89e678b` 曾通过全部四个 ARM64 任务；最新工作树的对应结果见 9.1：
   - `assembleMobileArm64_v8aDebug`
   - `assembleLeanbackArm64_v8aDebug`
   - `assembleMobileArm64_v8aRelease`
   - `assembleLeanbackArm64_v8aRelease`
   - release 构建同时通过 R8、资源压缩、签名校验和 `lintVital`。
 - ARM64 libmpv 已从源码重建；原始及 APK 内 `libmpv.so` 均声明 `NEEDED libvulkan.so` 且包含 `VK_KHR_surface`，MPV 与 libplacebo Meson 日志均为 `Run-time dependency vulkan found: YES`。构建缓存使用逐 ABI revision marker，防止 ARMv7 误复用 ARM64 结果。
-- 手机（API 36）与 TV（API 32）在同一最新 debug 头上均通过 `SelfCheckActivity: passed=108 failed=0`；新增覆盖 action refresh、线路质量哈希存储及 PNG-TS 检测/解包。
+- 2026-09-23 的最新工作树在手机（API 36）与 TV（API 32）均通过 `SelfCheckActivity: passed=122 failed=0`；在原有 action refresh、线路质量及 PNG-TS 覆盖外，新增播放器 buffer、HTTP 实现及直播延迟设置边界检查。
 - 手机和 TV 最新 release APK 均安装并冷启动成功，无 fatal/`UnsatisfiedLinkError`；TV 上 AirPlay 监听 7000，`_raop._tcp` 与 `_airplay._tcp` 均注册成功。
 - 首页“媒体库”崩溃已定位为 UPnP service binder 已连接但 registry/control point 尚未就绪。`DlnaMediaManager` 现进行空安全延迟 attach，并在搜索/枚举/解绑路径保护未就绪状态；TV debug 与 release 均实测进入 `DlnaServerActivity` 并保持 resumed，无崩溃。
 - 打开媒体库后关闭 App 的崩溃已定位：jUPnP 3.0.4 `AndroidUpnpServiceImpl` 只构造 `UpnpServiceImpl`，未自动调用 `startup()`；router 为 null 时父类 `onDestroy()` 会在 `AndroidRouter.unregisterBroadcastReceiver()` 空指针。当前修复由 `DlnaBrowserService.onCreate()` 同步启动 UPnP，并以 `upnpStarted` 区分完整/部分初始化；只有该已知空指针走手动 registry/config/router 清理，不再用 `catch (Throwable)` 隐藏 VM 错误。`DLNARendererService` 对“设置关闭后 startup 前 stopSelf”及启动失败采用同一策略。
@@ -346,9 +349,32 @@ git push origin --delete fongmi
 - 其他修复：MPV stop 取消延迟 END_FILE 错误、READY 取消 Exo 延迟重试、音频焦点恢复保留 volume gain、黑屏 watchdog 跳过纯音频、绝对本地路径仅允许位于共享存储根内；`PlayerSetting` 增加 buffer/http/liveLatency，缓冲设置同时接入 Exo 与 MPV；引入 `scripts/release_playback_regress.sh`。
 - 本轮 TV 回归（leanback arm64 debug）：`SelfCheckActivity` 108/108；`MpvSmokeActivity` HLS `RENDERED_FIRST_FRAME`，`c2.rk.avc.decoder` + `Using hardware decoding (mediacodec)`；`ExoSmokeActivity` DASH `RESULT ok=true` decoder=`c2.rk.avc.decoder`；媒体库进入后 force-stop 无 crash。
 - 设置页已补「缓冲时间 / HTTP 方式 / 直播延迟」双端入口，并接入 Exo `DefaultLoadControl` 与 MPV demuxer 缓存。
-- `Path.resolveUnderRoot`、`Local` 路径校验、`FileUtil.copyAtomically` 与根目录 `LICENSE` 已齐备。
+- `Path.resolveUnderRoot`、`Local` 路径校验与 `FileUtil.copyAtomically` 已齐备。根目录 `LICENSE` 当前仅存在于本地未跟踪工作树，不能作为已发布源码树的合规证据，发布前需由维护者确认是否纳入版本控制。
 
-## 10. 运行问题分析（2026-09-22，待改代码）
+### 9.1 2026-09-23 生命周期、并发与体积复核
+
+本轮针对 `v5.5.6-source.8` 之后的工作树完成以下修复与验证：
+
+- `DlnaMulticastLock` 改为 owner-aware 共享持有，浏览器、Renderer 和移动端 DMC 不再相互提前释放同一把非引用计数锁。
+- Leanback Renderer 使用前台 `START_STICKY` 服务承载，网络监听跟随服务寿命而非 `HomeActivity`；空闲安全广播由每分钟降为每五分钟，减少 TV 待机唤醒。
+- 移动端 DMC 在投屏弹窗关闭后保留 60 秒热连接，再解绑并关闭 jUPnP；启动失败和部分初始化均走显式清理；service 暂时断连时等待 Android 自动重连，不再重复 `bindService()` 增加绑定引用。
+- 自定义 DLNA HTTP server 改为最多 8 worker、32 排队的有界执行器；限制 8 KiB 请求行、32 KiB/100 个 header 和 1 MiB body，跟踪活动 socket，停止时主动关闭；默认端口冲突时回退到系统分配端口。
+- AirPlay native stop/destroy 在专用串行 IO scope 执行，快速 stop/start 不再阻塞主线程或与销毁竞态；视频 pipeline/renderer 在 release 后重置 EGL、surface 和时间戳状态。TV 上连续 stop/start 后 7000 端口恢复监听；进程被强制终止后，`START_STICKY` 的 null-intent 重启可重新建立 AirPlay 7000 与 DLNA 49152 监听，无 fatal/ANR。
+- SMB release 日志不再输出 share 名；DLNA ProGuard keep 范围缩小到 jUPnP 反射需要的类型。
+- ARM64 mobile/Leanback 的 debug/release 四个任务均构建成功；release 同时通过 R8、资源压缩、签名和 `lintVital`。TV 上 Renderer 为前台服务，49152 端口可响应；超长 header 和超大 body 被断开后，服务仍可继续处理请求。
+- GitHub Actions `35752814712` 的 ARMv7 job 成功；ARM64 job 在 APK 打包阶段因 2 GiB Gradle heap OOM 失败，而非源码或 native 编译失败。workflow 已改为 4 GiB heap，并将 TV/mobile 拆为两个无 daemon 的串行 invocation，避免两个 80+ MiB APK 同时达到内存峰值；此修改仍需下一次 CI 运行确认。
+- APK 体积复核显示主要占用来自 libmpv/FFmpeg、Chaquopy/Python、迅雷 native 和 Leanback AirPlay/OpenSSL。曾实测 OpenSSL 静态链接，仅净减约 0.4 MiB 且扩大单个 JNI 库、增加回归面，因此已撤回；未为追求小幅数字删除解码器或协议能力。
+
+最新本地验证产物（仅用于本轮审计，不纳入版本控制）：
+
+```text
+review-mobile-arm64-debug.apk      95741087  sha256 28787065e96ca5a09034c964a72c5a688f71d52e4e2893c9292c6bc99e47f6ca
+review-leanback-arm64-debug.apk   125542956  sha256 12fca6205f134733ca533b547f5a89097832bcddf0b61fa6703d5806ca0059ac
+review-mobile-arm64-release.apk    81623180  sha256 d540c23a510ca674c842a918c61d79770848110b815932d84f09c0de82bd2a6a
+review-leanback-arm64-release.apk  90416031  sha256 c52ec02873041a6d672ef221c99062c09d711733e42d0f97760e6c209efd1e37
+```
+
+## 10. 运行问题分析（2026-09-22，持续更新）
 
 ### 10.1 SMB 加 1 个出现 2 个文件夹
 
@@ -384,10 +410,10 @@ git push origin --delete fongmi
 计划对齐 fongmi `dca422818`：`BackupManager` 原子替换、恢复失败回滚、UI 状态反馈。
 - TV 本地 server 的 `/locale` 返回 `zh-CN`；无效 `/tsraw` session 返回 `404 session expired`，不会形成匿名开放代理。
 - OkHttp 默认重定向实现会在跨 origin 时移除 `Authorization`；播放器使用同一 OkHttp 重定向链，未增加会跨 origin 重注入该请求头的自定义逻辑。
-- 尚未完成：真实 SMB/WebDAV 服务器、DLNA DMC/DMR/ContentDirectory、AirPlay 音频/视频/镜像/PIN/断连/换网的完整全链路回归，以及 ARMv7 构建；x86_64 已按项目基线移除，不再作为合入门禁。
+- 尚未完成：真实 SMB/WebDAV 服务器、DLNA DMC/DMR/ContentDirectory、AirPlay 音频/视频/镜像/PIN/断连/换网的完整全链路回归。ARMv7 已在 CI `35752814712` 构建成功；x86_64 已按项目基线移除，不再作为合入门禁。
 - 尚未删除 `origin/fongmi`；必须等上述协议回归后再合并 `release` 并删除远端供体分支。
 
-以下 APK 是 `9a89e678b` 的上一轮已验证产物，**不包含本节后续的 DLNA shutdown、场景化缓存和 header 隔离修复**；新批次完成构建/设备回归后必须替换：
+以下 APK 是历史 `9a89e678b` 批次，仅保留作体积和回归对照；当前验证应以上文 9.1 的 `review-*` 产物为准：
 
 ```text
 app-mobile-fongmi-port-debug.apk    178534457  sha256 fa876b3eaf810a899da7a49b7e170c0a4631e92ba3f25ddac515c3c4ceca8241

@@ -12,6 +12,7 @@ set(UXPLAY_LIB third_party/UxPlay/lib)
 # ---------- OpenSSL (built from source via openssl-cmake) ----------
 set(BUILD_OPENSSL ON CACHE BOOL "" FORCE)
 set(OPENSSL_BUILD_VERSION "3.4.4" CACHE STRING "" FORCE)
+set(OPENSSL_USE_STATIC_LIBS OFF CACHE BOOL "" FORCE)
 set(CROSS_ANDROID ON CACHE BOOL "" FORCE)
 string(REGEX MATCH "[0-9]+" AIRPLAY_ANDROID_API "${ANDROID_PLATFORM}")
 set(OPENSSL_PARAMS "-D__ANDROID_API__=${AIRPLAY_ANDROID_API}" CACHE STRING "" FORCE)
@@ -59,7 +60,7 @@ add_library(plist STATIC
     ${PLIST_SRC}/ptrarray.c
     ${PLIST_SRC}/time64.c
     ${PLIST_SRC}/xplist.c
-    ${PLIST_CNARY}/cnary.c
+    # libcnary/cnary.c is a standalone demo containing main(), not library code.
     ${PLIST_CNARY}/node.c
     ${PLIST_CNARY}/node_list.c
 )

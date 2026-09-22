@@ -50,7 +50,8 @@
 # the TV then only appears as AirPlay (mDNS) and never as DLNA.
 -keepattributes *Annotation*
 -keepattributes InnerClasses,EnclosingMethod,Signature
--keep class com.fongmi.android.tv.dlna.** { *; }
+-keep,allowoptimization class com.fongmi.android.tv.dlna.DLNAAvTransportImpl { *; }
+-keep,allowoptimization class com.fongmi.android.tv.dlna.DLNARenderingControlImpl { *; }
 -keep class * extends org.jupnp.support.avtransport.AbstractAVTransportService { *; }
 -keep class * extends org.jupnp.support.renderingcontrol.AbstractAudioRenderingControl { *; }
 -keep class org.jupnp.support.connectionmanager.ConnectionManagerService { *; }

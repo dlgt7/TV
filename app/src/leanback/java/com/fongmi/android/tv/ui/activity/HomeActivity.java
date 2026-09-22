@@ -532,7 +532,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     protected void onDestroy() {
-        CastNetworkWatcher.unregister(this);
+        CastNetworkWatcher.unregisterIfUnused(this);
         // Keep DLNARendererService running so the TV stays discoverable after the user
         // leaves HomeActivity. Stopping it here meant: cast once → exit/finish home →
         // second scan finds nothing. Settings toggle still stops the service via apply().

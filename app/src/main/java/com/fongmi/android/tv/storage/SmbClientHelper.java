@@ -162,7 +162,7 @@ public class SmbClientHelper implements AutoCloseable {
         }
         List<String> result = new ArrayList<>(found.values());
         Collections.sort(result, String.CASE_INSENSITIVE_ORDER);
-        Log.i(TAG, "SMB shares found count=" + result.size() + " names=" + result);
+        Log.i(TAG, "SMB shares found count=" + result.size());
         return result;
     }
 
