@@ -47,6 +47,7 @@ public final class SubtitleSearchDialog extends BaseBottomSheetDialog implements
     private PlayerManager player;
     private String keyword;
     private int nextPos;
+    private boolean secondary;
 
     public SubtitleSearchDialog() {
         this.states = new ArrayDeque<>();
@@ -60,6 +61,11 @@ public final class SubtitleSearchDialog extends BaseBottomSheetDialog implements
 
     public SubtitleSearchDialog player(PlayerManager player) {
         this.player = player;
+        return this;
+    }
+
+    public SubtitleSearchDialog secondary(boolean secondary) {
+        this.secondary = secondary;
         return this;
     }
 
@@ -172,7 +178,8 @@ public final class SubtitleSearchDialog extends BaseBottomSheetDialog implements
     }
 
     private void applySub(Sub sub) {
-        player.setSub(sub);
+        if (secondary) player.setSecondarySub(sub);
+        else player.setSub(sub);
         dismiss();
     }
 

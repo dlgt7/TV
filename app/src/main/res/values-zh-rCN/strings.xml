@@ -171,6 +171,10 @@
     <string name="player_preload_size">预载容量</string>
     <string name="player_preload_time">预载时间</string>
     <string name="player_preload_time_value">%1$d 秒</string>
+    <string name="player_buffer">缓冲时间</string>
+    <string name="player_buffer_value">%1$d 秒</string>
+    <string name="player_http">HTTP 方式</string>
+    <string name="player_live_latency">直播延迟</string>
     <string name="player_preload_metered">按流量计费网络也预载</string>
     <string name="player_preload_diagnostics">预载诊断</string>
     <string name="player_preload_diagnostics_reset">重置</string>
@@ -178,6 +182,9 @@
     <string name="player_mpv_gpu_next">gpu-next</string>
     <string name="player_mpv_vulkan">vulkan</string>
     <string name="player_mpv_conf_import_success">已导入 mpv.conf</string>
+    <string name="player_mpv_conf_import_failed">导入 mpv.conf 失败</string>
+    <string name="player_mpv_conf_save_failed">保存 mpv.conf 失败</string>
+    <string name="player_mpv_conf_conflict">以下选项由播放模式管理并会被覆盖：%1$s</string>
     <string name="player_ua">User-Agent</string>
 
     <!-- Danmaku -->
@@ -190,11 +197,18 @@
     <string name="search_keyword">关键字…</string>
     <string name="subtitle_search">搜索字幕</string>
     <string name="subtitle_secondary">第二字幕（长按清除）</string>
+    <string name="subtitle_secondary_search">搜索第二字幕</string>
+    <string name="subtitle_secondary_file">选择字幕文件</string>
+    <string name="subtitle_secondary_embedded">选择内嵌第二字幕轨</string>
+    <string name="subtitle_secondary_failed">第二字幕加载失败</string>
+    <string name="subtitle_secondary_offset">第二字幕偏移</string>
+    <string name="subtitle_secondary_clear">清除第二字幕</string>
+    <string name="subtitle_secondary_active">%1$s · %2$+.1f 秒</string>
     <string name="subtitle_search_api_title">Assrt</string>
     <string name="subtitle_search_token_hint">Token</string>
     <string name="player_subtitle_assrt">字幕搜索 Token</string>
     <string name="player_subtitle_font">字幕字体</string>
-    <string name="player_mpv_conf_precedence">mpv.conf 中的用户选项优先于应用默认值；应用强制项（vo/hwdec/代理）仍会覆盖。</string>
+    <string name="player_mpv_conf_precedence">mpv.conf 中的用户选项优先于应用默认值；播放模式强制项（vo/hwdec）仍会覆盖。</string>
     <string name="player_volume_gain_on">音量增益 1.5x</string>
     <string name="player_volume_gain_off">音量增益已关闭</string>
     <string name="subtitle_font_default">系统默认</string>
@@ -263,6 +277,16 @@
         <item>特大</item>
     </string-array>
 
+    <string-array name="select_exo_http">
+        <item>Default</item>
+        <item>OkHttp</item>
+    </string-array>
+
+    <string-array name="select_live_latency">
+        <item>流畅</item>
+        <item>低延迟</item>
+    </string-array>
+
     <string-array name="select_scale">
         <item>原始</item>
         <item>16:9</item>
@@ -282,4 +306,146 @@
         <item>选择字幕</item>
     </string-array>
 
+    <string name="dialog_reset">重置</string>
+    <string name="player_audio_effect">音频效果</string>
+    <string name="player_video_effect">视频效果</string>
+    <string name="effect_preset">预设</string>
+    <string name="effect_equalizer">十段均衡器（dB ×100）</string>
+    <string name="effect_dynamics">动态处理</string>
+    <string name="effect_channels">声道控制</string>
+    <string name="effect_video_adjust">色彩和细节</string>
+    <string name="effect_stability">动态稳定</string>
+    <string name="effect_dialogue">人声增强</string>
+    <string name="effect_boost">增益（dB ×100）</string>
+    <string name="effect_preamp">前级（dB ×100）</string>
+    <string name="effect_loudness">响度归一化</string>
+    <string name="effect_balance">左右平衡</string>
+    <string name="effect_center">中置增益（dB ×100）</string>
+    <string name="effect_saturation">饱和度 ×100</string>
+    <string name="effect_contrast">对比度 ×100</string>
+    <string name="effect_brightness">亮度 ×100</string>
+    <string name="effect_sharpness">锐度 ×100</string>
+    <string name="effect_shadow">暗部提升 ×100</string>
+    <string name="effect_gamma">伽马 ×100</string>
+    <string name="effect_hue">色调</string>
+    <string name="effect_temperature">色温</string>
+    <string name="error_audio_effect_unsupported">当前输出不支持音频效果</string>
+    <string name="error_audio_effect_passthrough">关闭音频直通后才能使用音频效果</string>
+    <string name="error_audio_effect_apply">应用音频效果失败</string>
+    <string name="error_video_effect_unsupported">当前渲染器不支持视频效果</string>
+    <string name="error_video_effect_apply">应用视频效果失败</string>
+    <string name="error_video_effect_zero_copy">视频效果需要兼容硬解或软解模式</string>
+
+    <string-array name="audio_effect_presets">
+        <item>关闭</item><item>自然</item><item>人声</item><item>影院</item><item>低音</item><item>高音</item><item>流行</item><item>摇滚</item><item>舞曲</item><item>电子</item><item>嘻哈</item><item>爵士</item><item>古典</item><item>自定义</item>
+    </string-array>
+    <string-array name="audio_channel_modes">
+        <item>自动</item><item>立体声混合</item><item>单声道</item><item>左右反转</item>
+    </string-array>
+    <string-array name="video_effect_presets">
+        <item>关闭</item><item>自然</item><item>鲜艳</item><item>清晰</item><item>明亮</item><item>影院</item><item>柔和</item><item>暖色</item><item>冷色</item><item>舒适</item><item>动画</item><item>运动</item><item>游戏</item><item>自定义</item>
+    </string-array>
+
+    <!-- 网络存储 -->
+    <string name="setting_network_storage">网络存储</string>
+    <string name="network_storage_add_smb">添加 SMB</string>
+    <string name="network_storage_add_webdav">添加 WebDAV</string>
+    <string name="network_storage_discover_smb">发现 SMB</string>
+    <string name="network_storage_discovering">正在扫描局域网 SMB…</string>
+    <string name="network_storage_discover_empty">未发现 SMB 主机</string>
+    <string name="network_storage_discover_pick">选择 SMB 主机</string>
+    <string name="network_storage_discover_done">发现 %d 台 SMB 主机</string>
+    <string name="network_storage_empty">暂无网络存储</string>
+    <string name="network_storage_name">名称</string>
+    <string name="network_storage_host">主机</string>
+    <string name="network_storage_port">端口</string>
+    <string name="network_storage_share">共享名</string>
+    <string name="network_storage_path">路径</string>
+    <string name="network_storage_https">HTTPS</string>
+    <string name="network_storage_username">用户名</string>
+    <string name="network_storage_password">密码</string>
+    <string name="network_storage_save">保存</string>
+    <string name="network_storage_edit">编辑</string>
+    <string name="network_storage_delete">删除</string>
+    <string name="network_storage_browse">浏览</string>
+    <string name="network_storage_invalid">请填写必要字段</string>
+    <string name="network_storage_list_fail">目录读取失败</string>
+    <string name="network_storage_share_missing">共享名不存在，已列出可用共享</string>
+    <string name="network_storage_share_optional">共享名（可留空，进入后自动列出）</string>
+    <string name="network_storage_type_smb">SMB</string>
+    <string name="network_storage_type_webdav">WebDAV</string>
+
+
+    <string name="setting_cast_setting">投屏设置</string>
+    <string name="setting_dlna_setting">DLNA 设置</string>
+    <string name="setting_dlna">DLNA</string>
+    <string name="setting_dlna_name">设备名称</string>
+    <string name="setting_dlna_iface_mode">网卡模式</string>
+    <string name="setting_dlna_iface">网卡</string>
+    <string name="setting_dlna_iface_none">无可用网卡</string>
+    <string name="setting_dlna_http_port">HTTP 端口</string>
+    <string name="setting_airplay_setting">AirPlay 设置</string>
+    <string name="setting_airplay">AirPlay</string>
+    <string name="setting_airplay_name">设备名称</string>
+    <string name="setting_airplay_port">服务端口</string>
+    <string name="setting_airplay_iface_mode">网卡模式</string>
+    <string name="setting_airplay_iface">网卡</string>
+    <string name="setting_airplay_iface_none">无可用网卡</string>
+    <string name="setting_airplay_require_pin">需要 PIN</string>
+    <string name="setting_airplay_allow_new">允许新连接</string>
+    <string name="setting_airplay_advertise_video">通告视频</string>
+    <string name="setting_airplay_advertise_audio">通告音频</string>
+    <string name="setting_airplay_advanced">高级配置</string>
+    <string name="airplay_cast_waiting">等待 AirPlay 连接…</string>
+    <string name="airplay_cast_connecting">正在连接…</string>
+    <string name="airplay_cast_mirroring">AirPlay 镜像</string>
+    <string name="airplay_cast_video">AirPlay 视频</string>
+    <string name="airplay_cast_audio">AirPlay 音频</string>
+    <string name="airplay_cast_pin_hint">请在设备上输入此 PIN</string>
+    <string name="airplay_cast_play">播放</string>
+    <string name="airplay_cast_pause">暂停</string>
+    <string name="airplay_cast_close">关闭</string>
+    <string name="setting_airplay_h265">H.265 (HEVC)</string>
+    <string name="setting_airplay_enforce_sdr">强制 SDR</string>
+    <string name="setting_airplay_resolution">分辨率</string>
+    <string name="setting_airplay_resolution_auto">自动</string>
+    <string name="setting_airplay_resolution_custom">自定义…</string>
+    <string name="setting_airplay_max_fps">最高帧率</string>
+    <string name="setting_airplay_max_fps_custom">自定义…</string>
+    <string name="setting_airplay_overscanned">过扫描</string>
+    <string name="setting_airplay_low_latency">低延迟</string>
+    <string name="setting_airplay_allow_frame_drop">允许丢帧</string>
+    <string name="setting_airplay_realtime_priority">实时解码优先级</string>
+    <string name="setting_airplay_operating_rate">工作速率提示</string>
+    <string name="setting_airplay_aligned_pacing">对齐帧节奏</string>
+    <string name="setting_airplay_aac">AAC</string>
+    <string name="setting_airplay_alac">ALAC</string>
+    <string name="setting_airplay_force_sw_alac">强制软解 ALAC</string>
+    <string name="setting_airplay_audio_latency">音频延迟</string>
+    <string name="setting_airplay_audio_latency_default">默认</string>
+    <string name="setting_airplay_audio_latency_ms">%d 毫秒</string>
+    <string name="setting_airplay_audio_auto_buffer">自动音频缓冲</string>
+    <string name="setting_airplay_audio_cushion">音频缓冲 (毫秒)</string>
+    <string name="setting_airplay_audio_adaptive">音频缓冲档位</string>
+    <string name="setting_airplay_oboe_buffer">硬件缓冲 (帧)</string>
+    <string name="setting_airplay_auto_fullscreen">自动全屏</string>
+    <string name="setting_airplay_idle_preview">空闲预览</string>
+    <string name="setting_airplay_debug_overlay">调试信息</string>
+    <string name="setting_airplay_benchmark_log">性能日志</string>
+    <string-array name="setting_airplay_audio_adaptive_names">
+        <item>最低延迟</item>
+        <item>较低延迟</item>
+        <item>均衡</item>
+        <item>更稳</item>
+        <item>最稳</item>
+    </string-array>
+    <string name="setting_dlna_library">媒体库</string>
+
+    <string name="detail_path">路径：<xliff:g name="name">%s</xliff:g></string>
+    <string name="network_storage_manual">手动输入</string>
+    <string name="network_storage_pin_home">显示到首页</string>
+    <string name="network_storage_unpin_home">取消首页显示</string>
+
+    <string name="network_storage_insecure_auth">允许通过 HTTP 发送凭据</string>
+    <string name="network_storage_smb_downgrade">允许回退到未加密 SMB</string>
 </resources>

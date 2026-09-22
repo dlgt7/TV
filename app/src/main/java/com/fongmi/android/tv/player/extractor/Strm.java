@@ -29,7 +29,8 @@ public class Strm implements Source.Extractor {
         try (Response res = OkHttp.newCall(OkHttp.noRedirect(), url).execute()) {
             String content = res.header(HttpHeaders.CONTENT_DISPOSITION, "");
             boolean text = content.contains(".strm") || content.contains(".txt");
-            return text ? res.body().string().split("\\R", 2)[0] : url;
+            if (!text || res.body() == null) return url;
+            return res.body().string().split("\\R", 2)[0];
         }
     }
 

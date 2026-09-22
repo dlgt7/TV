@@ -3,7 +3,9 @@ package com.fongmi.android.tv.ui.dialog;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.View;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -17,6 +19,8 @@ import com.fongmi.android.tv.player.mpv.MpvConfigFiles;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.Notify;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.util.List;
 
 public class MpvConfDialog extends BaseAlertDialog {
 
@@ -46,6 +50,19 @@ public class MpvConfDialog extends BaseAlertDialog {
     @Override
     protected void initEvent() {
         binding.input.setEndIconOnClickListener(this::onChoose);
+        binding.text.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { updateHint(s); }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+        updateHint(binding.text.getText());
+    }
+
+    private void updateHint(CharSequence text) {
+        List<String> conflicts = MpvConfigFiles.findInterfaceManagedOptions(text);
+        binding.input.setHelperText(conflicts.isEmpty()
+                ? getString(R.string.player_mpv_conf_precedence)
+                : getString(R.string.player_mpv_conf_conflict, TextUtils.join(", ", conflicts)));
     }
 
     private void setText(String text) {
@@ -54,7 +71,7 @@ public class MpvConfDialog extends BaseAlertDialog {
     }
 
     private void onPositive(DialogInterface dialog, int which) {
-        MpvConfigFiles.write(binding.text.getText().toString());
+        if (!MpvConfigFiles.write(binding.text.getText().toString())) Notify.show(R.string.player_mpv_conf_save_failed);
     }
 
     private void onChoose(View view) {
@@ -63,8 +80,8 @@ public class MpvConfDialog extends BaseAlertDialog {
 
     private final ActivityResultLauncher<Intent> launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
         if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) return;
-        MpvConfigFiles.importFrom(requireContext(), result.getData().getData());
-        Notify.show(R.string.player_mpv_conf_import_success);
-        setText(MpvConfigFiles.read());
+        boolean success = MpvConfigFiles.importFrom(requireContext(), result.getData().getData());
+        Notify.show(success ? R.string.player_mpv_conf_import_success : R.string.player_mpv_conf_import_failed);
+        if (success) setText(MpvConfigFiles.read());
     });
 }

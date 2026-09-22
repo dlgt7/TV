@@ -36,6 +36,7 @@ public class JianPian implements Source.Extractor {
     private void check() {
         double cache = Path.size(Path.jpa());
         double total = cache + Path.available(Path.jpa());
+        if (total <= 0) return;
         int percent = (int) (cache / total * 100);
         if (percent > 10) Path.clear(Path.jpa());
     }

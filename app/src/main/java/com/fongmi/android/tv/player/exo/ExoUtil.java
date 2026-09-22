@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.player.exo;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,6 +11,9 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.audio.AudioProcessor;
+import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.LoadControl;
 import androidx.media3.exoplayer.Renderer;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
@@ -39,14 +43,64 @@ import java.util.stream.Collectors;
 public class ExoUtil {
 
     public static ExoPlayer buildPlayer(int decode, Player.Listener listener) {
+        return buildPlayer(decode, listener, null);
+    }
+
+    public static ExoPlayer buildPlayer(int decode, Player.Listener listener, AudioProcessor audioProcessor) {
+        return buildPlayer(decode, listener, audioProcessor, false);
+    }
+
+    public static ExoPlayer buildPlayer(int decode, Player.Listener listener, AudioProcessor audioProcessor, boolean live) {
         decode = decode == PlayerEngine.SOFT ? PlayerEngine.SOFT : PlayerEngine.HARD;
-        ExoPlayer player = new ExoPlayer.Builder(App.get()).setTrackSelector(buildTrackSelector()).setRenderersFactory(buildPlaybackRenderersFactory(decode)).setMediaSourceFactory(buildMediaSourceFactory()).build();
+        ExoPlayer player = new ExoPlayer.Builder(App.get())
+                .setTrackSelector(buildTrackSelector())
+                .setLoadControl(buildLoadControl(live))
+                .setRenderersFactory(buildPlaybackRenderersFactory(decode, audioProcessor))
+                .setMediaSourceFactory(buildMediaSourceFactory())
+                .build();
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());
         player.setAudioAttributes(AudioAttributes.DEFAULT, true);
         player.setHandleAudioBecomingNoisy(true);
         player.setPlayWhenReady(true);
         player.addListener(listener);
         return player;
+    }
+
+    /** Map Setting buffer seconds (1–15) onto Media3 LoadControl durations. */
+    public static LoadControl buildLoadControl() {
+        return buildLoadControl(false);
+    }
+
+    public static LoadControl buildLoadControl(boolean live) {
+        int bufferMs = PlayerSetting.getBuffer() * 1000;
+        int minBufferMs = Math.max(bufferMs, live ? 3000 : 5000);
+        int maxBufferMs = Math.clamp(minBufferMs * 3, live ? 8000 : 15000, live ? 15000 : 30000);
+        int playbackMs = Math.min(2500, Math.max(1000, bufferMs / 2));
+        int rebufferMs = Math.min(5000, Math.max(playbackMs, bufferMs));
+        int targetBufferBytes = getTargetBufferBytes(live);
+        if (live && PlayerSetting.isLiveLowLatency()) {
+            minBufferMs = Math.max(1000, bufferMs / 2);
+            maxBufferMs = Math.max(minBufferMs * 2, 6000);
+            playbackMs = Math.min(1200, minBufferMs);
+            rebufferMs = Math.min(2500, Math.max(playbackMs, minBufferMs));
+            targetBufferBytes = 8 * 1024 * 1024;
+        }
+        return new DefaultLoadControl.Builder()
+                .setBufferDurationsMs(minBufferMs, maxBufferMs, playbackMs, rebufferMs)
+                .setTargetBufferBytes(targetBufferBytes)
+                .setBackBuffer(0, false)
+                .setPrioritizeTimeOverSizeThresholds(true)
+                .build();
+    }
+
+    /** Scale memory buffering to the actual device class rather than reserving 32 MiB everywhere. */
+    private static int getTargetBufferBytes(boolean live) {
+        ActivityManager manager = (ActivityManager) App.get().getSystemService(Context.ACTIVITY_SERVICE);
+        int memoryClass = manager == null ? 256 : manager.getMemoryClass();
+        if (live) return memoryClass <= 256 ? 8 * 1024 * 1024 : 16 * 1024 * 1024;
+        if (memoryClass <= 256) return 16 * 1024 * 1024;
+        if (memoryClass <= 512) return 24 * 1024 * 1024;
+        return 32 * 1024 * 1024;
     }
 
     public static String getMimeType(int errorCode) {
@@ -84,21 +138,21 @@ public class ExoUtil {
         return trackSelector;
     }
 
-    private static RenderersFactory buildPlaybackRenderersFactory(int decode) {
-        return buildRenderersFactory(getRenderMode(decode), PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer(), decode);
+    private static RenderersFactory buildPlaybackRenderersFactory(int decode, AudioProcessor audioProcessor) {
+        return buildRenderersFactory(getRenderMode(decode), PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer(), decode, audioProcessor);
     }
 
     static RenderersFactory buildRenderersFactory() {
-        return buildRenderersFactory(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER, PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer(), PlayerEngine.HARD);
+        return buildRenderersFactory(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER, PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer(), PlayerEngine.HARD, null);
     }
 
-    private static RenderersFactory buildRenderersFactory(int renderMode, boolean audioPrefer, boolean videoPrefer, int decode) {
+    private static RenderersFactory buildRenderersFactory(int renderMode, boolean audioPrefer, boolean videoPrefer, int decode, AudioProcessor audioProcessor) {
         boolean preferByDecode = renderMode == DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
         MediaCodecSelector codecSelector = buildMediaCodecSelector(decode);
         DefaultRenderersFactory factory = new DefaultRenderersFactory(App.get()) {
             @Override
             protected AudioSink buildAudioSink(@NonNull Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams) {
-                return ExoUtil.buildAudioSink(context, enableFloatOutput, enableAudioOutputPlaybackParams);
+                return ExoUtil.buildAudioSink(context, enableFloatOutput, enableAudioOutputPlaybackParams, audioProcessor);
             }
 
             @Override
@@ -135,9 +189,10 @@ public class ExoUtil {
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
     }
 
-    private static AudioSink buildAudioSink(Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams) {
+    private static AudioSink buildAudioSink(Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams, AudioProcessor audioProcessor) {
         DefaultAudioSink.Builder builder = new DefaultAudioSink.Builder(context).setEnableFloatOutput(enableFloatOutput).setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams);
         if (!PlayerSetting.isAudioPassThrough()) builder.setAudioOutputProvider(new AudioTrackAudioOutputProvider.Builder(null).build());
+        if (audioProcessor != null) builder.setAudioProcessors(new AudioProcessor[]{audioProcessor});
         return builder.build();
     }
 

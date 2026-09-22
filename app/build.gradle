@@ -11,6 +11,7 @@ android {
     namespace = 'com.fongmi.android.tv'
 
     compileSdk libs.versions.compileSdk.get().toInteger()
+    ndkVersion = '29.0.14206865'
 
     defaultConfig {
         applicationId "com.fongmi.android.tv"
@@ -105,6 +106,7 @@ dependencies {
     implementation project(':chaquo')
     implementation project(':quickjs')
     implementation project(':media3compat')
+    leanbackImplementation project(':airplay')
     implementation libs.appcompat
     implementation libs.lifecycle.service
     implementation libs.media
@@ -128,6 +130,8 @@ dependencies {
     implementation libs.newpipeextractor
     implementation libs.permissionx
     implementation libs.simple.xml
+    implementation libs.sardine
+    implementation libs.smbj
     implementation libs.textdrawable
     leanbackImplementation libs.leanback
     leanbackImplementation libs.androidautosize

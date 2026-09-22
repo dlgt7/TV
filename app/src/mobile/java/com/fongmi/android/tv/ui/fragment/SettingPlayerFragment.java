@@ -27,6 +27,7 @@ import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.setting.SubtitleSetting;
 import com.fongmi.android.tv.ui.activity.HomeActivity;
 import com.fongmi.android.tv.ui.base.BaseFragment;
+import com.fongmi.android.tv.ui.dialog.EffectSettingDialog;
 import com.fongmi.android.tv.ui.dialog.ExternalFontDialog;
 import com.fongmi.android.tv.ui.dialog.MpvConfDialog;
 import com.fongmi.android.tv.ui.dialog.SpeedDialog;
@@ -50,6 +51,8 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
     private String[] render;
     private String[] scale;
     private String[] engine;
+    private String[] http;
+    private String[] latency;
 
     private final ActivityResultLauncher<Intent> fontLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> FileChooser.getUri(result, this::importFont));
 
@@ -74,6 +77,9 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
         mBinding.scaleText.setText((scale = ResUtil.getStringArray(R.array.select_scale))[PlayerSetting.getScale()]);
         mBinding.captionText.setText((caption = ResUtil.getStringArray(R.array.select_caption))[PlayerSetting.isCaption() ? 1 : 0]);
         mBinding.backgroundText.setText((background = ResUtil.getStringArray(R.array.select_background))[PlayerSetting.getBackground()]);
+        mBinding.bufferText.setText(getString(R.string.player_buffer_value, PlayerSetting.getBuffer()));
+        mBinding.httpText.setText((http = ResUtil.getStringArray(R.array.select_exo_http))[PlayerSetting.getHttp()]);
+        mBinding.liveLatencyText.setText((latency = ResUtil.getStringArray(R.array.select_live_latency))[PlayerSetting.getLiveLatency()]);
         bindSubtitleLabels();
     }
 
@@ -106,8 +112,13 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
         mBinding.caption.setOnClickListener(this::setCaption);
         mBinding.caption.setOnLongClickListener(this::onCaption);
         mBinding.speed.setOnClickListener(this::onSpeed);
+        mBinding.audioEffect.setOnClickListener(view -> EffectSettingDialog.showAudio(requireActivity()));
+        mBinding.videoEffect.setOnClickListener(view -> EffectSettingDialog.showVideo(requireActivity()));
         mBinding.background.setOnClickListener(this::onBackground);
         mBinding.adblock.setOnClickListener(this::setAdblock);
+        mBinding.buffer.setOnClickListener(this::setBuffer);
+        mBinding.http.setOnClickListener(this::setHttp);
+        mBinding.liveLatency.setOnClickListener(this::setLiveLatency);
         mBinding.preload.setOnClickListener(this::onPreload);
         mBinding.decode.setOnClickListener(this::onDecode);
         mBinding.ua.setOnClickListener(this::onUa);
@@ -133,7 +144,27 @@ public class SettingPlayerFragment extends BaseFragment implements UaListener, S
         mBinding.mpvGpuNext.setVisibility(mpv ? View.VISIBLE : View.GONE);
         mBinding.decode.setVisibility(exo ? View.VISIBLE : View.GONE);
         mBinding.adblock.setVisibility(exo ? View.VISIBLE : View.GONE);
+        mBinding.buffer.setVisibility(View.VISIBLE);
+        mBinding.http.setVisibility(exo ? View.VISIBLE : View.GONE);
         mBinding.caption.setVisibility(PlayerSetting.hasCaption() ? View.VISIBLE : View.GONE);
+    }
+
+    private void setBuffer(View view) {
+        int next = PlayerSetting.getBuffer() >= 15 ? 1 : PlayerSetting.getBuffer() + 1;
+        PlayerSetting.putBuffer(next);
+        mBinding.bufferText.setText(getString(R.string.player_buffer_value, next));
+    }
+
+    private void setHttp(View view) {
+        int index = (PlayerSetting.getHttp() + 1) % http.length;
+        PlayerSetting.putHttp(index);
+        mBinding.httpText.setText(http[index]);
+    }
+
+    private void setLiveLatency(View view) {
+        int index = (PlayerSetting.getLiveLatency() + 1) % latency.length;
+        PlayerSetting.putLiveLatency(index);
+        mBinding.liveLatencyText.setText(latency[index]);
     }
 
     private void setEngine(View view) {

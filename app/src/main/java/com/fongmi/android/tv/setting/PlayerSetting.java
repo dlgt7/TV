@@ -19,7 +19,17 @@ public class PlayerSetting {
     private static final int MIN_BACKGROUND = 0;
     private static final int MAX_BACKGROUND = 2;
     private static final int HARD_DEFAULT = 1;
-    private static final float MIN_SPEED = 2.0f;
+    private static final int MIN_BUFFER = 1;
+    private static final int MAX_BUFFER = 15;
+    private static final int DEFAULT_BUFFER = 5;
+    public static final int LIVE_LATENCY_SMOOTH = 0;
+    public static final int LIVE_LATENCY_LOW = 1;
+    /** Legacy fork/dev: 0=SYS, 1=IJK, 2=EXO. Mapped to Exo/MPV below. */
+    public static final int PLAYER_TYPE_FOLLOW = -1;
+    public static final int PLAYER_TYPE_MPV = 1;
+    public static final int PLAYER_TYPE_EXO = 2;
+    private static final String EXO_DECODE_MIGRATION = "decode_defaults_migrated_v4";
+    private static final float MIN_SPEED = 0.5f;
     private static final float MAX_SPEED = 5.0f;
 
     public static int getEngine() {
@@ -84,6 +94,7 @@ public class PlayerSetting {
     }
 
     public static int getDecode(boolean live, int engine) {
+        migrateLegacyExoDecodeDefaults();
         String scene = live ? "live" : "vod";
         String player = engine == ENGINE_MPV ? "mpv" : "exo";
         int fallback;
@@ -95,6 +106,28 @@ public class PlayerSetting {
         }
         int max = engine == ENGINE_MPV ? 2 : 1;
         return Math.clamp(Prefers.getInt(scene + "_" + player + "_decode", fallback), 0, max);
+    }
+
+    /**
+     * Older releases accidentally persisted an automatic EXO fallback as a scene-wide soft decode.
+     * Migrate only the complete legacy v3 footprint and only when the explicit "prefer software
+     * video" switch is off. Isolated live/VOD soft choices are treated as intentional and kept.
+     */
+    public static void migrateLegacyExoDecodeDefaults() {
+        if (Prefers.getBoolean(EXO_DECODE_MIGRATION)) return;
+        int liveExo = Prefers.getInt("live_exo_decode", HARD_DEFAULT);
+        int vodExo = Prefers.getInt("vod_exo_decode", HARD_DEFAULT);
+        int liveMpv = Prefers.getInt("live_mpv_decode", HARD_DEFAULT);
+        int vodMpv = Prefers.getInt("vod_mpv_decode", HARD_DEFAULT);
+        // The known legacy footprint has both EXO scenes stuck on soft while the previous MPV
+        // migration already moved both MPV scenes to hard. Do not rewrite isolated scene choices.
+        boolean legacyFootprint = Prefers.getBoolean("decode_defaults_migrated_v3")
+                && liveExo == 0 && vodExo == 0 && liveMpv > 0 && vodMpv > 0;
+        if (!isVideoPrefer() && legacyFootprint) {
+            Prefers.put("live_exo_decode", HARD_DEFAULT);
+            Prefers.put("vod_exo_decode", HARD_DEFAULT);
+        }
+        Prefers.put(EXO_DECODE_MIGRATION, true);
     }
 
     public static void putDecode(boolean live, int engine, int decode) {
@@ -118,6 +151,49 @@ public class PlayerSetting {
 
     public static void putMpvVulkan(boolean vulkan) {
         Prefers.put("mpv_vulkan", vulkan);
+    }
+
+    /**
+     * Map config playerType onto current engines.
+     * 1 (legacy IJK) → MPV; otherwise follow the user's live/vod engine setting.
+     * Site {@code playerType=2 (EXO)} is no longer forced here: it fought the user's MPV
+     * preference and mid-play engine switches. Hard requirements (DASH/DRM/SMB) still force
+     * Exo in {@link com.fongmi.android.tv.player.engine.PlayerEngineFactory}.
+     */
+    public static int resolveEngine(boolean live, int playerType) {
+        if (playerType == PLAYER_TYPE_MPV) return ENGINE_MPV;
+        return live ? getLiveEngine() : getVodEngine();
+    }
+
+    /** Playback buffer target in seconds (mapped to Exo LoadControl and MPV demux cache). */
+    public static int getBuffer() {
+        int value = Prefers.getInt("exo_buffer", DEFAULT_BUFFER);
+        return Math.clamp(value <= 0 ? DEFAULT_BUFFER : value, MIN_BUFFER, MAX_BUFFER);
+    }
+
+    public static void putBuffer(int buffer) {
+        Prefers.put("exo_buffer", Math.clamp(buffer, MIN_BUFFER, MAX_BUFFER));
+    }
+
+    /** 0 = DefaultHttpDataSource, 1 = OkHttp (default). */
+    public static int getHttp() {
+        return Math.clamp(Prefers.getInt("exo_http", 1), 0, 1);
+    }
+
+    public static void putHttp(int http) {
+        Prefers.put("exo_http", Math.clamp(http, 0, 1));
+    }
+
+    public static int getLiveLatency() {
+        return Math.clamp(Prefers.getInt("live_latency", LIVE_LATENCY_SMOOTH), LIVE_LATENCY_SMOOTH, LIVE_LATENCY_LOW);
+    }
+
+    public static void putLiveLatency(int mode) {
+        Prefers.put("live_latency", Math.clamp(mode, LIVE_LATENCY_SMOOTH, LIVE_LATENCY_LOW));
+    }
+
+    public static boolean isLiveLowLatency() {
+        return getLiveLatency() == LIVE_LATENCY_LOW;
     }
 
     public static int getRender() {

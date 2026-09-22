@@ -30,6 +30,25 @@ public class TrackUtil {
         return MimeTypes.APPLICATION_SUBRIP;
     }
 
+    public static boolean isBitmapSubtitle(Format format) {
+        if (format == null) return false;
+        String value = !TextUtils.isEmpty(format.sampleMimeType) ? format.sampleMimeType : format.codecs;
+        if (TextUtils.isEmpty(value)) return false;
+        value = value.toLowerCase(Locale.ROOT);
+        return value.contains("pgs") || value.contains("vobsub") || value.contains("dvd_subtitle")
+                || value.contains("dvbsub") || value.contains("dvb_subtitle");
+    }
+
+    public static boolean hasSelectedBitmapSubtitle(Tracks tracks) {
+        for (Tracks.Group group : tracks.getGroups()) {
+            if (group.getType() != C.TRACK_TYPE_TEXT) continue;
+            for (int i = 0; i < group.length; i++) {
+                if (group.isTrackSelected(i) && isBitmapSubtitle(group.getTrackFormat(i))) return true;
+            }
+        }
+        return false;
+    }
+
     public static int count(Tracks tracks, int type) {
         return tracks.getGroups().stream().filter(trackGroup -> trackGroup.getType() == type).mapToInt(trackGroup -> trackGroup.length).sum();
     }

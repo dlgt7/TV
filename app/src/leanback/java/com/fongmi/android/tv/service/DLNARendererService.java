@@ -20,10 +20,11 @@ import com.fongmi.android.tv.dlna.DLNARenderingControlImpl;
 import com.fongmi.android.tv.dlna.DLNAServiceConfiguration;
 import com.fongmi.android.tv.dlna.RenderState;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.setting.DlnaSetting;
 import com.fongmi.android.tv.utils.Notify;
-import com.fongmi.android.tv.utils.Util;
 
 import org.jupnp.UpnpServiceConfiguration;
+import org.jupnp.android.AndroidRouter;
 import org.jupnp.android.AndroidUpnpServiceImpl;
 import org.jupnp.binding.annotations.AnnotationLocalServiceBinder;
 import org.jupnp.model.DefaultServiceManager;
@@ -55,8 +56,13 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     private PlaybackService playbackService;
     private Player currentListenerPlayer;
     private boolean bound;
+    private boolean upnpStarted;
+
+    private static Runnable pendingApply;
+    private static Runnable pendingStart;
 
     public static void start(Context context) {
+        if (!DlnaSetting.isEnabled()) return;
         context.startService(new Intent(context, DLNARendererService.class));
     }
 
@@ -64,9 +70,25 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
         context.stopService(new Intent(context, DLNARendererService.class));
     }
 
+    public static void apply(Context context) {
+        Context app = context.getApplicationContext();
+        if (pendingApply != null) App.removeCallbacks(pendingApply);
+        if (pendingStart != null) App.removeCallbacks(pendingStart);
+        pendingApply = () -> {
+            pendingApply = null;
+            stop(app);
+            pendingStart = () -> {
+                pendingStart = null;
+                start(app);
+            };
+            App.post(pendingStart, 400);
+        };
+        App.post(pendingApply, 1000);
+    }
+
     @Override
     protected UpnpServiceConfiguration createConfiguration() {
-        return new DLNAServiceConfiguration();
+        return new DLNAServiceConfiguration(true);
     }
 
     @Override
@@ -74,8 +96,17 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
         super.onCreate();
         Notification notification = new NotificationCompat.Builder(this, Notify.DEFAULT).setSmallIcon(R.drawable.ic_notification).setContentTitle(getString(R.string.app_name)).setSilent(true).build();
         startForeground(Notify.ID + 1, notification);
-        upnpService.startup();
-        registerLocalDevice();
+        if (!DlnaSetting.isEnabled()) {
+            stopSelf();
+            return;
+        }
+        try {
+            upnpService.startup();
+            upnpStarted = true;
+            registerLocalDevice();
+        } catch (RuntimeException ignored) {
+            stopSelf();
+        }
     }
 
     private void registerLocalDevice() {
@@ -84,7 +115,7 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
         LocalService<DLNARenderingControlImpl> renderControl = createRenderingControl();
         DeviceIdentity identity = new DeviceIdentity(new UDN(UUID.nameUUIDFromBytes((Build.MANUFACTURER + Build.MODEL + "-MediaRenderer").getBytes(StandardCharsets.UTF_8))));
         UDADeviceType type = new UDADeviceType("MediaRenderer", 1);
-        DeviceDetails details = new DeviceDetails(Util.getDeviceName(), new ManufacturerDetails(Build.MANUFACTURER), new ModelDetails(Build.MODEL, "DLNA Renderer", "1.0"));
+        DeviceDetails details = new DeviceDetails(DlnaSetting.getDisplayName(), new ManufacturerDetails(Build.MANUFACTURER), new ModelDetails(Build.MODEL, "DLNA Renderer", "1.0"));
         try {
             LocalDevice device = new LocalDevice(identity, type, details, new LocalService[]{avTransport, connManager, renderControl});
             upnpService.getRegistry().addDevice(device);
@@ -133,7 +164,36 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     @Override
     public void onDestroy() {
         unbindPlaybackService();
-        super.onDestroy();
+        if (!upnpStarted) {
+            shutdownPartiallyInitializedService();
+            return;
+        }
+        try {
+            // Same jUPnP 3.0.4 shutdown NPE as DlnaBrowserService when startup() never ran.
+            super.onDestroy();
+        } catch (NullPointerException ignored) {
+            shutdownPartiallyInitializedService();
+        }
+    }
+
+    private void shutdownPartiallyInitializedService() {
+        if (upnpService == null) return;
+        try {
+            if (upnpService.getRouter() instanceof AndroidRouter router) router.unregisterBroadcastReceiver();
+        } catch (RuntimeException ignored) {
+        }
+        try {
+            if (upnpService.getRegistry() != null) upnpService.getRegistry().shutdown();
+        } catch (RuntimeException ignored) {
+        }
+        try {
+            if (upnpService.getConfiguration() != null) upnpService.getConfiguration().shutdown();
+        } catch (RuntimeException ignored) {
+        }
+        try {
+            if (upnpService.getRouter() != null) upnpService.getRouter().shutdown();
+        } catch (Exception ignored) {
+        }
     }
 
     private void bindPlaybackService() {
@@ -222,8 +282,9 @@ public class DLNARendererService extends AndroidUpnpServiceImpl implements Servi
     private final Runnable positionUpdater = new Runnable() {
         @Override
         public void run() {
-            if (player != null && avTransportImpl != null && player.isPlaying()) avTransportImpl.updatePositionCache(player.getPosition(), getDuration());
-            if (player != null) App.post(this, 1000);
+            if (!isDlnaActive || player == null) return;
+            if (avTransportImpl != null && player.isPlaying()) avTransportImpl.updatePositionCache(player.getPosition(), getDuration());
+            App.post(this, 1000);
         }
     };
 

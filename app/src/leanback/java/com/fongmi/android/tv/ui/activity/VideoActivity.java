@@ -56,6 +56,7 @@ import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.storage.NetworkPlayResolver;
 import com.fongmi.android.tv.ui.adapter.ArrayAdapter;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
 import com.fongmi.android.tv.ui.adapter.FlagAdapter;
@@ -87,7 +88,6 @@ import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PartUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Sniffer;
-import com.fongmi.android.tv.utils.Traffic;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.github.bassaer.library.MDColor;
@@ -155,6 +155,11 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         start(activity, key, id, name, null);
     }
 
+    /** Local / network file: open in fullscreen and finish on back (skip detail chrome). */
+    public static void startFullscreen(Activity activity, String key, String id, String name) {
+        start(activity, key, id, name, null, null, false, false, true);
+    }
+
     public static void start(Activity activity, String key, String id, String name, String pic) {
         start(activity, key, id, name, pic, null);
     }
@@ -164,9 +169,14 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     public static void start(Activity activity, String key, String id, String name, String pic, String mark, boolean collect, boolean cast) {
+        start(activity, key, id, name, pic, mark, collect, cast, false);
+    }
+
+    public static void start(Activity activity, String key, String id, String name, String pic, String mark, boolean collect, boolean cast, boolean fullscreen) {
         Intent intent = new Intent(activity, VideoActivity.class);
         intent.putExtra("collect", collect);
         intent.putExtra("cast", cast);
+        intent.putExtra("fullscreen", fullscreen);
         intent.putExtra("mark", mark);
         intent.putExtra("name", name);
         intent.putExtra("key", key);
@@ -183,6 +193,14 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private boolean isCast() {
         return getIntent().getBooleanExtra("cast", false);
+    }
+
+    private boolean isDirectPlay() {
+        return getIntent().getBooleanExtra("fullscreen", false);
+    }
+
+    private boolean shouldEnterFullscreenOnStart() {
+        return isDirectPlay() || isCast();
     }
 
     private String getName() {
@@ -212,6 +230,19 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private Site getSite() {
         return VodConfig.get().getSite(getKey());
+    }
+
+    private String getDisplaySiteName() {
+        String id = getId();
+        if (NetworkPlayResolver.isNetworkPlayUrl(id)) {
+            String title = NetworkPlayResolver.displayTitle(id);
+            return TextUtils.isEmpty(title) ? getString(R.string.setting_network_storage) : title;
+        }
+        if (isDirectPushPlay()) {
+            String mark = getMark();
+            return TextUtils.isEmpty(mark) ? getString(R.string.dlna_library_type) : mark;
+        }
+        return getSite().getName();
     }
 
     private Episode getEpisode() {
@@ -533,6 +564,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void startPlayback(Result result, boolean useParse, long startPositionMs, History history, Episode episode) {
+        player().setEngineForNextPlayback(PlayerSetting.resolveEngine(false, getSite().getPlayerType()));
         startPlayer(getHistoryKey(), result, useParse, getSite().getTimeout(), startPositionMs, VodPlaybackMedia.metadata(history, episode));
     }
 
@@ -545,13 +577,56 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     public void renderDetail(Vod item, History history) {
         mHistory = history;
         mBinding.progressLayout.showContent();
-        mBinding.name.setText(item.getName());
+        String title = isSimplePlay() && !TextUtils.isEmpty(getName()) ? getName() : item.getName();
+        mBinding.name.setText(title);
+        if (isSimplePlay() && !TextUtils.isEmpty(title)) {
+            item.setName(title);
+            mHistory.setVodName(title);
+        }
+        // Persist display source (server / drive name) so home history is not「手机推送」.
+        if (isDirectPushPlay()) {
+            String site = getDisplaySiteName();
+            if (!TextUtils.isEmpty(site)) mHistory.setVodFlag(site);
+        }
         mBinding.video.requestFocus();
         App.removeCallbacks(mR4);
         setArtwork(item.getPic());
         checkKeepImg();
         setText(item);
         updateKeep();
+        applyDirectPlayChrome();
+        applyNetworkPlayChrome();
+    }
+
+    private void applyDirectPlayChrome() {
+        if (!isDirectPlay()) return;
+        mBinding.content.setVisibility(View.GONE);
+        mBinding.keep.setVisibility(View.GONE);
+        mBinding.change.setVisibility(View.GONE);
+        mBinding.part.setVisibility(View.GONE);
+    }
+
+    private void applyNetworkPlayChrome() {
+        if (!isSimplePlay()) return;
+        mBinding.content.setVisibility(View.GONE);
+        mBinding.change.setVisibility(View.GONE);
+        mBinding.part.setVisibility(View.GONE);
+        mBinding.quick.setVisibility(View.GONE);
+        mBinding.control.action.parse.setVisibility(View.GONE);
+        mBinding.control.action.next.setVisibility(View.GONE);
+        mBinding.control.action.prev.setVisibility(View.GONE);
+    }
+
+    private boolean isNetworkPlay() {
+        return NetworkPlayResolver.isNetworkPlayUrl(getId());
+    }
+
+    private boolean isDirectPushPlay() {
+        return SiteApi.PUSH.equals(getKey()) && SiteApi.isDirectPlayId(getId());
+    }
+
+    private boolean isSimplePlay() {
+        return isNetworkPlay() || isDirectPushPlay();
     }
 
     @Override
@@ -583,7 +658,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void renderFlags(List<Flag> items) {
-        mBinding.flag.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        boolean hide = isSimplePlay() && items.size() <= 1;
+        mBinding.flag.setVisibility(hide || items.isEmpty() ? View.GONE : View.VISIBLE);
         mFlagAdapter.addAll(items);
     }
 
@@ -623,6 +699,10 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void renderSources(List<Vod> items) {
+        if (isSimplePlay()) {
+            mBinding.quick.setVisibility(View.GONE);
+            return;
+        }
         mQuickAdapter.addAll(items);
         mBinding.quick.setVisibility(mQuickAdapter.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -640,7 +720,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     @Override
     public void renderUseParse(boolean useParse) {
         setUseParse(useParse);
-        mBinding.control.action.parse.setVisibility(isUseParse() ? View.VISIBLE : View.GONE);
+        mBinding.control.action.parse.setVisibility(isSimplePlay() || !isUseParse() ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -710,7 +790,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void checkCast() {
-        if (isCast() && !isFullscreen()) enterFullscreen();
+        if (shouldEnterFullscreenOnStart() && !isFullscreen()) enterFullscreen();
         else mBinding.progressLayout.showProgress();
     }
 
@@ -724,13 +804,54 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void setText(Vod item) {
         mBinding.content.setTag(item.getContent());
+        if (isSimplePlay()) {
+            setSimplePlayText(item);
+            return;
+        }
         setText(mBinding.year, R.string.detail_year, item.getYear());
         setText(mBinding.area, R.string.detail_area, item.getArea());
         setText(mBinding.type, R.string.detail_type, item.getTypeName());
-        setText(mBinding.site, R.string.detail_site, getSite().getName());
+        setText(mBinding.site, R.string.detail_site, getDisplaySiteName());
         setText(mBinding.director, R.string.detail_director, item.getDirector());
         setText(mBinding.actor, R.string.detail_actor, item.getActor());
         setText(mBinding.remark, 0, item.getRemarks());
+    }
+
+    private void setSimplePlayText(Vod item) {
+        String protocol = item.getTypeName();
+        if (TextUtils.isEmpty(protocol)) {
+            protocol = isNetworkPlay() ? NetworkPlayResolver.protocolLabel(getId()) : getString(R.string.dlna_library_type);
+        }
+        String path = item.getArea();
+        if (TextUtils.isEmpty(path) && isNetworkPlay()) path = NetworkPlayResolver.displayPath(getId());
+        if (TextUtils.isEmpty(path) && isDirectPushPlay()) path = displayUrlPath(getId());
+        setText(mBinding.site, R.string.detail_source, getDisplaySiteName());
+        setText(mBinding.type, R.string.detail_protocol, protocol);
+        mBinding.year.setVisibility(View.GONE);
+        mBinding.area.setVisibility(View.GONE);
+        mBinding.actor.setVisibility(View.GONE);
+        mBinding.remark.setVisibility(View.GONE);
+        if (TextUtils.isEmpty(path)) {
+            mBinding.director.setVisibility(View.GONE);
+        } else {
+            mBinding.director.setText(getString(R.string.detail_path, path));
+            mBinding.director.setVisibility(View.VISIBLE);
+            mBinding.director.setSingleLine(true);
+            mBinding.director.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+            mBinding.director.setMovementMethod(null);
+        }
+    }
+
+    private static String displayUrlPath(String url) {
+        if (TextUtils.isEmpty(url)) return "";
+        try {
+            android.net.Uri uri = android.net.Uri.parse(url);
+            String path = uri.getPath();
+            if (!TextUtils.isEmpty(path) && path.length() > 1) return path;
+            return url;
+        } catch (Exception e) {
+            return url;
+        }
     }
 
     private void setText(TextView view, int resId, String text) {
@@ -757,7 +878,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void setEpisodeAdapter(List<Episode> items) {
-        mBinding.episode.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        boolean hide = isSimplePlay() && items.size() <= 1;
+        mBinding.episode.setVisibility(hide || items.isEmpty() ? View.GONE : View.VISIBLE);
         mEpisodeAdapter.addAll(items);
         setArrayAdapter(items.size());
         setR2Callback();
@@ -1034,7 +1156,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private void hideProgress() {
         mBinding.progress.getRoot().setVisibility(View.GONE);
         App.removeCallbacks(mR3);
-        Traffic.reset();
+        traffic.reset();
     }
 
     private void showError(String text) {
@@ -1077,7 +1199,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
+        traffic.setSpeed(mBinding.progress.traffic);
         App.post(mR3, 1000);
     }
 
@@ -1116,6 +1238,10 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void setPartAdapter() {
+        if (isDirectPlay() || isSimplePlay()) {
+            mBinding.part.setVisibility(View.GONE);
+            return;
+        }
         mPartAdapter.addAll(PartUtil.split(mHistory.getVodName()));
         mBinding.part.setVisibility(View.VISIBLE);
         setR2Callback();
@@ -1138,7 +1264,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         keep.setCid(VodConfig.getCid());
         keep.setVodPic(mHistory.getVodPic());
         keep.setVodName(mHistory.getVodName());
-        keep.setSiteName(getSite().getName());
+        keep.setSiteName(getDisplaySiteName());
         keep.setCreateTime(System.currentTimeMillis());
         keep.save();
     }
@@ -1148,6 +1274,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         if (keep != null) {
             keep.setVodName(mHistory.getVodName());
             keep.setVodPic(mHistory.getVodPic());
+            keep.setSiteName(getDisplaySiteName());
             keep.save();
         }
     }
@@ -1453,9 +1580,11 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
             hideControl();
         } else if (isVisible(mBinding.widget.center)) {
             hideCenter();
-        } else if (isFullscreen()) {
+        } else if (isFullscreen() && !isDirectPlay()) {
+            // Network / vod: leave fullscreen back to detail chrome.
             exitFullscreen();
         } else {
+            // Direct file play stays fullscreen-only; back finishes the activity.
             mViewModel.stopSearch();
             if (isTaskRoot()) startActivity(new Intent(this, HomeActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
             super.onBackInvoked();

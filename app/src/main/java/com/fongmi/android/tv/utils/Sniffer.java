@@ -27,8 +27,10 @@ public class Sniffer {
 
     public static String getUrl(String text) {
         if (Json.isObj(text) || text.contains("$")) return text;
-        Matcher m = AI_PUSH.matcher(text);
-        if (m.find()) return m.group(0);
+        Matcher network = Pattern.compile("(https?|thunder|magnet|ed2k):\\S+").matcher(text);
+        if (network.find()) return network.group(0);
+        Matcher video = Pattern.compile("(?<!\\w)video:\\S+").matcher(text);
+        if (video.find()) return video.group(0);
         return text;
     }
 

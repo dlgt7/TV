@@ -8,6 +8,7 @@ public final class SecondarySubtitleDiagnostics {
     private static final AtomicInteger loaded = new AtomicInteger();
     private static final AtomicInteger failed = new AtomicInteger();
     private static final AtomicInteger rendered = new AtomicInteger();
+    private static volatile String lastError = "";
 
     private SecondarySubtitleDiagnostics() {
     }
@@ -16,8 +17,9 @@ public final class SecondarySubtitleDiagnostics {
         loaded.incrementAndGet();
     }
 
-    static void onFailed() {
+    static void onFailed(Throwable error) {
         failed.incrementAndGet();
+        lastError = error == null ? "unknown" : error.getClass().getSimpleName();
     }
 
     static void onRendered() {
@@ -28,12 +30,13 @@ public final class SecondarySubtitleDiagnostics {
         loaded.set(0);
         failed.set(0);
         rendered.set(0);
+        lastError = "";
     }
 
     public static Snapshot snapshot() {
-        return new Snapshot(loaded.get(), failed.get(), rendered.get());
+        return new Snapshot(loaded.get(), failed.get(), rendered.get(), lastError);
     }
 
-    public record Snapshot(int loaded, int failed, int rendered) {
+    public record Snapshot(int loaded, int failed, int rendered, String lastError) {
     }
 }

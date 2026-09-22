@@ -3,14 +3,15 @@ package com.fongmi.android.tv.ui.dialog;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.DialogSpeedBinding;
 import com.fongmi.android.tv.impl.SpeedListener;
 import com.fongmi.android.tv.setting.PlayerSetting;
-import com.fongmi.android.tv.utils.KeyUtil;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class SpeedDialog extends BaseAlertDialog {
 
+    private static final float[] PRESETS = {0.5f, 0.8f, 1.0f, 1.2f, 1.5f, 2.0f, 3.0f, 5.0f};
     private DialogSpeedBinding binding;
 
     public static void show(FragmentActivity activity) {
@@ -24,27 +25,24 @@ public class SpeedDialog extends BaseAlertDialog {
 
     @Override
     protected MaterialAlertDialogBuilder getBuilder() {
-        return builder().setView(getBinding().getRoot());
+        return builder().setTitle(R.string.player_speed)
+                .setSingleChoiceItems(labels(), selected(), (dialog, which) -> {
+                    ((SpeedListener) requireActivity()).setSpeed(PRESETS[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.dialog_negative, null);
     }
 
-    @Override
-    protected void initView() {
-        binding.slider.setValue(PlayerSetting.getSpeed());
+    private int selected() {
+        float value = PlayerSetting.getSpeed();
+        int best = 0;
+        for (int i = 1; i < PRESETS.length; i++) if (Math.abs(PRESETS[i] - value) < Math.abs(PRESETS[best] - value)) best = i;
+        return best;
     }
 
-    @Override
-    protected void initEvent() {
-        binding.slider.addOnChangeListener((slider, value, fromUser) -> ((SpeedListener) requireActivity()).setSpeed(value));
-        binding.slider.setOnKeyListener((view, keyCode, event) -> {
-            boolean enter = KeyUtil.isEnterKey(event);
-            if (enter) dismiss();
-            return enter;
-        });
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        getDialog().getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+    private String[] labels() {
+        String[] labels = new String[PRESETS.length];
+        for (int i = 0; i < labels.length; i++) labels[i] = PRESETS[i] + "×";
+        return labels;
     }
 }

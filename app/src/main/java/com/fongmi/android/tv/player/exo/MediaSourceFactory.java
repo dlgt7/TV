@@ -2,12 +2,15 @@ package com.fongmi.android.tv.player.exo;
 
 import static androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS;
 
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.database.StandaloneDatabaseProvider;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.datasource.cache.Cache;
 import androidx.media3.datasource.cache.CacheDataSource;
@@ -17,12 +20,14 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource;
 import androidx.media3.exoplayer.drm.DrmSessionManagerProvider;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.ExtractorsFactory;
 import androidx.media3.extractor.ts.TsExtractor;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.PreloadSetting;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
@@ -38,17 +43,15 @@ public class MediaSourceFactory implements MediaSource.Factory {
     private static Cache cache;
 
     private final DefaultMediaSourceFactory defaultMediaSourceFactory;
-    private HttpDataSource.Factory httpDataSourceFactory;
-    private DataSource.Factory dataSourceFactory;
     private ExtractorsFactory extractorsFactory;
 
     public MediaSourceFactory() {
-        defaultMediaSourceFactory = new DefaultMediaSourceFactory(getDataSourceFactory(), getExtractorsFactory());
+        defaultMediaSourceFactory = new DefaultMediaSourceFactory(createUpstreamDataSourceFactory(Map.of()), getExtractorsFactory());
     }
 
     static DataSource.Factory createUpstreamDataSourceFactory(Map<String, String> headers) {
-        HttpDataSource.Factory factory = new OkHttpDataSource.Factory(OkHttp.player());
-        factory.setDefaultRequestProperties(headers);
+        HttpDataSource.Factory factory = createHttpDataSourceFactory();
+        factory.setDefaultRequestProperties(headers == null ? Map.of() : Map.copyOf(headers));
         return new DefaultDataSource.Factory(App.get(), factory);
     }
 
@@ -91,8 +94,21 @@ public class MediaSourceFactory implements MediaSource.Factory {
     @NonNull
     @Override
     public MediaSource createMediaSource(@NonNull MediaItem mediaItem) {
-        getHttpDataSourceFactory().setDefaultRequestProperties(ExoUtil.extractHeaders(mediaItem));
-        return defaultMediaSourceFactory.createMediaSource(mediaItem);
+        Uri uri = mediaItem.localConfiguration != null ? mediaItem.localConfiguration.uri : Uri.EMPTY;
+        if ("smb".equalsIgnoreCase(uri.getScheme())) {
+            return new ProgressiveMediaSource.Factory(new SmbDataSource.Factory(), getExtractorsFactory())
+                    .createMediaSource(mediaItem);
+        }
+        // A shared mutable HTTP factory leaks headers between current playback and preload sources.
+        // Build a lightweight per-item factory so Authorization/Referer remain bound to this item.
+        Map<String, String> headers = ExoUtil.extractHeaders(mediaItem);
+        DataSource.Factory upstream = createUpstreamDataSourceFactory(headers);
+        // Media3's default cache key is only the URL. Never let authenticated responses share
+        // spans with a later request that happens to use the same URL and different credentials.
+        DataSource.Factory source = hasSensitiveHeaders(headers)
+                ? upstream
+                : () -> getCacheDataSource(upstream).createDataSource();
+        return new DefaultMediaSourceFactory(source, getExtractorsFactory()).createMediaSource(mediaItem);
     }
 
     private ExtractorsFactory getExtractorsFactory() {
@@ -100,17 +116,28 @@ public class MediaSourceFactory implements MediaSource.Factory {
         return extractorsFactory;
     }
 
-    private DataSource.Factory getDataSourceFactory() {
-        if (dataSourceFactory == null) dataSourceFactory = () -> getCacheDataSource(new DefaultDataSource.Factory(App.get(), getHttpDataSourceFactory())).createDataSource();
-        return dataSourceFactory;
-    }
-
     private CacheDataSource.Factory getCacheDataSource(DataSource.Factory upstreamFactory) {
         return new CacheDataSource.Factory().setCache(getCache()).setUpstreamDataSourceFactory(upstreamFactory).setCacheWriteDataSinkFactory(null).setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
     }
 
-    private HttpDataSource.Factory getHttpDataSourceFactory() {
-        if (httpDataSourceFactory == null) httpDataSourceFactory = new OkHttpDataSource.Factory(OkHttp.player());
-        return httpDataSourceFactory;
+    public static boolean hasSensitiveHeaders(Map<String, String> headers) {
+        if (headers == null) return false;
+        for (String name : headers.keySet()) {
+            if (name == null) continue;
+            if ("authorization".equalsIgnoreCase(name)
+                    || "proxy-authorization".equalsIgnoreCase(name)
+                    || "cookie".equalsIgnoreCase(name)
+                    || "set-cookie".equalsIgnoreCase(name)) return true;
+        }
+        return false;
+    }
+
+    private static HttpDataSource.Factory createHttpDataSourceFactory() {
+        if (PlayerSetting.getHttp() == 0) {
+            // Do not allow HTTPS credentials to follow a protocol downgrade. OkHttp separately
+            // strips Authorization on cross-origin redirects.
+            return new DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(false);
+        }
+        return new OkHttpDataSource.Factory(OkHttp.player());
     }
 }

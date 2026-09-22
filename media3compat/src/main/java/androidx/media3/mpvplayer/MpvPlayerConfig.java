@@ -70,9 +70,10 @@ public final class MpvPlayerConfig {
             addPreInitStringOption("cache", "yes");
             addPreInitStringOption("cache-on-disk", "yes");
             addPreInitStringOption("demuxer-cache-dir", cacheDir.getAbsolutePath());
-            addPreInitStringOption("cache-secs", Integer.toString(seconds));
-            addPreInitStringOption("demuxer-max-bytes", sizeMb + "MiB");
-            return addPreInitStringOption("demuxer-max-back-bytes", "0");
+            addPreInitStringOption("cache-secs", Integer.toString(Math.max(1, seconds)));
+            addPreInitStringOption("demuxer-max-bytes", Math.max(8, sizeMb) + "MiB");
+            addPreInitStringOption("demuxer-max-back-bytes", "8MiB");
+            return this;
         }
 
         public Builder addAndroidSubtitleOptions(Context context, boolean caption, double position, double scale) {

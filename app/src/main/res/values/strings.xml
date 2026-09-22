@@ -172,6 +172,10 @@
     <string name="player_preload_size">Preload size</string>
     <string name="player_preload_time">Preload time</string>
     <string name="player_preload_time_value">%1$d seconds</string>
+    <string name="player_buffer">Buffer time</string>
+    <string name="player_buffer_value">%1$d s</string>
+    <string name="player_http">HTTP method</string>
+    <string name="player_live_latency">Live latency</string>
     <string name="player_preload_metered">Preload on metered network</string>
     <string name="player_preload_diagnostics">Preload diagnostics</string>
     <string name="player_preload_diagnostics_reset">Reset</string>
@@ -179,6 +183,9 @@
     <string name="player_mpv_gpu_next">gpu-next</string>
     <string name="player_mpv_vulkan">vulkan</string>
     <string name="player_mpv_conf_import_success">Imported mpv.conf</string>
+    <string name="player_mpv_conf_import_failed">Failed to import mpv.conf</string>
+    <string name="player_mpv_conf_save_failed">Failed to save mpv.conf</string>
+    <string name="player_mpv_conf_conflict">These options are managed by the playback mode and will be overridden: %1$s</string>
     <string name="player_ua">User-Agent</string>
 
     <!-- Danmaku -->
@@ -191,11 +198,18 @@
     <string name="search_keyword">Keywords…</string>
     <string name="subtitle_search">Search subtitle</string>
     <string name="subtitle_secondary">Secondary subtitle (long press to clear)</string>
+    <string name="subtitle_secondary_search">Search secondary subtitle</string>
+    <string name="subtitle_secondary_file">Choose subtitle file</string>
+    <string name="subtitle_secondary_embedded">Choose embedded secondary track</string>
+    <string name="subtitle_secondary_failed">Unable to load secondary subtitle</string>
+    <string name="subtitle_secondary_offset">Secondary subtitle offset</string>
+    <string name="subtitle_secondary_clear">Clear secondary subtitle</string>
+    <string name="subtitle_secondary_active">%1$s · %2$+.1f s</string>
     <string name="subtitle_search_api_title">Assrt</string>
     <string name="subtitle_search_token_hint">Token</string>
     <string name="player_subtitle_assrt">Subtitle search token</string>
     <string name="player_subtitle_font">Subtitle font</string>
-    <string name="player_mpv_conf_precedence">User options in mpv.conf override Android defaults. App-required options (vo/hwdec/proxy) still win.</string>
+    <string name="player_mpv_conf_precedence">User options in mpv.conf override Android defaults. Playback-mode options (vo/hwdec) still win.</string>
     <string name="player_volume_gain_on">Volume gain 1.5x</string>
     <string name="player_volume_gain_off">Volume gain off</string>
     <string name="subtitle_font_default">System default</string>
@@ -262,6 +276,16 @@
         <item>MPV</item>
     </string-array>
 
+    <string-array name="select_exo_http">
+        <item>Default</item>
+        <item>OkHttp</item>
+    </string-array>
+
+    <string-array name="select_live_latency">
+        <item>Smooth</item>
+        <item>Low latency</item>
+    </string-array>
+
     <string-array name="select_render">
         <item>Surface</item>
         <item>Texture</item>
@@ -293,4 +317,162 @@
         <item>Select subtitle track</item>
     </string-array>
 
+    <string name="dialog_reset">Reset</string>
+    <string name="player_audio_effect">Audio effects</string>
+    <string name="player_video_effect">Video effects</string>
+    <string name="effect_preset">Preset</string>
+    <string name="effect_equalizer">10-band equalizer (dB ×100)</string>
+    <string name="effect_dynamics">Dynamics</string>
+    <string name="effect_channels">Channel controls</string>
+    <string name="effect_video_adjust">Color and detail</string>
+    <string name="effect_stability">Dynamic stability</string>
+    <string name="effect_dialogue">Dialogue enhancement</string>
+    <string name="effect_boost">Boost (dB ×100)</string>
+    <string name="effect_preamp">Preamp (dB ×100)</string>
+    <string name="effect_loudness">Loudness normalization</string>
+    <string name="effect_balance">Balance</string>
+    <string name="effect_center">Center gain (dB ×100)</string>
+    <string name="effect_saturation">Saturation ×100</string>
+    <string name="effect_contrast">Contrast ×100</string>
+    <string name="effect_brightness">Brightness ×100</string>
+    <string name="effect_sharpness">Sharpness ×100</string>
+    <string name="effect_shadow">Shadow lift ×100</string>
+    <string name="effect_gamma">Gamma ×100</string>
+    <string name="effect_hue">Hue</string>
+    <string name="effect_temperature">Temperature</string>
+    <string name="error_audio_effect_unsupported">Audio effects are unavailable for this output</string>
+    <string name="error_audio_effect_passthrough">Disable audio passthrough to use audio effects</string>
+    <string name="error_audio_effect_apply">Failed to apply audio effects</string>
+    <string name="error_video_effect_unsupported">Video effects are unavailable for this renderer</string>
+    <string name="error_video_effect_apply">Failed to apply video effects</string>
+    <string name="error_video_effect_zero_copy">Video effects require compatible hard decode or software decode</string>
+
+    <string-array name="audio_effect_presets">
+        <item>Off</item><item>Natural</item><item>Vocal</item><item>Cinema</item><item>Bass</item><item>Treble</item><item>Pop</item><item>Rock</item><item>Dance</item><item>Electronic</item><item>Hip-hop</item><item>Jazz</item><item>Classical</item><item>Custom</item>
+    </string-array>
+    <string-array name="audio_channel_modes">
+        <item>Auto</item><item>Stereo downmix</item><item>Mono</item><item>Reverse L/R</item>
+    </string-array>
+    <string-array name="video_effect_presets">
+        <item>Off</item><item>Natural</item><item>Vivid</item><item>Clear</item><item>Bright</item><item>Cinema</item><item>Soft</item><item>Warm</item><item>Cool</item><item>Comfort</item><item>Anime</item><item>Sport</item><item>Game</item><item>Custom</item>
+    </string-array>
+
+    <!-- Network storage -->
+    <string name="setting_network_storage">Network storage</string>
+    <string name="network_storage_add_smb">Add SMB</string>
+    <string name="network_storage_add_webdav">Add WebDAV</string>
+    <string name="network_storage_discover_smb">Discover SMB</string>
+    <string name="network_storage_discovering">Scanning LAN for SMB…</string>
+    <string name="network_storage_discover_empty">No SMB hosts found</string>
+    <string name="network_storage_discover_pick">Select SMB host</string>
+    <string name="network_storage_discover_done">Found %d SMB host(s)</string>
+    <string name="network_storage_empty">No network storage</string>
+    <string name="network_storage_name">Name</string>
+    <string name="network_storage_host">Host</string>
+    <string name="network_storage_port">Port</string>
+    <string name="network_storage_share">Share</string>
+    <string name="network_storage_path">Path</string>
+    <string name="network_storage_https">HTTPS</string>
+    <string name="network_storage_username">Username</string>
+    <string name="network_storage_password">Password</string>
+    <string name="network_storage_save">Save</string>
+    <string name="network_storage_edit">Edit</string>
+    <string name="network_storage_delete">Delete</string>
+    <string name="network_storage_browse">Browse</string>
+    <string name="network_storage_invalid">Please fill in required fields</string>
+    <string name="network_storage_list_fail">Failed to list directory</string>
+    <string name="network_storage_share_missing">Share not found. Showing available shares.</string>
+    <string name="network_storage_share_optional">Share (optional, leave empty to list)</string>
+    <string name="network_storage_type_smb">SMB</string>
+    <string name="network_storage_type_webdav">WebDAV</string>
+
+    <!-- DLNA media library -->
+    <string name="detail_source">Source: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_protocol">Protocol: <xliff:g name="name">%s</xliff:g></string>
+    <string name="dlna_library_refresh">Refresh</string>
+    <string name="dlna_library_empty">No media servers found</string>
+    <string name="dlna_library_browse_fail">Failed to browse folder</string>
+    <string name="dlna_library_play_fail">No playable URL</string>
+    <string name="dlna_library_type">DLNA</string>
+    <string name="dlna_library_pin">Add to library home</string>
+    <string name="dlna_library_unpin">Remove from library home</string>
+    <string name="dlna_library_pin_added">Added to library home</string>
+    <string name="dlna_library_pin_removed">Removed from library home</string>
+    <string name="dlna_library_pinned">Pinned</string>
+    <string name="dlna_library_folder">Folder</string>
+    <string name="dlna_library_item">Item</string>
+    <string name="setting_dlna_library">Media library</string>
+
+
+    <string name="setting_cast_setting">Cast setting</string>
+    <string name="setting_dlna_setting">DLNA setting</string>
+    <string name="setting_dlna">DLNA</string>
+    <string name="setting_dlna_name">Device name</string>
+    <string name="setting_dlna_iface_mode">Network mode</string>
+    <string name="setting_dlna_iface">Network interface</string>
+    <string name="setting_dlna_iface_none">No interface</string>
+    <string name="setting_dlna_http_port">HTTP port</string>
+    <string name="setting_airplay_setting">AirPlay setting</string>
+    <string name="setting_airplay">AirPlay</string>
+    <string name="setting_airplay_name">Device name</string>
+    <string name="setting_airplay_port">Server port</string>
+    <string name="setting_airplay_iface_mode">Network mode</string>
+    <string name="setting_airplay_iface">Network interface</string>
+    <string name="setting_airplay_iface_none">No interface</string>
+    <string name="setting_airplay_require_pin">Require PIN</string>
+    <string name="setting_airplay_allow_new">Allow new connection</string>
+    <string name="setting_airplay_advertise_video">Advertise video</string>
+    <string name="setting_airplay_advertise_audio">Advertise audio</string>
+    <string name="setting_airplay_advanced">Advanced</string>
+    <string name="airplay_cast_waiting">Waiting for AirPlay…</string>
+    <string name="airplay_cast_connecting">Connecting…</string>
+    <string name="airplay_cast_mirroring">AirPlay Mirroring</string>
+    <string name="airplay_cast_video">AirPlay Video</string>
+    <string name="airplay_cast_audio">AirPlay Audio</string>
+    <string name="airplay_cast_pin_hint">Enter this PIN on your device</string>
+    <string name="airplay_cast_play">Play</string>
+    <string name="airplay_cast_pause">Pause</string>
+    <string name="airplay_cast_close">Close</string>
+    <string name="setting_airplay_h265">H.265 (HEVC)</string>
+    <string name="setting_airplay_enforce_sdr">Force SDR</string>
+    <string name="setting_airplay_resolution">Resolution</string>
+    <string name="setting_airplay_resolution_auto">Auto</string>
+    <string name="setting_airplay_resolution_custom">Custom…</string>
+    <string name="setting_airplay_max_fps">Maximum FPS</string>
+    <string name="setting_airplay_max_fps_custom">Custom…</string>
+    <string name="setting_airplay_overscanned">Overscanned</string>
+    <string name="setting_airplay_low_latency">Low latency</string>
+    <string name="setting_airplay_allow_frame_drop">Allow frame drop</string>
+    <string name="setting_airplay_realtime_priority">Realtime decoder priority</string>
+    <string name="setting_airplay_operating_rate">Operating rate hint</string>
+    <string name="setting_airplay_aligned_pacing">Aligned frame pacing</string>
+    <string name="setting_airplay_aac">AAC</string>
+    <string name="setting_airplay_alac">ALAC</string>
+    <string name="setting_airplay_force_sw_alac">Force software ALAC</string>
+    <string name="setting_airplay_audio_latency">Audio delay</string>
+    <string name="setting_airplay_audio_latency_default">Default</string>
+    <string name="setting_airplay_audio_latency_ms">%d ms</string>
+    <string name="setting_airplay_audio_auto_buffer">Auto audio buffer</string>
+    <string name="setting_airplay_audio_cushion">Audio buffer (ms)</string>
+    <string name="setting_airplay_audio_adaptive">Audio buffer profile</string>
+    <string name="setting_airplay_oboe_buffer">Hardware buffer (frames)</string>
+    <string name="setting_airplay_auto_fullscreen">Auto fullscreen</string>
+    <string name="setting_airplay_idle_preview">Idle preview</string>
+    <string name="setting_airplay_debug_overlay">Debug overlay</string>
+    <string name="setting_airplay_benchmark_log">Debug logging</string>
+    <string-array name="setting_airplay_audio_adaptive_names">
+        <item>Lowest latency</item>
+        <item>Lower latency</item>
+        <item>Balanced</item>
+        <item>Better stability</item>
+        <item>Best stability</item>
+    </string-array>
+
+    <string name="detail_path">Path: <xliff:g name="name">%s</xliff:g></string>
+    <string name="network_storage_manual">Enter manually</string>
+    <string name="network_storage_pin_home">Show on home</string>
+    <string name="network_storage_unpin_home">Remove from home</string>
+
+    <string name="network_storage_insecure_auth">Allow credentials over HTTP</string>
+    <string name="network_storage_smb_downgrade">Allow unencrypted SMB fallback</string>
 </resources>

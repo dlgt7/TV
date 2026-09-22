@@ -26,12 +26,15 @@ import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.bean.Track;
 import com.fongmi.android.tv.databinding.DialogTrackBinding;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.track.TrackUtil;
 import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.ui.adapter.TrackAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.FileUtil;
+import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,11 +107,20 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         binding.title.setText(ResUtil.getStringArray(R.array.select_track)[type - 1]);
         binding.recycler.post(() -> binding.recycler.scrollToPosition(adapter.getSelected()));
         binding.recycler.setVisibility(adapter.getItemCount() == 0 ? View.GONE : View.VISIBLE);
-        binding.offset.setVisibility(hasText() || hasAudio() ? View.VISIBLE : View.GONE);
+        boolean bitmapSubtitle = type == C.TRACK_TYPE_TEXT && TrackUtil.hasSelectedBitmapSubtitle(player.getCurrentTracks());
+        binding.offset.setVisibility((hasText() && !bitmapSubtitle) || hasAudio() ? View.VISIBLE : View.GONE);
         binding.choose.setVisibility(hasChoose() ? View.VISIBLE : View.GONE);
         binding.search.setVisibility(hasSearch() ? View.VISIBLE : View.GONE);
         binding.secondary.setVisibility(hasSecondarySubtitle() ? View.VISIBLE : View.GONE);
-        binding.secondary.setSelected(player != null && player.getSecondarySub() != null);
+        binding.effect.setVisibility(type == C.TRACK_TYPE_AUDIO || type == C.TRACK_TYPE_VIDEO ? View.VISIBLE : View.GONE);
+        binding.effect.setContentDescription(getString(type == C.TRACK_TYPE_VIDEO ? R.string.player_video_effect : R.string.player_audio_effect));
+        binding.secondary.setSelected(player != null && player.hasSecondarySubtitle());
+        if (player != null && player.getSecondarySub() != null) {
+            binding.secondary.setContentDescription(getString(R.string.subtitle_secondary_active,
+                    player.getSecondarySub().getName(), player.getSecondarySubtitleOffsetMs() / 1000.0));
+        } else if (player != null && player.hasSecondarySubtitle()) {
+            binding.secondary.setContentDescription(getString(R.string.subtitle_secondary_embedded));
+        }
         binding.subtitle.setVisibility(hasText() ? View.VISIBLE : View.GONE);
     }
 
@@ -119,7 +131,21 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
         binding.search.setOnClickListener(this::onSearch);
         binding.secondary.setOnClickListener(this::onSecondarySubtitle);
         binding.secondary.setOnLongClickListener(this::onClearSecondarySubtitle);
+        binding.effect.setOnClickListener(this::onEffectSetting);
         binding.subtitle.setOnClickListener(this::onSubtitle);
+        binding.title.setOnLongClickListener(this::onEffectSetting);
+    }
+
+    private boolean onEffectSetting(View view) {
+        if (type == C.TRACK_TYPE_AUDIO) {
+            int error = player.getAudioSettingError();
+            if (player.canSetAudioSetting() || error == R.string.error_audio_effect_passthrough) EffectSettingDialog.showAudio(requireActivity(), player);
+            else Notify.show(error != 0 ? error : R.string.error_audio_effect_unsupported);
+        } else if (type == C.TRACK_TYPE_VIDEO) {
+            if (!player.canSetVideoSetting()) Notify.show(player.getVideoSettingError() != 0 ? player.getVideoSettingError() : R.string.error_video_effect_unsupported);
+            else EffectSettingDialog.showVideo(requireActivity(), player);
+        } else return false;
+        return true;
     }
 
     private void onOffset(View view) {
@@ -139,12 +165,64 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
     }
 
     private void onSecondarySubtitle(View view) {
+        List<Integer> actionIds = new ArrayList<>();
+        actionIds.add(R.string.subtitle_secondary_search);
+        actionIds.add(R.string.subtitle_secondary_file);
+        if (!player.getEmbeddedSecondarySubtitleOptions().isEmpty()) actionIds.add(R.string.subtitle_secondary_embedded);
+        actionIds.add(R.string.subtitle_secondary_offset);
+        actionIds.add(R.string.subtitle_secondary_clear);
+        String[] actions = actionIds.stream().map(id -> getString(id)).toArray(String[]::new);
+        new MaterialAlertDialogBuilder(requireActivity())
+                .setTitle(R.string.subtitle_secondary)
+                .setItems(actions, (dialog, which) -> handleSecondaryAction(actionIds.get(which)))
+                .setNegativeButton(R.string.dialog_negative, null)
+                .show();
+    }
+
+    private void handleSecondaryAction(int action) {
+        if (action == R.string.subtitle_secondary_search) openSecondarySearch();
+        else if (action == R.string.subtitle_secondary_file) chooseSecondaryFile();
+        else if (action == R.string.subtitle_secondary_embedded) chooseEmbeddedSecondary();
+        else if (action == R.string.subtitle_secondary_offset) SecondarySubtitleOffsetDialog.show(requireActivity(), player);
+        else if (action == R.string.subtitle_secondary_clear) {
+            player.clearSecondarySub();
+            player.setEmbeddedSecondarySubtitle(null);
+        }
+    }
+
+    private void chooseEmbeddedSecondary() {
+        List<PlayerManager.SecondaryTrackOption> options = player.getEmbeddedSecondarySubtitleOptions();
+        String[] labels = new String[options.size() + 1];
+        labels[0] = getString(R.string.none);
+        int selected = 0;
+        for (int i = 0; i < options.size(); i++) {
+            labels[i + 1] = provider.getTrackName(options.get(i).format());
+            if (options.get(i).selected()) selected = i + 1;
+        }
+        new MaterialAlertDialogBuilder(requireActivity())
+                .setTitle(R.string.subtitle_secondary_embedded)
+                .setSingleChoiceItems(labels, selected, (dialog, which) -> {
+                    player.setEmbeddedSecondarySubtitle(which == 0 ? null : options.get(which - 1).selection());
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.dialog_negative, null)
+                .show();
+    }
+
+    private void openSecondarySearch() {
+        FragmentActivity activity = requireActivity();
+        dismissNow();
+        SubtitleSearchDialog.create().player(player).secondary(true).show(activity);
+    }
+
+    private void chooseSecondaryFile() {
         FileChooser.from(secondaryLauncher).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, "text/*", "application/octet-stream"});
         player.pause();
     }
 
     private boolean onClearSecondarySubtitle(View view) {
         player.clearSecondarySub();
+        player.setEmbeddedSecondarySubtitle(null);
         dismiss();
         return true;
     }
@@ -201,15 +279,26 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
 
     private void setSubtitle(Uri uri) {
         if (!isAdded()) return;
+        persistReadPermission(uri);
         player.setSub(Sub.from(FileUtil.getDisplayName(uri), uri.toString()));
         dismiss();
     }
 
     private void setSecondarySubtitle(Uri uri) {
         if (!isAdded()) return;
+        persistReadPermission(uri);
         player.setSecondarySub(Sub.from(FileUtil.getDisplayName(uri), uri.toString()));
         player.play();
         dismiss();
+    }
+
+    private void persistReadPermission(Uri uri) {
+        if (!"content".equalsIgnoreCase(uri.getScheme())) return;
+        try {
+            requireContext().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (SecurityException ignored) {
+            // Some document providers grant only a transient permission; playback can still proceed.
+        }
     }
 
     public interface Listener {

@@ -59,4 +59,8 @@
         <item>PiP</item>
     </string-array>
 
+
+    <string name="device_searching">Searching for devices…</string>
+    <string name="device_empty">No devices found. Refresh or check the same Wi‑Fi.</string>
+    <string name="device_casting">Casting…</string>
 </resources>

@@ -1,9 +1,12 @@
 package com.fongmi.android.tv.player.engine;
 
+import androidx.annotation.Nullable;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.TrackSelectionOverride;
 
 import com.fongmi.android.tv.bean.Sub;
+import com.fongmi.android.tv.player.effect.PlayerEffect;
 import com.fongmi.android.tv.player.media.PlaySpec;
 
 public interface PlayerEngine {
@@ -16,11 +19,22 @@ public interface PlayerEngine {
 
     Player getPlayer();
 
+    default PlayerEffect getEffect() {
+        return PlayerEffect.NONE;
+    }
+
+    default boolean requiresAudioEffectRebuild() {
+        return false;
+    }
+
     void release();
 
     Player rebuild();
 
     boolean setDecode(int decode);
+
+    default void setLiveMode(boolean live) {
+    }
 
     void start(PlaySpec spec, long startPositionMs);
 
@@ -51,6 +65,16 @@ public interface PlayerEngine {
 
     default void setVolumeGain(float gain) {
         if (getPlayer().isCommandAvailable(Player.COMMAND_SET_VOLUME)) getPlayer().setVolume(Math.clamp(gain, 0f, 1f));
+    }
+
+    default boolean supportsEmbeddedSecondarySubtitle() {
+        return false;
+    }
+
+    default void setEmbeddedSecondarySubtitle(@Nullable TrackSelectionOverride selection) {
+    }
+
+    default void setEmbeddedSecondarySubtitleOffset(long offsetMs) {
     }
 
     default boolean addSubtitle(Sub sub) {

@@ -9,6 +9,7 @@ import com.fongmi.android.tv.bean.Channel;
 import com.fongmi.android.tv.bean.EpgData;
 import com.fongmi.android.tv.bean.Group;
 import com.fongmi.android.tv.bean.Result;
+import com.fongmi.android.tv.player.LineQualityStore;
 
 public class LivePlaybackController {
 
@@ -38,6 +39,7 @@ public class LivePlaybackController {
 
     public void selectChannel(Channel channel) {
         if (channel == null) return;
+        if (!channel.isOnly()) channel.setIndex(LineQualityStore.bestIndex(channel.getUrls(), channel.getIndex()));
         state.setChannel(channel);
         host.renderChannelSelection(channel);
         refresh();

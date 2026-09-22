@@ -3,13 +3,17 @@ package com.fongmi.android.tv.player.mpv;
 import android.content.Context;
 import android.net.Uri;
 
+import com.fongmi.android.tv.utils.FileUtil;
 import com.github.catvod.utils.Path;
 
 import java.io.File;
-import java.io.InputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class MpvConfigFiles {
 
@@ -24,22 +28,35 @@ public final class MpvConfigFiles {
         String value = Path.read(file());
         if (value != null && !value.trim().isEmpty()) return value;
         return "# mpv.conf — user options override Android defaults.\n"
-                + "# App still forces vo/hwdec/proxy-url when needed for playback.\n"
+                + "# App still forces vo/hwdec when required by the selected playback mode.\n"
                 + "# Example:\n"
                 + "# vo=gpu\n"
                 + "# hwdec=mediacodec-copy\n";
     }
 
-    public static void write(String content) {
-        String value = content == null ? "" : content;
-        Path.write(file(), value.getBytes(StandardCharsets.UTF_8));
+    public static boolean write(String content) {
+        try {
+            FileUtil.writeAtomically((content == null ? "" : content).getBytes(StandardCharsets.UTF_8), file());
+            return true;
+        } catch (IOException | SecurityException ignored) {
+            return false;
+        }
     }
 
-    public static void importFrom(Context context, Uri uri) {
-        try (InputStream in = context.getContentResolver().openInputStream(uri)) {
-            Path.write(file(), in);
-        } catch (Exception ignored) {
+    public static boolean importFrom(Context context, Uri uri) {
+        try {
+            FileUtil.copyAtomically(uri, file());
+            return true;
+        } catch (IOException | SecurityException ignored) {
+            return false;
         }
+    }
+
+    public static List<String> findInterfaceManagedOptions(CharSequence content) {
+        Set<String> options = getDefaultOptions(content == null ? "" : content.toString());
+        return MpvUtil.getManagedOptionNames().stream()
+                .filter(option -> options.contains(option) || options.contains("no-" + option))
+                .toList();
     }
 
     public static Map<String, String> readGlobalOptions() {
@@ -80,6 +97,26 @@ public final class MpvConfigFiles {
                 + "  <alias><family>monospace</family><prefer><family>Droid Sans Mono</family></prefer></alias>\n"
                 + "</fontconfig>\n";
         if (!content.equals(Path.read(config))) Path.write(config, content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static Set<String> getDefaultOptions(String content) {
+        Set<String> options = new HashSet<>();
+        boolean active = true;
+        if (!content.isEmpty() && content.charAt(0) == '\uFEFF') content = content.substring(1);
+        for (String source : content.split("\\R")) {
+            String line = source.trim();
+            if (line.startsWith("[") && line.contains("]")) {
+                String profile = line.substring(1, line.indexOf(']')).trim();
+                active = profile.isEmpty() || "default".equals(profile);
+                continue;
+            }
+            if (!active || line.isEmpty() || line.startsWith("#")) continue;
+            if (line.startsWith("--")) line = line.substring(2);
+            int end = 0;
+            while (end < line.length() && (Character.isLetterOrDigit(line.charAt(end)) || line.charAt(end) == '-' || line.charAt(end) == '_')) end++;
+            if (end > 0) options.add(line.substring(0, end));
+        }
+        return options;
     }
 
     private static boolean isReserved(String key) {

@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.leanback.widget.ArrayObjectAdapter;
+import androidx.leanback.widget.BaseGridView;
 import androidx.leanback.widget.FocusHighlight;
 import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
@@ -38,6 +39,7 @@ import com.fongmi.android.tv.bean.Style;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.ActivityHomeBinding;
 import com.fongmi.android.tv.db.BackupManager;
+import com.fongmi.android.tv.dlna.CastNetworkWatcher;
 import com.fongmi.android.tv.event.CastEvent;
 import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
@@ -46,8 +48,14 @@ import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.player.extractor.Source;
 import com.fongmi.android.tv.server.Server;
+import com.fongmi.android.tv.service.AirPlayServer;
 import com.fongmi.android.tv.service.DLNARendererService;
 import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.setting.AirPlaySetting;
+import com.fongmi.android.tv.setting.DlnaSetting;
+import com.fongmi.android.tv.setting.Setting;
+import com.fongmi.android.tv.storage.NetworkStorage;
+import com.fongmi.android.tv.storage.NetworkStorageStore;
 import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
@@ -79,12 +87,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener {
+public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener, HeaderPresenter.OnClickListener {
 
     private ActivityHomeBinding mBinding;
     private ArrayObjectAdapter mHistoryAdapter;
     private ArrayObjectAdapter mFuncAdapter;
     private ArrayObjectAdapter mAdapter;
+    private int actionPosition = -1;
     private HistoryPresenter mPresenter;
     private SiteViewModel mViewModel;
     private Result mResult;
@@ -121,7 +130,11 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         mClock = Clock.create(mBinding.clock);
         mBinding.progressLayout.showProgress();
         PermissionUtil.requestNotify(this);
+        DlnaSetting.ensureDefaultInterface();
+        AirPlaySetting.ensureDefaultInterface();
         DLNARendererService.start(this);
+        AirPlayServer.start(this);
+        CastNetworkWatcher.register(this);
         Updater.create().start(this);
         setRecyclerView();
         setViewModel();
@@ -165,14 +178,17 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @SuppressLint("RestrictedApi")
     private void setRecyclerView() {
         CustomSelector selector = new CustomSelector();
-        selector.addPresenter(Integer.class, new HeaderPresenter());
+        selector.addPresenter(Integer.class, new HeaderPresenter(this));
         selector.addPresenter(String.class, new ProgressPresenter());
         selector.addPresenter(Vod.class, new VodPresenter(this, Style.list()));
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16), VodPresenter.class);
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(16), FuncPresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(16, FocusHighlight.ZOOM_FACTOR_NONE), FuncPresenter.class);
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16, FocusHighlight.ZOOM_FACTOR_SMALL, HorizontalGridView.FOCUS_SCROLL_ALIGNED), HistoryPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
+        mBinding.recycler.setWindowAlignment(BaseGridView.WINDOW_ALIGN_NO_EDGE);
+        mBinding.recycler.setWindowAlignmentOffsetPercent(BaseGridView.WINDOW_ALIGN_OFFSET_PERCENT_DISABLED);
+        mBinding.recycler.setItemAlignmentOffsetPercent(BaseGridView.ITEM_ALIGN_OFFSET_PERCENT_DISABLED);
     }
 
     private void setViewModel() {
@@ -181,7 +197,25 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             mAdapter.remove("progress");
             addVideo(mResult = result);
             Cache.clear().put(result);
+            restoreActionPosition();
         });
+        mViewModel.getAction().observe(this, this::onActionResult);
+    }
+
+    private void onActionResult(Result result) {
+        if (result == null) return;
+        mViewModel.clearAction();
+        Notify.show(result.getMsg());
+        if (!result.shouldRefreshAction()) return;
+        actionPosition = mBinding.recycler.getSelectedPosition();
+        getVideo();
+    }
+
+    private void restoreActionPosition() {
+        if (actionPosition < 0) return;
+        int position = Math.min(actionPosition, Math.max(0, mAdapter.size() - 1));
+        mBinding.recycler.post(() -> mBinding.recycler.setSelectedPosition(position));
+        actionPosition = -1;
     }
 
     private void setAdapter() {
@@ -274,6 +308,9 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         items.add(Func.create(R.string.home_search));
         items.add(Func.create(R.string.home_keep));
         items.add(Func.create(R.string.home_push));
+        NetworkStorage homeStorage = NetworkStorageStore.getHome();
+        if (homeStorage != null) items.add(Func.create(R.string.home_network_storage, null, homeStorage.getId()));
+        if (Setting.isDlnaLibrary()) items.add(Func.create(R.string.home_media_library));
         items.add(Func.create(R.string.home_setting));
         mFuncAdapter.setItems(items, new BaseDiffCallback<Func>());
     }
@@ -387,12 +424,20 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     @Override
+    public void onHeaderClick(int resId) {
+        if (resId == R.string.home_history) HistoryActivity.start(this);
+        else if (resId == R.string.home_recommend) RecommendActivity.start(this);
+    }
+
+    @Override
     public void onItemClick(Func item) {
         if (item.getResId() == R.string.home_vod) VodActivity.start(this, mResult);
         else if (item.getResId() == R.string.home_live) LiveActivity.start(this);
         else if (item.getResId() == R.string.home_keep) KeepActivity.start(this);
         else if (item.getResId() == R.string.home_push) PushActivity.start(this);
         else if (item.getResId() == R.string.home_search) SearchActivity.start(this);
+        else if (item.getResId() == R.string.home_network_storage) NetworkBrowseActivity.start(this, item.getId());
+        else if (item.getResId() == R.string.home_media_library) DlnaServerActivity.start(this);
         else if (item.getResId() == R.string.home_setting) SettingActivity.start(this);
     }
 
@@ -448,7 +493,16 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (KeyUtil.isMenuKey(event)) showDialog();
-        if (KeyUtil.isActionDown(event) & KeyUtil.isDownKey(event) && getCurrentFocus() == mBinding.title) return mBinding.recycler.getChildAt(0).requestFocus();
+        if (KeyUtil.isActionDown(event) && KeyUtil.isDownKey(event) && getCurrentFocus() == mBinding.title) {
+            mBinding.recycler.setSelectedPosition(0);
+            mBinding.recycler.scrollToPosition(0);
+            mBinding.recycler.post(() -> {
+                View child = mBinding.recycler.getChildAt(0);
+                if (child != null) child.requestFocus();
+                else mBinding.recycler.requestFocus();
+            });
+            return true;
+        }
         return super.dispatchKeyEvent(event);
     }
 
@@ -480,6 +534,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     protected void onDestroy() {
+        CastNetworkWatcher.unregister(this);
         DLNARendererService.stop(this);
         LiveConfig.get().clear();
         VodConfig.get().clear();

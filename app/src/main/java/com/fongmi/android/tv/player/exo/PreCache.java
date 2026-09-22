@@ -44,6 +44,11 @@ public class PreCache {
             PreloadDiagnostics.skipped(mediaItem, "unsupported_scheme");
             return;
         }
+        if (MediaSourceFactory.hasSensitiveHeaders(ExoUtil.extractHeaders(mediaItem))) {
+            stopManager();
+            PreloadDiagnostics.skipped(mediaItem, "sensitive_headers");
+            return;
+        }
         PreloadPolicy.Decision decision = PreloadPolicy.evaluate(App.get());
         if (!decision.allowed()) {
             stopManager();

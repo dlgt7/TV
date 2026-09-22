@@ -3,6 +3,7 @@ package com.fongmi.android.tv.player.exo;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 
+import com.fongmi.android.tv.player.effect.PlayerEffect;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.media.PlaySpec;
 
@@ -13,12 +14,18 @@ public class ExoPlayerEngine implements PlayerEngine {
     private final Player.Listener listener;
     private ExoPlayerSession session;
     private int decode;
+    private boolean live;
 
     public ExoPlayerEngine(int decode, Player.Listener listener) {
+        this(decode, false, listener);
+    }
+
+    public ExoPlayerEngine(int decode, boolean live, Player.Listener listener) {
         this.decode = normalizeDecode(decode);
+        this.live = live;
         this.listener = listener;
         this.provider = new ErrorMsgProvider();
-        this.session = new ExoPlayerSession(this.decode, listener);
+        this.session = new ExoPlayerSession(this.decode, live, listener);
     }
 
     @Override
@@ -32,6 +39,16 @@ public class ExoPlayerEngine implements PlayerEngine {
     }
 
     @Override
+    public PlayerEffect getEffect() {
+        return session.effect();
+    }
+
+    @Override
+    public boolean requiresAudioEffectRebuild() {
+        return !session.effect().isAudioProcessorInstalled();
+    }
+
+    @Override
     public void release() {
         session.release();
     }
@@ -39,7 +56,7 @@ public class ExoPlayerEngine implements PlayerEngine {
     @Override
     public Player rebuild() {
         session.release();
-        session = new ExoPlayerSession(decode, listener);
+        session = new ExoPlayerSession(decode, live, listener);
         return session.player();
     }
 
@@ -52,6 +69,11 @@ public class ExoPlayerEngine implements PlayerEngine {
     public boolean setDecode(int decode) {
         this.decode = normalizeDecode(decode);
         return true;
+    }
+
+    @Override
+    public void setLiveMode(boolean live) {
+        this.live = live;
     }
 
     @Override

@@ -66,7 +66,7 @@ public final class FileChooser {
                 .putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
                 .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
                 .putExtra("android.content.extra.SHOW_ADVANCED", true)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
     }
 
     private static boolean useInternal(Intent intent) {

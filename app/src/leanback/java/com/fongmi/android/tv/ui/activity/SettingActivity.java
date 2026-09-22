@@ -84,6 +84,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     private void setOtherText() {
         mBinding.dohText.setText(getDohList()[getDohIndex()]);
         mBinding.incognitoText.setText(Setting.getSwitch(Setting.isIncognito()));
+        mBinding.dlnaLibraryText.setText(Setting.getSwitch(Setting.isDlnaLibrary()));
         mBinding.sizeText.setText((size = ResUtil.getStringArray(R.array.select_size))[PlayerSetting.getSize()]);
     }
 
@@ -107,6 +108,8 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         mBinding.backup.setOnClickListener(this::onBackup);
         mBinding.player.setOnClickListener(this::onPlayer);
         mBinding.danmaku.setOnClickListener(this::onDanmaku);
+        mBinding.cast.setOnClickListener(this::onCast);
+        mBinding.networkStorage.setOnClickListener(this::onNetworkStorage);
         mBinding.restore.setOnClickListener(this::onRestore);
         mBinding.version.setOnClickListener(this::onVersion);
         mBinding.vod.setOnLongClickListener(this::onVodEdit);
@@ -115,6 +118,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         mBinding.liveHome.setOnClickListener(this::onLiveHome);
         mBinding.wall.setOnLongClickListener(this::onWallEdit);
         mBinding.incognito.setOnClickListener(this::setIncognito);
+        mBinding.dlnaLibrary.setOnClickListener(this::setDlnaLibrary);
         mBinding.vodHistory.setOnClickListener(this::onVodHistory);
         mBinding.liveHistory.setOnClickListener(this::onLiveHistory);
         mBinding.wallDefault.setOnClickListener(this::setWallDefault);
@@ -228,6 +232,14 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         SettingDanmakuActivity.start(this);
     }
 
+    private void onCast(View view) {
+        SettingCastActivity.start(this);
+    }
+
+    private void onNetworkStorage(View view) {
+        NetworkStorageActivity.start(this);
+    }
+
     private void onVersion(View view) {
         Updater.create().force().start(this);
     }
@@ -251,6 +263,12 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     private void setIncognito(View view) {
         Setting.putIncognito(!Setting.isIncognito());
         mBinding.incognitoText.setText(Setting.getSwitch(Setting.isIncognito()));
+    }
+
+    private void setDlnaLibrary(View view) {
+        Setting.putDlnaLibrary(!Setting.isDlnaLibrary());
+        mBinding.dlnaLibraryText.setText(Setting.getSwitch(Setting.isDlnaLibrary()));
+        ConfigEvent.common();
     }
 
     private void setSize(View view) {

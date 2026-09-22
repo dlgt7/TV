@@ -3,28 +3,40 @@ package com.fongmi.android.tv.player.mpv;
 import androidx.media3.common.C;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
+import androidx.annotation.Nullable;
 import androidx.media3.common.Player;
+import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.mpvplayer.MpvPlayer;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.bean.Sub;
+import com.fongmi.android.tv.player.effect.PlayerEffect;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.media.MediaItemFactory;
 import com.fongmi.android.tv.player.media.PlaySpec;
-
-import java.util.concurrent.TimeUnit;
+import com.fongmi.android.tv.utils.Task;
 
 public class MpvPlayerEngine implements PlayerEngine {
 
     private final MpvErrorMsgProvider provider;
     private final Player.Listener listener;
     private MpvPlayer player;
+    private MpvPlayerEffect effect;
     private PlaySpec spec;
     private int decode;
+    private int startGeneration;
+    private boolean live;
 
     public MpvPlayerEngine(int decode, Player.Listener listener) {
+        this(decode, false, listener);
+    }
+
+    public MpvPlayerEngine(int decode, boolean live, Player.Listener listener) {
         this.decode = decode;
+        this.live = live;
         this.listener = listener;
-        this.player = MpvUtil.buildPlayer(decode, listener);
+        this.player = MpvUtil.buildPlayer(decode, live, listener);
+        this.effect = new MpvPlayerEffect(player);
         this.provider = new MpvErrorMsgProvider();
     }
 
@@ -43,14 +55,23 @@ public class MpvPlayerEngine implements PlayerEngine {
     }
 
     @Override
+    public PlayerEffect getEffect() {
+        return effect;
+    }
+
+    @Override
     public void release() {
+        startGeneration++;
         player.release();
     }
 
     @Override
     public Player rebuild() {
+        startGeneration++;
         player.release();
-        return player = MpvUtil.buildPlayer(decode, listener);
+        player = MpvUtil.buildPlayer(decode, live, listener);
+        effect = new MpvPlayerEffect(player);
+        return player;
     }
 
     @Override
@@ -60,7 +81,25 @@ public class MpvPlayerEngine implements PlayerEngine {
 
     @Override
     public void setVolumeGain(float gain) {
-        if (player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(Math.clamp(gain, 0f, 2f));
+        // Must not go through Player.setVolume: Media3 caps volume at 1 and rejects a 1.5x gain
+        // with an IllegalArgumentException, which previously crashed PlaybackService on startup
+        // whenever the MPV engine was selected with a persisted gain.
+        player.setVolumeGain(Math.clamp(gain, 0f, 2f));
+    }
+
+    @Override
+    public boolean supportsEmbeddedSecondarySubtitle() {
+        return true;
+    }
+
+    @Override
+    public void setEmbeddedSecondarySubtitle(@Nullable TrackSelectionOverride selection) {
+        player.setSecondaryTextTrackSelectionOverride(selection);
+    }
+
+    @Override
+    public void setEmbeddedSecondarySubtitleOffset(long offsetMs) {
+        player.setSecondarySubtitleDelayMs(offsetMs);
     }
 
     @Override
@@ -81,13 +120,31 @@ public class MpvPlayerEngine implements PlayerEngine {
     }
 
     @Override
-    public void start(PlaySpec spec, long startPositionMs) {
-        this.spec = spec;
-        startInternal(startPositionMs);
+    public void setLiveMode(boolean live) {
+        this.live = live;
     }
 
-    private void startInternal(long startPositionMs) {
+    @Override
+    public void start(PlaySpec spec, long startPositionMs) {
+        this.spec = spec;
         long position = startPositionMs == C.TIME_UNSET ? 0 : Math.max(0, startPositionMs);
+        int generation = ++startGeneration;
+        Task.submit(() -> {
+            PlaySpec prepared = MpvHlsPngTs.prepare(spec);
+            App.post(() -> {
+                if (generation != startGeneration) return;
+                this.spec = prepared;
+                startInternal(position);
+            });
+        });
+    }
+
+    private void startInternal(long position) {
+        effect.applyVideoEffect();
+        // Must go through the effect, not setAudioFilter(""): clearing here left the configured
+        // audio chain unapplied for the whole session. applyAudioEffect() also emits "" when the
+        // effects are off, so it still resets stale state.
+        effect.applyAudioEffect();
         player.setMediaItem(MediaItemFactory.from(spec), position);
         player.prepare();
         player.play();
@@ -95,12 +152,12 @@ public class MpvPlayerEngine implements PlayerEngine {
 
     @Override
     public boolean isLive() {
-        return player.getDuration() < TimeUnit.MINUTES.toMillis(1);
+        return live;
     }
 
     @Override
     public boolean isVod() {
-        return player.getDuration() > TimeUnit.MINUTES.toMillis(1);
+        return !live;
     }
 
     @Override

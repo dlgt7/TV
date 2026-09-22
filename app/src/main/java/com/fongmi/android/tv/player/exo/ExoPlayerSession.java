@@ -1,8 +1,10 @@
 package com.fongmi.android.tv.player.exo;
 
 import androidx.media3.common.MediaItem;
+import androidx.annotation.NonNull;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.Tracks;
 import androidx.media3.exoplayer.ExoPlayer;
 
 import com.fongmi.android.tv.App;
@@ -10,17 +12,20 @@ import com.fongmi.android.tv.player.engine.PlaybackRecoveryPolicy;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.media.MediaItemFactory;
 import com.fongmi.android.tv.player.media.PlaySpec;
+import com.fongmi.android.tv.setting.AudioSetting;
+import com.fongmi.android.tv.setting.PlayerSetting;
 
-import java.util.concurrent.TimeUnit;
 
 /** Owns one ExoPlayer instance and all resources whose lifecycle must match that instance. */
 final class ExoPlayerSession {
 
     private final Runnable retryRunnable = this::retryTransient;
     private final ExoVolumeGain volumeGain;
+    private final ExoPlayerEffect effect;
     private final PreCache preCache;
     private final ExoPlayer player;
     private final int decode;
+    private final boolean live;
 
     private PlaySpec spec;
     private int attempts;
@@ -28,8 +33,17 @@ final class ExoPlayerSession {
     private boolean released;
 
     ExoPlayerSession(int decode, Player.Listener listener) {
+        this(decode, false, listener);
+    }
+
+    ExoPlayerSession(int decode, boolean live, Player.Listener listener) {
         this.decode = decode == PlayerEngine.SOFT ? PlayerEngine.SOFT : PlayerEngine.HARD;
-        this.player = ExoUtil.buildPlayer(this.decode, listener);
+        this.live = live;
+        if (AudioSetting.hasEffect(8)) PlayerSetting.putAudioPassThrough(false);
+        this.effect = new ExoPlayerEffect(!PlayerSetting.isAudioPassThrough());
+        this.player = ExoUtil.buildPlayer(this.decode, listener, effect.getAudioProcessor(), live);
+        this.effect.setPlayer(player);
+        this.player.addListener(effectListener);
         this.preCache = new PreCache();
         this.volumeGain = new ExoVolumeGain();
         this.volumeGain.attach(player);
@@ -37,6 +51,10 @@ final class ExoPlayerSession {
 
     ExoPlayer player() {
         return player;
+    }
+
+    ExoPlayerEffect effect() {
+        return effect;
     }
 
     void setVolumeGain(float gain) {
@@ -65,15 +83,19 @@ final class ExoPlayerSession {
     }
 
     void resetErrorBudget() {
+        // READY means the current attempt recovered. A queued transient retry must not restart a
+        // healthy stream a moment later with its stale position.
+        cancelPendingRetry();
         attempts = 0;
     }
 
     boolean isLive() {
-        return player.getDuration() < TimeUnit.MINUTES.toMillis(1) || player.isCurrentMediaItemLive();
+        if (player.isCurrentMediaItemLive()) return true;
+        return player.getDuration() == androidx.media3.common.C.TIME_UNSET && live;
     }
 
     boolean isVod() {
-        return player.getDuration() > TimeUnit.MINUTES.toMillis(1) && !player.isCurrentMediaItemLive();
+        return !isLive();
     }
 
     PlayerEngine.ErrorAction handleError(PlaybackException error) {
@@ -93,6 +115,8 @@ final class ExoPlayerSession {
         cancelPendingRetry();
         preCache.release();
         volumeGain.release();
+        player.removeListener(effectListener);
+        effect.release();
         player.release();
         spec = null;
     }
@@ -136,4 +160,20 @@ final class ExoPlayerSession {
     private void cancelPendingRetry() {
         App.removeCallbacks(retryRunnable);
     }
+
+    private final Player.Listener effectListener = new Player.Listener() {
+        @Override
+        public void onTracksChanged(@NonNull Tracks tracks) {
+            effect.applyAudioEffect();
+            effect.applyVideoEffect();
+        }
+
+        @Override
+        public void onPlaybackStateChanged(int state) {
+            if (state == Player.STATE_READY) {
+                effect.applyAudioEffect();
+                effect.applyVideoEffect();
+            }
+        }
+    };
 }

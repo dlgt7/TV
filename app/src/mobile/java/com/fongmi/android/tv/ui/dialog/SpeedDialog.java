@@ -1,7 +1,5 @@
 package com.fongmi.android.tv.ui.dialog;
 
-import android.content.DialogInterface;
-
 import androidx.fragment.app.Fragment;
 import androidx.viewbinding.ViewBinding;
 
@@ -13,8 +11,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class SpeedDialog extends BaseAlertDialog {
 
+    private static final float[] PRESETS = {0.5f, 0.8f, 1.0f, 1.2f, 1.5f, 2.0f, 3.0f, 5.0f};
     private DialogSpeedBinding binding;
-    private float value;
 
     public static void show(Fragment fragment) {
         new SpeedDialog().show(fragment.getChildFragmentManager(), null);
@@ -27,19 +25,24 @@ public class SpeedDialog extends BaseAlertDialog {
 
     @Override
     protected MaterialAlertDialogBuilder getBuilder() {
-        return builder().setTitle(R.string.player_speed).setView(getBinding().getRoot()).setPositiveButton(R.string.dialog_positive, this::onPositive).setNegativeButton(R.string.dialog_negative, this::onNegative);
+        return builder().setTitle(R.string.player_speed)
+                .setSingleChoiceItems(labels(), selected(), (dialog, which) -> {
+                    ((SpeedListener) requireParentFragment()).setSpeed(PRESETS[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.dialog_negative, null);
     }
 
-    @Override
-    protected void initView() {
-        binding.slider.setValue(value = PlayerSetting.getSpeed());
+    private int selected() {
+        float value = PlayerSetting.getSpeed();
+        int best = 0;
+        for (int i = 1; i < PRESETS.length; i++) if (Math.abs(PRESETS[i] - value) < Math.abs(PRESETS[best] - value)) best = i;
+        return best;
     }
 
-    private void onPositive(DialogInterface dialog, int which) {
-        ((SpeedListener) requireParentFragment()).setSpeed(binding.slider.getValue());
-    }
-
-    private void onNegative(DialogInterface dialog, int which) {
-        ((SpeedListener) requireParentFragment()).setSpeed(value);
+    private String[] labels() {
+        String[] labels = new String[PRESETS.length];
+        for (int i = 0; i < labels.length; i++) labels[i] = PRESETS[i] + "×";
+        return labels;
     }
 }

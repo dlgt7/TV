@@ -72,7 +72,6 @@ import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PiP;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.fongmi.android.tv.utils.Traffic;
 import com.fongmi.android.tv.utils.Util;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -494,7 +493,7 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     private void hideProgress() {
         mBinding.progress.getRoot().setVisibility(View.GONE);
         App.removeCallbacks(mR2);
-        Traffic.reset();
+        traffic.reset();
     }
 
     private void showError(String text) {
@@ -542,7 +541,7 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
+        traffic.setSpeed(mBinding.progress.traffic);
         App.post(mR2, 1000);
     }
 
@@ -662,6 +661,9 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     private void start(Result result, long startPositionMs) {
+        int type = mChannel != null ? mChannel.getPlayerType() : PlayerSetting.PLAYER_TYPE_FOLLOW;
+        if (type < 0) type = getHome().getPlayerType();
+        player().setEngineForNextPlayback(PlayerSetting.resolveEngine(true, type));
         mPlaybackKey = result.getRealUrl();
         startPlayer(mPlaybackKey, result, false, getHome().getTimeout(), startPositionMs, buildMetadata());
     }
@@ -1139,6 +1141,8 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
             hideControl();
         } else if (isVisible(mBinding.widget.info)) {
             hideInfo();
+        } else if (isVisible(mBinding.epgData)) {
+            hideEpg();
         } else if (isVisible(mBinding.recycler)) {
             hideUI();
         } else if (!isLock()) {

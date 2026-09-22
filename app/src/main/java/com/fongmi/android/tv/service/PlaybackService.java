@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.service;
 
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
@@ -53,6 +54,7 @@ import java.util.function.Consumer;
 public class PlaybackService extends MediaLibraryService implements MediaLibrarySession.Callback, PlayerManager.Callback {
 
     public static final String LOCAL_BIND_ACTION = BuildConfig.APPLICATION_ID.concat(".LOCAL_BIND");
+    public static final String ACTION_SUSPEND = BuildConfig.APPLICATION_ID.concat(".SUSPEND");
 
     private static final SessionCommand COMMAND_REPEAT = new SessionCommand(ActionEvent.REPEAT, Bundle.EMPTY);
     private static final String ACTION_MEDIA_BROWSER_SERVICE = "android.media.browse.MediaBrowserService";
@@ -137,6 +139,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         else if (ActionEvent.AUDIO.equals(action)) dispatchAudio();
         else if (ActionEvent.REPEAT.equals(action)) dispatchRepeat();
         else if (ActionEvent.REPLAY.equals(action)) dispatchReplay();
+        else if (ACTION_SUSPEND.equals(action)) suspend();
     }
 
     private boolean isLocalBind(Intent intent) {
@@ -189,6 +192,11 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     private void stopAndClear() {
         player.stop();
         player.clearMediaItems();
+    }
+
+    public static void requestSuspend(Context context) {
+        if (!running) return;
+        context.startService(new Intent(context, PlaybackService.class).setAction(ACTION_SUSPEND));
     }
 
     public void suspend() {
@@ -574,6 +582,16 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         return Task.executor().submit(() -> {
             MediaItem item = BrowseTree.getItem(mediaId);
             return item != null ? LibraryResult.ofItem(item, null) : LibraryResult.ofError(SessionError.ERROR_BAD_VALUE);
+        });
+    }
+
+    @NonNull
+    @Override
+    public ListenableFuture<MediaSession.MediaItemsWithStartPosition> onPlaybackResumption(@NonNull MediaSession session, @NonNull MediaSession.ControllerInfo controller, boolean isForPlayback) {
+        return Task.executor().submit(() -> {
+            BrowseTree.PlaybackResumption saved = BrowseTree.getPlaybackResumption();
+            if (saved == null) return new MediaSession.MediaItemsWithStartPosition(List.of(), 0, C.TIME_UNSET);
+            return new MediaSession.MediaItemsWithStartPosition(List.of(saved.item()), 0, saved.positionMs());
         });
     }
 

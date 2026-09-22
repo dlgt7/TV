@@ -18,6 +18,7 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Device;
 import com.fongmi.android.tv.bean.History;
@@ -31,7 +32,6 @@ import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.ScanTask;
-import com.fongmi.android.tv.utils.Task;
 import com.github.catvod.net.OkHttp;
 
 import java.io.IOException;
@@ -44,6 +44,7 @@ import okhttp3.Response;
 
 public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.OnClickListener, ScanTask.Listener {
 
+    private final FormBody.Builder body;
     private final OkHttpClient client;
     private final TypedArray mode;
 
@@ -53,6 +54,7 @@ public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
     private String type;
 
     public SyncDialog() {
+        body = new FormBody.Builder();
         scanTask = new ScanTask(this);
         client = OkHttp.client(Constant.TIMEOUT_SYNC);
         mode = ResUtil.getTypedArray(R.array.cast_mode);
@@ -63,10 +65,16 @@ public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
     }
 
     public SyncDialog history() {
+        body.add("device", Device.get().toString());
+        body.add("config", Config.vod().toString());
+        body.add("targets", App.gson().toJson(History.get()));
         return type("history");
     }
 
     public SyncDialog keep() {
+        body.add("device", Device.get().toString());
+        body.add("targets", App.gson().toJson(Keep.getVod()));
+        body.add("configs", App.gson().toJson(Config.findUrls()));
         return type("keep");
     }
 
@@ -109,7 +117,10 @@ public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
     private void getDevice() {
         adapter.setItems(Device.getAll(), () -> {
             if (adapter.getItemCount() == 0) onRefresh();
-            else binding.recycler.setVisibility(View.VISIBLE);
+            else {
+                binding.recycler.setVisibility(View.VISIBLE);
+                binding.status.setVisibility(View.GONE);
+            }
         });
     }
 
@@ -135,6 +146,8 @@ public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
             Device.delete();
             scanTask.start();
             binding.recycler.setVisibility(View.GONE);
+            binding.status.setText(R.string.device_searching);
+            binding.status.setVisibility(View.VISIBLE);
         });
     }
 
@@ -144,45 +157,29 @@ public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
 
     @Override
     public void onFind(Device device) {
+        binding.status.setVisibility(View.GONE);
         binding.recycler.setVisibility(View.VISIBLE);
         adapter.sort(device);
     }
 
     @Override
     public void onItemClick(Device item) {
-        send(item, binding.mode.getTag().toString(), false);
+        OkHttp.newCall(client, String.format(Locale.getDefault(), "%s/action?do=sync&mode=%s&type=%s", item.getIp(), binding.mode.getTag().toString(), type), body.build()).enqueue(getCallback());
     }
 
     @Override
     public boolean onLongClick(Device item) {
         String mode = binding.mode.getTag().toString();
         if (mode.equals("0")) return false;
-        send(item, mode, true);
+        if (mode.equals("2")) deleteLocal();
+        String force = mode.equals("1") ? "&force=true" : "";
+        OkHttp.newCall(client, String.format(Locale.getDefault(), "%s/action?do=sync&mode=%s&type=%s%s", item.getIp(), mode, type, force), body.build()).enqueue(getCallback());
         return true;
     }
 
-    private void send(Device item, String mode, boolean force) {
-        String url = String.format(Locale.getDefault(), "%s/action?do=sync&mode=%s&type=%s%s", item.getIp(), mode, type, force ? "&force=true" : "");
-        Runnable request = () -> OkHttp.newCall(client, url, buildBody()).enqueue(getCallback());
-        if (type.equals("history")) Task.executeSerial(request);
-        else request.run();
-    }
-
-    private FormBody buildBody() {
-        if (type.equals("history")) {
-            Config config = Config.vod();
-            FormBody.Builder body = new FormBody.Builder();
-            body.add("device", Device.get().toString());
-            body.add("config", config.toString());
-            body.add("targets", App.gson().toJson(History.get(config.getId())));
-            return body.build();
-        } else {
-            FormBody.Builder body = new FormBody.Builder();
-            body.add("device", Device.get().toString());
-            body.add("targets", App.gson().toJson(Keep.getVod()));
-            body.add("configs", App.gson().toJson(Config.findUrls()));
-            return body.build();
-        }
+    private void deleteLocal() {
+        if (type.equals("keep")) Keep.deleteAll();
+        if (type.equals("history")) History.delete(VodConfig.getCid());
     }
 
     private Callback getCallback() {

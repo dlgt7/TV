@@ -26,6 +26,7 @@ import com.fongmi.android.tv.databinding.ActivityCastBinding;
 import com.fongmi.android.tv.dlna.CastAction;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.service.CastConflict;
 import com.fongmi.android.tv.service.DLNARendererService;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.PlayerSetting;
@@ -36,7 +37,6 @@ import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.fongmi.android.tv.utils.Traffic;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -150,6 +150,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     private void setAction(Intent intent) {
         mAction = intent.getParcelableExtra(CastAction.KEY_EXTRA);
         if (mAction == null) return;
+        CastConflict.yieldToDlna(this);
         mBinding.widget.title.setText(getName());
         mBinding.widget.title.setSelected(true);
         resetMedia();
@@ -233,7 +234,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     private void hideProgress() {
         mBinding.progress.getRoot().setVisibility(View.GONE);
         App.removeCallbacks(mR2);
-        Traffic.reset();
+        traffic.reset();
     }
 
     private void showError(String text) {
@@ -276,7 +277,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
+        traffic.setSpeed(mBinding.progress.traffic);
         App.post(mR2, 1000);
     }
 

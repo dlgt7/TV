@@ -116,6 +116,20 @@ public class BrowseTree {
         return LiveBrowse.navigate(mediaId, delta);
     }
 
+    @Nullable
+    public static PlaybackResumption getPlaybackResumption() {
+        try {
+            ImmutableList<MediaItem> history = VodBrowse.getHistory();
+            if (history.isEmpty()) return null;
+            MediaItem item = resolve(history.get(0).mediaId);
+            if (item == null || item.localConfiguration == null) return null;
+            long positionMs = consumeResumePosition();
+            return new PlaybackResumption(item, positionMs);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     public static long consumeResumePosition() {
         return VodBrowse.consumeResumePosition();
     }
@@ -160,6 +174,9 @@ public class BrowseTree {
 
     static MediaItem stream(@NonNull String id, @NonNull String url, @NonNull String title, @Nullable String subtitle, @Nullable String art) {
         return build(id, false, true, MediaMetadata.MEDIA_TYPE_VIDEO, title, subtitle, art, Uri.parse(url));
+    }
+
+    public record PlaybackResumption(MediaItem item, long positionMs) {
     }
 
     private static MediaItem build(@NonNull String id, boolean browsable, boolean playable, int mediaType, @NonNull String title, @Nullable String subtitle, @Nullable String art, @Nullable Uri uri) {

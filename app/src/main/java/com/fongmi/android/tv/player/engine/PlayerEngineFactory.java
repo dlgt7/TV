@@ -14,25 +14,37 @@ import com.fongmi.android.tv.utils.UrlUtil;
 public final class PlayerEngineFactory {
 
     public static PlayerEngine create(int decode, Player.Listener listener) {
-        return create(decode, PlayerSetting.getVodEngine(), listener);
+        return create(decode, PlayerSetting.getVodEngine(), false, listener);
     }
 
     public static PlayerEngine create(int decode, int preferredEngine, Player.Listener listener) {
-        return create(decode, resolve(preferredEngine), listener);
+        return create(decode, preferredEngine, false, listener);
+    }
+
+    public static PlayerEngine create(int decode, int preferredEngine, boolean live, Player.Listener listener) {
+        return create(decode, resolve(preferredEngine), live, listener);
     }
 
     public static PlayerEngine create(int decode, int preferredEngine, PlaySpec spec, Player.Listener listener) {
-        return create(decode, resolve(preferredEngine, spec), listener);
+        return create(decode, preferredEngine, false, spec, listener);
+    }
+
+    public static PlayerEngine create(int decode, int preferredEngine, boolean live, PlaySpec spec, Player.Listener listener) {
+        return create(decode, resolve(preferredEngine, spec), live, listener);
     }
 
     public static PlayerEngine createExo(int decode, Player.Listener listener) {
-        return create(decode, EXO, listener);
+        return createExo(decode, false, listener);
     }
 
-    private static PlayerEngine create(int decode, PlayerEngine.Type type, Player.Listener listener) {
+    public static PlayerEngine createExo(int decode, boolean live, Player.Listener listener) {
+        return create(decode, EXO, live, listener);
+    }
+
+    private static PlayerEngine create(int decode, PlayerEngine.Type type, boolean live, Player.Listener listener) {
         return switch (type) {
-            case EXO -> new ExoPlayerEngine(decode, listener);
-            case MPV -> new MpvPlayerEngine(decode, listener);
+            case EXO -> new ExoPlayerEngine(decode, live, listener);
+            case MPV -> new MpvPlayerEngine(decode, live, listener);
         };
     }
 
@@ -50,8 +62,18 @@ public final class PlayerEngineFactory {
         return isMpvReady(preferredEngine) ? MPV : EXO;
     }
 
-    private static boolean requiresExo(PlaySpec spec) {
-        return spec.getDrm() != null || "smb".equals(UrlUtil.scheme(spec.getUrl()));
+    public static boolean requiresExo(PlaySpec spec) {
+        if (spec == null) return false;
+        if (spec.getDrm() != null || "smb".equals(UrlUtil.scheme(spec.getUrl()))) return true;
+        String url = spec.getUrl();
+        String lowerUrl = url == null ? "" : url.toLowerCase(java.util.Locale.US);
+        String format = spec.getFormat();
+        String lowerFormat = format == null ? "" : format.toLowerCase(java.util.Locale.US);
+        // DASH remains substantially more reliable in Media3 on Android, especially for DRM-like
+        // multi-period manifests and codec adaptation. Do not send it through the MPV fallback.
+        return lowerFormat.contains("dash") || lowerFormat.contains("mpd")
+                || lowerUrl.contains(".mpd") || lowerUrl.contains("format=mpd")
+                || lowerUrl.contains("/dash/");
     }
 
     private static boolean isMpvReady(int preferredEngine) {

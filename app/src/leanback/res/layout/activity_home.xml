@@ -16,7 +16,7 @@
         android:paddingStart="24dp"
         android:paddingTop="24dp"
         android:paddingEnd="24dp"
-        android:paddingBottom="8dp">
+        android:paddingBottom="24dp">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/logo"
@@ -51,16 +51,18 @@
     <com.fongmi.android.tv.ui.custom.ProgressLayout
         android:id="@+id/progressLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-        <androidx.leanback.widget.VerticalGridView
+        <com.fongmi.android.tv.ui.custom.HomeGridView
             android:id="@+id/recycler"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipChildren="false"
             android:clipToPadding="false"
             android:paddingStart="24dp"
-            android:paddingTop="8dp"
+            android:paddingTop="0dp"
             android:paddingEnd="24dp"
             android:paddingBottom="24dp"
             app:focusOutEnd="true"

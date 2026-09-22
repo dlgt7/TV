@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.player.mpv;
 
+import android.content.pm.PackageManager;
 import android.text.TextUtils;
 
 import androidx.media3.common.Player;
@@ -18,6 +19,7 @@ import com.fongmi.android.tv.setting.Setting;
 import com.github.catvod.utils.Path;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 public final class MpvUtil {
@@ -38,9 +40,15 @@ public final class MpvUtil {
     private static final String VALUE_GPU = "gpu";
     private static final String VALUE_MEDIACODEC = "mediacodec";
     private static final String VALUE_MEDIACODEC_EMBED = "mediacodec_embed";
+    private static final String VALUE_OPENGL = "opengl";
     private static final String VALUE_VULKAN = "vulkan";
     private static final String VALUE_YES = "yes";
     private static final String OPT_PROXY_URL = "proxy-url";
+    private static final int VULKAN_1_2 = 0x00402000;
+
+    public static List<String> getManagedOptionNames() {
+        return List.of("vo", "hwdec");
+    }
 
     public static boolean isAvailable() {
         try {
@@ -51,7 +59,11 @@ public final class MpvUtil {
     }
 
     public static MpvPlayer buildPlayer(int decode, Player.Listener listener) {
-        MpvPlayer player = new MpvPlayer.Builder(App.get()).setDecode(decode).setConfig(buildConfig(decode)).build();
+        return buildPlayer(decode, false, listener);
+    }
+
+    public static MpvPlayer buildPlayer(int decode, boolean live, Player.Listener listener) {
+        MpvPlayer player = new MpvPlayer.Builder(App.get()).setDecode(decode).setConfig(buildConfig(decode, live)).build();
         player.addListener(listener);
         return player;
     }
@@ -60,12 +72,12 @@ public final class MpvUtil {
         player.setSubtitleOptions(buildSubtitleConfig());
     }
 
-    private static MpvPlayerConfig buildConfig(int decode) {
+    private static MpvPlayerConfig buildConfig(int decode, boolean live) {
         Map<String, String> userOptions = MpvConfigFiles.readGlobalOptions();
         MpvPlayerConfig.Builder builder = new MpvPlayerConfig.Builder();
         addAndroidOptions(builder, userOptions, decode);
         addUserOptions(builder, userOptions);
-        addApplicationOptions(builder, userOptions, decode);
+        addApplicationOptions(builder, userOptions, decode, live);
         addTrackLanguageOptions(builder);
         addSubtitleStyleOptions(builder);
         return builder.build();
@@ -105,8 +117,10 @@ public final class MpvUtil {
         }
     }
 
-    private static void addApplicationOptions(MpvPlayerConfig.Builder builder, Map<String, String> userOptions, int decode) {
-        builder.setDefaultUserAgent(getDefaultUserAgent()).setHlsHttpPersistent(true);
+    private static void addApplicationOptions(MpvPlayerConfig.Builder builder, Map<String, String> userOptions, int decode, boolean live) {
+        // Persistent HLS connections break on a number of IPTV/CDN servers that rotate hosts.
+        if (!userOptions.containsKey("user-agent")) builder.setDefaultUserAgent(getDefaultUserAgent());
+        if (!userOptions.containsKey("hls-http-persistent")) builder.setHlsHttpPersistent(false);
         if (!userOptions.containsKey(OPT_PROXY_URL)) {
             builder.addPreInitStringOption(OPT_PROXY_URL, Server.get().getAddress(true) + "/proxy?");
         }
@@ -116,7 +130,46 @@ public final class MpvUtil {
         } else {
             addVideoOutputOptions(builder, userOptions);
         }
-        addPreloadOptions(builder);
+        addStreamOptions(builder, userOptions, live);
+        addPreloadOptions(builder, userOptions, live);
+    }
+
+    private static void addStreamOptions(MpvPlayerConfig.Builder builder, Map<String, String> userOptions, boolean live) {
+        if (!userOptions.containsKey("network-timeout")) {
+            builder.addPreInitStringOption("network-timeout", live ? "15" : "30");
+        }
+        if (!userOptions.containsKey("framedrop")) builder.addPreInitStringOption("framedrop", "vo");
+        if (live && !userOptions.containsKey("video-sync")) builder.addPreInitStringOption("video-sync", "audio");
+        if (!userOptions.containsKey("demuxer-max-bytes")) {
+            int mb = PlayerSetting.isLiveLowLatency()
+                    ? Math.max(8, PlayerSetting.getBuffer() * 2)
+                    : Math.max(15, PlayerSetting.getBuffer() * 3);
+            builder.addPreInitStringOption("demuxer-max-bytes", mb + "MiB");
+        }
+        if (live) {
+            if (!userOptions.containsKey("demuxer-max-back-bytes")) {
+                builder.addPreInitStringOption("demuxer-max-back-bytes", "0");
+            }
+            if (!userOptions.containsKey("cache-secs")) {
+                int seconds = PlayerSetting.isLiveLowLatency()
+                        ? Math.min(2, Math.max(1, PlayerSetting.getBuffer() / 2))
+                        : Math.max(1, PlayerSetting.getBuffer());
+                builder.addPreInitStringOption("cache-secs", Integer.toString(seconds));
+            }
+            if (!userOptions.containsKey("demuxer-lavf-o")) {
+                builder.addPreInitStringOption("demuxer-lavf-o", PlayerSetting.isLiveLowLatency()
+                        ? "analyzeduration=1000000,probesize=524288"
+                        : "analyzeduration=2500000,probesize=1048576");
+            }
+            if (!userOptions.containsKey("rtsp-transport")) {
+                builder.addPreInitStringOption("rtsp-transport", "tcp");
+            }
+        } else if (!userOptions.containsKey("demuxer-max-back-bytes")) {
+            builder.addPreInitStringOption("demuxer-max-back-bytes", "8MiB");
+        }
+        if (!userOptions.containsKey("stream-lavf-o")) {
+            builder.addPreInitStringOption("stream-lavf-o", "reconnect=1,reconnect_streamed=1,reconnect_delay_max=5");
+        }
     }
 
     private static String getVideoOutputDriver(Map<String, String> userOptions, int decode) {
@@ -132,9 +185,15 @@ public final class MpvUtil {
                     .addPreInitStringOption(OPT_GPU_CONTEXT, VALUE_ANDROID_VK);
             return;
         }
-        if (VALUE_VULKAN.equals(userOptions.get(OPT_GPU_API))
-                && !userOptions.containsKey(OPT_GPU_CONTEXT)) {
-            builder.addPreInitStringOption(OPT_GPU_CONTEXT, VALUE_ANDROID_VK);
+        if (VALUE_VULKAN.equals(userOptions.get(OPT_GPU_API))) {
+            if (isVulkanAvailable()) {
+                if (!userOptions.containsKey(OPT_GPU_CONTEXT)) builder.addPreInitStringOption(OPT_GPU_CONTEXT, VALUE_ANDROID_VK);
+            } else {
+                // A copied mpv.conf must not bypass the build/device capability guard.
+                builder.addPreInitStringOption(OPT_GPU_API, VALUE_OPENGL)
+                        .addPreInitStringOption(OPT_GPU_CONTEXT, VALUE_ANDROID)
+                        .addPreInitStringOption(OPT_OPENGL_ES, VALUE_YES);
+            }
             return;
         }
         if (!userOptions.containsKey(OPT_GPU_CONTEXT)) {
@@ -146,9 +205,24 @@ public final class MpvUtil {
         }
     }
 
-    private static void addPreloadOptions(MpvPlayerConfig.Builder builder) {
-        if (!PreloadSetting.isPreload()) return;
-        builder.addDiskCacheOptions(Path.mpvCache(), PreloadSetting.getPreloadTimeSeconds(), PreloadSetting.getPreloadSizeMb());
+    private static void addPreloadOptions(MpvPlayerConfig.Builder builder, Map<String, String> userOptions, boolean live) {
+        // Persisting a moving live window wastes flash and can contend with decoder I/O.
+        if (live || !PreloadSetting.isPreload()) return;
+        File mediaCache = new File(Path.mpvCache(), "media");
+        if (!userOptions.containsKey("cache")) builder.addPreInitStringOption("cache", "yes");
+        if (!userOptions.containsKey("cache-on-disk")) builder.addPreInitStringOption("cache-on-disk", "yes");
+        if (!userOptions.containsKey("demuxer-cache-dir")) {
+            builder.addPreInitStringOption("demuxer-cache-dir", mediaCache.getAbsolutePath());
+        }
+        if (!userOptions.containsKey("cache-secs")) {
+            builder.addPreInitStringOption("cache-secs", Integer.toString(Math.max(1, PreloadSetting.getPreloadTimeSeconds())));
+        }
+        if (!userOptions.containsKey("demuxer-max-bytes")) {
+            builder.addPreInitStringOption("demuxer-max-bytes", Math.max(8, PreloadSetting.getPreloadSizeMb()) + "MiB");
+        }
+        if (!userOptions.containsKey("demuxer-max-back-bytes")) {
+            builder.addPreInitStringOption("demuxer-max-back-bytes", "8MiB");
+        }
     }
 
     private static void addSubtitleStyleOptions(MpvPlayerConfig.Builder builder) {
@@ -176,14 +250,9 @@ public final class MpvUtil {
     }
 
     private static boolean isVulkanAvailable() {
-        if (!App.get().getPackageManager().hasSystemFeature("android.hardware.vulkan.level")) return false;
-        try {
-            // After MPVLib.init(), mpv-version property embeds feature flags; but before init
-            // we cannot query. Instead rely on build-time constant from the media3compat module.
-            return is.xyz.mpv.MPVLib.hasFeature("vulkan");
-        } catch (Throwable e) {
-            return false;
-        }
+        PackageManager manager = App.get().getPackageManager();
+        return com.fongmi.media3.compat.BuildConfig.LIBMPV_VULKAN
+                && manager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, VULKAN_1_2);
     }
 
     private static double getSubtitleScale() {

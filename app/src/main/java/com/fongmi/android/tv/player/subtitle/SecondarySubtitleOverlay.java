@@ -15,10 +15,12 @@ import androidx.media3.ui.PlayerView;
 import androidx.media3.ui.SubtitleView;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.setting.SubtitleSetting;
+import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.Task;
 import com.github.catvod.net.OkHttp;
 
@@ -26,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -110,20 +113,21 @@ public final class SecondarySubtitleOverlay {
         try {
             Map<String, String> headers = player == null ? Collections.emptyMap() : player.getHeaders();
             byte[] data = read(sub.getUri(), headers);
-            String mime = getMimeType(sub);
+            String mime = getMimeType(sub, data);
             SecondarySubtitleTimeline parsed = SecondarySubtitleTimeline.parse(data, mime);
-            handler.post(() -> applyLoaded(requestGeneration, parsed));
-        } catch (Throwable ignored) {
-            handler.post(() -> applyLoaded(requestGeneration, null));
+            handler.post(() -> applyLoaded(requestGeneration, parsed, null));
+        } catch (Throwable error) {
+            handler.post(() -> applyLoaded(requestGeneration, null, error));
         }
     }
 
-    private void applyLoaded(int requestGeneration, @Nullable SecondarySubtitleTimeline parsed) {
+    private void applyLoaded(int requestGeneration, @Nullable SecondarySubtitleTimeline parsed, @Nullable Throwable error) {
         if (released || generation.get() != requestGeneration) return;
         timeline = parsed;
         if (parsed == null) {
             loadedUrl = "";
-            SecondarySubtitleDiagnostics.onFailed();
+            SecondarySubtitleDiagnostics.onFailed(error);
+            Notify.show(R.string.subtitle_secondary_failed);
             show(Collections.emptyList());
             return;
         }
@@ -147,11 +151,23 @@ public final class SecondarySubtitleOverlay {
         subtitleView.setVisibility(hasCues ? SubtitleView.VISIBLE : SubtitleView.GONE);
     }
 
-    private static String getMimeType(Sub sub) {
+    private static String getMimeType(Sub sub, byte[] data) {
+        String detected = detectMimeType(data);
+        if (!TextUtils.isEmpty(detected)) return detected;
         String mime = sub.getFormat();
         if (TextUtils.isEmpty(mime)) mime = PlayerHelper.getSubtitleMimeType(sub.getName());
         if (TextUtils.isEmpty(mime)) mime = PlayerHelper.getSubtitleMimeType(sub.getUrl());
         return TextUtils.isEmpty(mime) ? MimeTypes.APPLICATION_SUBRIP : mime;
+    }
+
+    private static String detectMimeType(byte[] data) {
+        if (data.length == 0) return "";
+        int length = Math.min(data.length, 4096);
+        String sample = new String(data, 0, length, StandardCharsets.UTF_8).replace("\uFEFF", "").trim();
+        if (sample.startsWith("WEBVTT")) return MimeTypes.TEXT_VTT;
+        if (sample.startsWith("[Script Info]") || sample.contains("\nDialogue:")) return MimeTypes.TEXT_SSA;
+        if (sample.startsWith("<?xml") || sample.startsWith("<tt") || sample.contains("<tt ")) return MimeTypes.APPLICATION_TTML;
+        return "";
     }
 
     private static byte[] read(@Nullable Uri uri, Map<String, String> headers) throws IOException {
@@ -191,6 +207,7 @@ public final class SecondarySubtitleOverlay {
             if (total > MAX_BYTES) throw new IOException("Subtitle too large");
             output.write(buffer, 0, count);
         }
+        if (total == 0) throw new IOException("Empty subtitle");
         return output.toByteArray();
     }
 }

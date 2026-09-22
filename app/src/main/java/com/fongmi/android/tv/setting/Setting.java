@@ -113,6 +113,14 @@ public class Setting {
         Prefers.put("incognito", incognito);
     }
 
+    public static boolean isDlnaLibrary() {
+        return Prefers.getBoolean("dlna_library");
+    }
+
+    public static void putDlnaLibrary(boolean enabled) {
+        Prefers.put("dlna_library", enabled);
+    }
+
     public static boolean getUpdate() {
         return Prefers.getBoolean("update", true);
     }

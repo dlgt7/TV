@@ -3,6 +3,7 @@ package com.fongmi.android.tv.player.extractor;
 import android.net.Uri;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.bean.Core;
@@ -19,6 +20,7 @@ import com.tvbus.engine.TVCore;
 
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TVBus implements Source.Extractor, Listener {
 
@@ -33,13 +35,15 @@ public class TVBus implements Source.Extractor, Listener {
         return "tvbus".equals(UrlUtil.scheme(uri));
     }
 
-    private void init(Core core) {
+    private void init(Core core) throws Exception {
         try {
             App.get().setHook(core.getHook());
             tvcore = new TVCore(getPath(core.getSo())).listener(this).auth(core.getAuth()).name(core.getName()).pass(core.getPass()).domain(core.getDomain()).broker(core.getBroker());
             for (Core.Option option : core.getOption()) tvcore.option(option.getKey(), option.getValues());
             tvcore.serv(0).play(8902).mode(1).init();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            tvcore = null;
+            throw new ExtractException(ResUtil.getString(R.string.error_play_url));
         } finally {
             App.get().setHook(null);
         }
@@ -56,9 +60,13 @@ public class TVBus implements Source.Extractor, Listener {
         Core c = LiveConfig.get().getHome().getCore();
         if (core != null && !core.equals(c)) change();
         if (tvcore == null) init(core = c);
+        if (tvcore == null) throw new ExtractException(ResUtil.getString(R.string.error_play_url));
         latch = new CountDownLatch(1);
         tvcore.start(url);
-        latch.await();
+        if (!latch.await(Constant.TIMEOUT_PLAY, TimeUnit.MILLISECONDS)) {
+            stop();
+            throw new ExtractException(ResUtil.getString(R.string.error_play_url));
+        }
         return check();
     }
 

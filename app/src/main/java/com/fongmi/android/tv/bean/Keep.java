@@ -148,11 +148,13 @@ public class Keep implements Diffable<Keep> {
     }
 
     public String getSiteKey() {
-        return getKey().split(AppDatabase.SYMBOL)[0];
+        String[] parts = getKey().split(AppDatabase.SYMBOL, 2);
+        return parts.length > 0 ? parts[0] : "";
     }
 
     public String getVodId() {
-        return getKey().split(AppDatabase.SYMBOL)[1];
+        String[] parts = getKey().split(AppDatabase.SYMBOL, 2);
+        return parts.length > 1 ? parts[1] : "";
     }
 
     public void save(int cid) {

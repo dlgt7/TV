@@ -91,6 +91,10 @@ public class Live {
     private Integer timeout;
 
     @Ignore
+    @SerializedName("playerType")
+    private Integer playerType;
+
+    @Ignore
     @SerializedName("header")
     @JsonAdapter(HeaderAdapter.class)
     private Map<String, String> header;
@@ -237,6 +241,14 @@ public class Live {
 
     public long getTimeout() {
         return timeout == null ? Constant.TIMEOUT_PLAY : TimeUnit.SECONDS.toMillis(Math.max(timeout, 1));
+    }
+
+    public int getPlayerType() {
+        return playerType == null ? -1 : playerType;
+    }
+
+    public void setPlayerType(Integer playerType) {
+        this.playerType = playerType;
     }
 
     public Map<String, String> getHeader() {

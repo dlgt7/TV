@@ -2,11 +2,13 @@ package com.fongmi.android.tv.dlna;
 
 import android.content.Context;
 import android.content.Intent;
+import android.app.Activity;
 
 import androidx.media3.common.Player;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.service.CastConflict;
 import com.fongmi.android.tv.ui.activity.CastActivity;
 import com.google.gson.reflect.TypeToken;
 
@@ -46,11 +48,26 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     private volatile String currentURI = "";
     private volatile String nextMetaData = "";
     private volatile String currentMetaData = "";
+    private volatile String prevURI = "";
+    private volatile String prevMetaData = "";
 
     private volatile boolean dlnaActive;
     private volatile long pendingSeekMs = -1;
-    private volatile long cachedPosition = -1;
-    private volatile long cachedDuration = -1;
+    /** Target of an in-flight Seek; preferred by PositionInfo until player reports. */
+    private volatile long seekingToMs = -1;
+    /** Atomic snapshot so PositionInfo never mixes position/duration from different updates. */
+    private volatile PosCache posCache = PosCache.EMPTY;
+
+    private static final class PosCache {
+        static final PosCache EMPTY = new PosCache(-1, -1);
+        final long position;
+        final long duration;
+
+        PosCache(long position, long duration) {
+            this.position = position;
+            this.duration = duration;
+        }
+    }
 
     public DLNAAvTransportImpl(Context context) {
         this.context = context;
@@ -67,19 +84,25 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
 
     public void reset() {
         nextURI = "";
+        prevURI = "";
         currentURI = "";
         nextMetaData = "";
+        prevMetaData = "";
         pendingSeekMs = -1;
-        cachedPosition = -1;
-        cachedDuration = -1;
+        seekingToMs = -1;
+        posCache = PosCache.EMPTY;
         currentMetaData = "";
         currentPlayMode = PlayMode.NORMAL;
         fireStateChange(RenderState.IDLE);
     }
 
     public void updatePositionCache(long position, long duration) {
-        cachedPosition = position;
-        cachedDuration = duration;
+        long seeking = seekingToMs;
+        // Drop optimistic seek once the player has landed near the target.
+        if (seeking >= 0 && position >= 0 && Math.abs(position - seeking) <= 1500) {
+            seekingToMs = -1;
+        }
+        posCache = new PosCache(position, duration);
     }
 
     public long consumePendingSeekMs() {
@@ -95,11 +118,17 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
 
     @Override
     public synchronized void setAVTransportURI(UnsignedIntegerFourBytes instanceId, String currentURI, String currentURIMetaData) {
+        String incoming = currentURI != null ? currentURI : "";
+        if (!this.currentURI.isEmpty() && !this.currentURI.equals(incoming)) {
+            prevURI = this.currentURI;
+            prevMetaData = this.currentMetaData;
+        }
         this.nextURI = "";
         this.nextMetaData = "";
         this.dlnaActive = false;
         this.pendingSeekMs = -1;
-        this.currentURI = currentURI != null ? currentURI : "";
+        this.seekingToMs = -1;
+        this.currentURI = incoming;
         this.currentMetaData = currentURIMetaData != null ? currentURIMetaData : "";
         startCastActivity(new CastAction(this.currentURI, this.currentMetaData, parseHeaders(this.currentMetaData)));
     }
@@ -123,7 +152,8 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     public MediaInfo getMediaInfo(UnsignedIntegerFourBytes instanceId) {
         String nURI = nextURI.isEmpty() ? "" : nextURI;
         String nMeta = nextURI.isEmpty() ? "" : nextMetaData;
-        String durStr = cachedDuration > 0 ? formatMs(cachedDuration) : "00:00:00";
+        long durMs = posCache.duration;
+        String durStr = durMs > 0 ? formatMs(durMs) : "00:00:00";
         return new MediaInfo(currentURI, currentMetaData, nURI, nMeta, new UnsignedIntegerFourBytes(1), durStr, StorageMedium.NETWORK);
     }
 
@@ -135,8 +165,11 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
 
     @Override
     public PositionInfo getPositionInfo(UnsignedIntegerFourBytes instanceId) {
-        long posMs = cachedPosition;
-        long durMs = cachedDuration;
+        PosCache cache = posCache;
+        long seeking = seekingToMs;
+        // Prefer in-flight seek target so controllers polling right after Seek see the request.
+        long posMs = seeking >= 0 ? seeking : cache.position;
+        long durMs = cache.duration;
         if (posMs < 0) return new PositionInfo(1, currentMetaData, currentURI);
         String relTime = formatMs(posMs);
         String durStr = durMs > 0 ? formatMs(durMs) : "00:00:00";
@@ -158,6 +191,11 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
         fireStateChange(RenderState.STOPPED);
         App.post(() -> {
             if (player != null && dlnaActive) player.stop();
+            // Close cast UI so PlaybackActivity releases decoder / unbinds service.
+            Activity current = App.activity();
+            if (current instanceof CastActivity && !current.isFinishing()) {
+                current.finish();
+            }
         });
     }
 
@@ -165,8 +203,9 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     public void play(UnsignedIntegerFourBytes instanceId, String speed) {
         App.post(() -> {
             if (player == null || !dlnaActive) return;
+            if (currentURI.isEmpty()) return;
             int state = player.getPlaybackState();
-            if (!currentURI.isEmpty() && (state == Player.STATE_ENDED || state == Player.STATE_IDLE)) {
+            if (state == Player.STATE_ENDED || state == Player.STATE_IDLE) {
                 startCastActivity(new CastAction(currentURI, currentMetaData, parseHeaders(currentMetaData)));
             } else {
                 player.play();
@@ -190,6 +229,8 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     public void seek(UnsignedIntegerFourBytes instanceId, String unit, String target) {
         if (!SeekMode.REL_TIME.toString().equals(unit) && !SeekMode.ABS_TIME.toString().equals(unit)) return;
         long ms = parseTimeToMs(target);
+        // Do not mutate posCache here (player seek is async). Expose target via seekingToMs instead.
+        if (ms >= 0) seekingToMs = ms;
         if (dlnaActive) {
             PlayerManager local = player;
             if (local != null) App.post(() -> local.seekTo(ms));
@@ -206,9 +247,24 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     }
 
     @Override
-    public void previous(UnsignedIntegerFourBytes instanceId) {
+    public synchronized void previous(UnsignedIntegerFourBytes instanceId) {
+        if (canPrevious()) {
+            String swapUri = currentURI;
+            String swapMeta = currentMetaData;
+            currentURI = prevURI;
+            currentMetaData = prevMetaData;
+            prevURI = swapUri;
+            prevMetaData = swapMeta;
+            startCastActivity(new CastAction(currentURI, currentMetaData, parseHeaders(currentMetaData)));
+            return;
+        }
+        // No previous item: restart current from the beginning when a session is active.
+        if (currentURI.isEmpty()) return;
         App.post(() -> {
-            if (player != null && dlnaActive) player.seekTo(0);
+            if (player != null && dlnaActive) {
+                seekingToMs = 0;
+                player.seekTo(0);
+            }
         });
     }
 
@@ -229,9 +285,9 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     @Override
     protected TransportAction[] getCurrentTransportActions(UnsignedIntegerFourBytes instanceId) {
         return switch (currentState) {
-            case PLAYING -> withNext(TransportAction.Pause, TransportAction.Stop, TransportAction.Seek);
-            case PAUSED_PLAYBACK -> withNext(TransportAction.Play, TransportAction.Stop, TransportAction.Seek);
-            default -> withNext(TransportAction.Play);
+            case PLAYING -> withNav(TransportAction.Pause, TransportAction.Stop, TransportAction.Seek);
+            case PAUSED_PLAYBACK -> withNav(TransportAction.Play, TransportAction.Stop, TransportAction.Seek);
+            default -> withNav(TransportAction.Play);
         };
     }
 
@@ -239,14 +295,23 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
         return dlnaActive && !currentURI.isEmpty() && hasNext();
     }
 
-    private TransportAction[] withNext(TransportAction... actions) {
-        if (!canNext()) return actions;
-        TransportAction[] result = Arrays.copyOf(actions, actions.length + 1);
-        result[actions.length] = TransportAction.Next;
+    private boolean canPrevious() {
+        // Allow Previous even before CastActivity marks dlnaActive (URI already known).
+        return !prevURI.isEmpty();
+    }
+
+    private TransportAction[] withNav(TransportAction... actions) {
+        int extra = (canNext() ? 1 : 0) + (canPrevious() ? 1 : 0);
+        if (extra == 0) return actions;
+        TransportAction[] result = Arrays.copyOf(actions, actions.length + extra);
+        int i = actions.length;
+        if (canNext()) result[i++] = TransportAction.Next;
+        if (canPrevious()) result[i] = TransportAction.Previous;
         return result;
     }
 
     private void startCastActivity(CastAction action) {
+        CastConflict.yieldToDlna(context);
         Intent intent = new Intent(context, CastActivity.class);
         intent.putExtra(CastAction.KEY_EXTRA, action);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -259,6 +324,10 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
 
     public synchronized CastAction popNext() {
         if (nextURI.isEmpty()) return null;
+        if (!currentURI.isEmpty()) {
+            prevURI = currentURI;
+            prevMetaData = currentMetaData;
+        }
         currentURI = nextURI;
         currentMetaData = nextMetaData;
         nextURI = "";
