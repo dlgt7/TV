@@ -124,10 +124,27 @@ def prepareLibmpv = tasks.register("prepareLibmpv") {
                             "caches/fongmi-ffmpeg-${abi}").absolutePath,
                     ffmpegJni.absolutePath, abi
             ]
-            def process = new ProcessBuilder(command)
-                    .redirectErrorStream(true).start()
-            process.inputStream.eachLine { line -> println line }
-            if (process.waitFor() != 0) {
+            // FFmpeg JNI is network + compile heavy; a half-written cache or a flaky
+            // GitHub tarball fetch should not fail the whole release. Retry with a clean
+            // source tree between attempts (arm64 has failed this way on Actions).
+            def attempts = 3
+            def ok = false
+            for (int attempt = 1; attempt <= attempts && !ok; attempt++) {
+                def process = new ProcessBuilder(command)
+                        .redirectErrorStream(true).start()
+                process.inputStream.eachLine { line -> println line }
+                def code = process.waitFor()
+                if (code == 0 && ffmpegJni.isFile() && ffmpegJni.length() > 0) {
+                    ok = true
+                } else {
+                    println "FFmpeg JNI ${abi} attempt ${attempt}/${attempts} failed (exit=${code})"
+                    def sourceRoot = new File(gradle.gradleUserHomeDir, "caches/fongmi-ffmpeg-${abi}/ffmpeg-${'3f92512fd1fd6f5e6d6eb45a156c352835314d69'}")
+                    if (sourceRoot.exists()) {
+                        sourceRoot.deleteDir()
+                    }
+                }
+            }
+            if (!ok) {
                 throw new GradleException("Failed to build ${abi} FFmpeg JNI")
             }
         }

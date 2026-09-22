@@ -58,7 +58,8 @@ if [[ ! -f "${FFMPEG_LIB_DIR}/libavcodec.a" ||
   ARCHIVE="${BUILD_CACHE}/ffmpeg-${FFMPEG_REVISION}.tar.gz"
   if [[ ! -f "${ARCHIVE}" ]] ||
       [[ "$(sha256sum "${ARCHIVE}" | cut -d ' ' -f 1)" != "${FFMPEG_ARCHIVE_SHA256}" ]]; then
-    curl --fail --location --retry 3 \
+    rm -f "${ARCHIVE}"
+    curl --fail --location --retry 5 --retry-delay 2 \
       "https://github.com/FFmpeg/FFmpeg/archive/${FFMPEG_REVISION}.tar.gz" \
       --output "${ARCHIVE}"
   fi
@@ -144,8 +145,11 @@ rm -rf "${NATIVE_BUILD}"
 "${CMAKE_HOME}/bin/cmake" --build "${NATIVE_BUILD}" --parallel
 "${TOOLCHAIN}/llvm-strip" --strip-unneeded "${BUILT_SO}"
 
-if ! "${TOOLCHAIN}/llvm-readelf" -h "${BUILT_SO}" | grep -q "Machine:.*${MACHINE}"; then
+# Do not use grep -q under `set -o pipefail`: grep may close the pipe after a match,
+# llvm-readelf then exits on SIGPIPE and a valid library is reported as the wrong ABI.
+if ! "${TOOLCHAIN}/llvm-readelf" -h "${BUILT_SO}" | grep "Machine:.*${MACHINE}" >/dev/null; then
   echo "Built FFmpeg JNI has the wrong architecture." >&2
+  "${TOOLCHAIN}/llvm-readelf" -h "${BUILT_SO}" >&2 || true
   exit 1
 fi
 install -m 0644 "${BUILT_SO}" "${OUTPUT_SO}"
