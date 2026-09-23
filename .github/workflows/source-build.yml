@@ -63,7 +63,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle
 
       - uses: actions/setup-python@v5
         with:
@@ -71,10 +70,30 @@ jobs:
           cache: pip
           cache-dependency-path: chaquo/requirements.txt
 
+      # setup-java cache:gradle snapshots all of ~/.gradle/caches (including the
+      # 1.3 GB fongmi-native dirs also cached below) and hashes every *.gradle*
+      # file, so a version-only bump evicts a 2–3 GB entry. Cache dependency
+      # downloads only, and keep gradle.properties out of the key so VERSION_*
+      # bumps do not invalidate it.
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/wrapper
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/jars-3
+            ~/.gradle/caches/journal-1
+          key: gradle-deps-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/wrapper/gradle-wrapper.jar') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-
+
       - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
 
+      # NDK/CMake are intentionally not cached: two NDKs are 2–5 GB and only
+      # save ~20–40s, which would evict the far more valuable native-libs cache
+      # under the repo's 10 GB Actions cache quota.
       - name: Install Android native toolchains
         run: sdkmanager "ndk;26.1.10909125" "ndk;29.0.14206865" "cmake;3.22.1"
 
@@ -100,6 +119,7 @@ jobs:
             ~/.gradle/caches/fongmi-libmpv
             ~/.gradle/caches/fongmi-ffmpeg-${{ matrix.abi }}
             ~/.gradle/caches/fongmi-dav1d
+          # Exclude app/build.gradle etc. so Java-only edits do not rebuild FFmpeg/mpv.
           key: native-${{ matrix.abi }}-${{ runner.os }}-${{ hashFiles('media3compat/scripts/*.sh', 'media3compat/build.gradle') }}
           restore-keys: |
             native-${{ matrix.abi }}-${{ runner.os }}-
