@@ -75,6 +75,7 @@ public class PlayerManager implements ParseCallback {
     private int retry;
     private int sourceRetry;
     private int firstFrameExtendCount;
+    private long firstFrameDeadlineMs;
     private int decode;
     /** Bitmask of decode modes already tried for the current item (avoids HARD↔SOFT oscillation). */
     private int decodeTriedMask;
@@ -644,6 +645,7 @@ public class PlayerManager implements ParseCallback {
         sourceRetry = 0;
         decodeTriedMask = 0;
         firstFrameExtendCount = 0;
+        firstFrameDeadlineMs = 0;
         mpvFallbackUsed = false;
         openReported = false;
     }
@@ -725,7 +727,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     private void handleSourceRetry(PlaybackException e) {
-        if (++sourceRetry > 2) {
+        if (++sourceRetry > 1) {
             App.removeCallbacks(sourceRetryRunnable);
             handleFatalError(e);
             return;
@@ -743,7 +745,10 @@ public class PlayerManager implements ParseCallback {
 
     private void handleFatalError(PlaybackException e) {
         if (spec != null) LineQualityStore.recordFailure(spec.getUrl());
-        callback.onError(e == null ? ResUtil.getString(R.string.error_play_timeout) : engine.getErrorMessage(e));
+        String msg = e == null ? ResUtil.getString(R.string.error_play_timeout) : engine.getErrorMessage(e);
+        // Always surface a toast so a stuck error panel cannot hide the failure.
+        Notify.show(msg);
+        callback.onError(msg);
     }
 
     /** External/soft subtitles need a gpu path; zero-copy embed cannot render them. */
@@ -767,6 +772,7 @@ public class PlayerManager implements ParseCallback {
         sourceRetry = 0;
         decodeTriedMask = 0;
         firstFrameExtendCount = 0;
+        firstFrameDeadlineMs = 0;
     }
 
     private boolean isHard() {
@@ -780,8 +786,8 @@ public class PlayerManager implements ParseCallback {
 
     private void onFirstFrameTimeout() {
         if (openReported || spec == null || isReleased()) return;
-        // MPV may advance position before STATE_READY; extend a few times, then fail.
-        if (engine.getType() == PlayerEngine.Type.MPV && getPosition() > 0 && firstFrameExtendCount < 3) {
+        // MPV may advance position before STATE_READY; only extend after a real open.
+        if (engine.getType() == PlayerEngine.Type.MPV && openReported && firstFrameExtendCount < 3) {
             firstFrameExtendCount++;
             scheduleFirstFrameTimeout();
             return;
@@ -842,6 +848,16 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void start(PlaySpec spec, long timeout, long startPositionMs) {
+        // New URL resets retry/watchdog state. Same-URL restarts must not, or a
+        // dead endpoint loops forever through start() -> budgets cleared.
+        String nextUrl = spec == null ? null : spec.getUrl();
+        String prevUrl = this.spec == null ? null : this.spec.getUrl();
+        if (!java.util.Objects.equals(prevUrl, nextUrl)) {
+            sourceRetry = 0;
+            retry = 0;
+            firstFrameDeadlineMs = 0;
+            firstFrameExtendCount = 0;
+        }
         if (this.spec != spec) clearSecondarySubTransient();
         this.spec = spec;
         restoreSecondarySubtitle(spec);
@@ -875,6 +891,9 @@ public class PlayerManager implements ParseCallback {
         pendingPreload = null;
         openReported = false;
         firstFrameExtendCount = 0;
+        if (firstFrameDeadlineMs == 0) {
+            firstFrameDeadlineMs = SystemClock.elapsedRealtime() + firstFrameTimeoutMs();
+        }
         playStartRealtimeMs = SystemClock.elapsedRealtime();
         ensureDecodeForSubs(spec);
         engine.start(spec, startPositionMs);
@@ -885,13 +904,19 @@ public class PlayerManager implements ParseCallback {
         initTrack = false;
     }
 
-    private void scheduleFirstFrameTimeout() {
+    private long firstFrameTimeoutMs() {
         // FFmpeg-backed MPV may inspect every rendition in an HLS master before the first frame.
         // Keep Exo's fast failure, but give MPV the full play timeout instead of aborting a healthy load.
-        long timeout = liveMode
+        return liveMode
                 ? (engine.getType() == PlayerEngine.Type.MPV ? Constant.TIMEOUT_PLAY : Constant.TIMEOUT_FIRST_FRAME_LIVE)
                 : Constant.TIMEOUT_FIRST_FRAME_VOD;
-        App.post(firstFrameRunnable, timeout);
+    }
+
+    private void scheduleFirstFrameTimeout() {
+        // Hard deadline across retries so a dead endpoint cannot refresh the watchdog forever.
+        long now = SystemClock.elapsedRealtime();
+        long remaining = firstFrameDeadlineMs > 0 ? firstFrameDeadlineMs - now : firstFrameTimeoutMs();
+        App.post(firstFrameRunnable, Math.max(100L, remaining));
     }
 
     private void startCurrent() {

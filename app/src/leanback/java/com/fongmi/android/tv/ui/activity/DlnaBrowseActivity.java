@@ -89,6 +89,19 @@ public class DlnaBrowseActivity extends BaseActivity implements DlnaEntryAdapter
         mBinding.progressLayout.showProgress();
         DlnaMediaManager.get().browse(mUuid, objectId, new DlnaMediaManager.BrowseCallback() {
             @Override
+            public void onPage(java.util.List<DlnaEntry> entries, boolean firstPage, boolean done) {
+                if (isFinishing()) return;
+                if (firstPage) {
+                    mAdapter.setItems(entries);
+                    mBinding.recycler.setSelectedPosition(0);
+                    mBinding.progressLayout.showContent(true, mAdapter.getItemCount());
+                } else {
+                    mAdapter.addItems(entries);
+                }
+                if (!done) mBinding.progressLayout.showProgress();
+            }
+
+            @Override
             public void onSuccess(java.util.List<DlnaEntry> entries) {
                 if (isFinishing()) return;
                 mAdapter.setItems(entries);

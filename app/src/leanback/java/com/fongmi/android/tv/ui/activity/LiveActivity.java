@@ -547,10 +547,10 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
 
     @Override
     public void showProgress() {
+        if (mBinding.widget.error.getVisibility() == View.VISIBLE) return;
         mBinding.progress.getRoot().setVisibility(View.VISIBLE);
         App.post(mR2, 0);
         hideCenter();
-        hideError();
     }
 
     private void hideProgress() {

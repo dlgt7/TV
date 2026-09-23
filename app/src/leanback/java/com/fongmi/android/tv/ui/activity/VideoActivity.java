@@ -466,7 +466,9 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public boolean isSiteChangeable() {
-        return getSite().isChangeable();
+        // Direct push URLs have no alternate line/source; searching the title after a
+        // failed open only restarts playback and keeps the loading spinner alive.
+        return !isDirectPushPlay() && getSite().isChangeable();
     }
 
     @Override
@@ -1147,10 +1149,11 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void showProgress() {
+        // Keep a fatal error visible; retry BUFFERING must not hide it.
+        if (mBinding.widget.error.getVisibility() == View.VISIBLE) return;
         mBinding.progress.getRoot().setVisibility(View.VISIBLE);
         App.post(mR3, 0);
         hideCenter();
-        hideError();
     }
 
     private void hideProgress() {

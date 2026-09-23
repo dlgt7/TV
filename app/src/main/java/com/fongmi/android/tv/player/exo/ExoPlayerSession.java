@@ -62,9 +62,15 @@ final class ExoPlayerSession {
     }
 
     void start(PlaySpec spec, long startPositionMs) {
+        // Keep the retry budget when the same URL is restarted after a failure;
+        // only a new item (or explicit reset) may clear attempts. Otherwise a
+        // dead endpoint loops forever through start() -> attempts=0.
+        if (this.spec == null || spec == null
+                || !java.util.Objects.equals(this.spec.getUrl(), spec.getUrl())) {
+            attempts = 0;
+        }
         this.spec = spec;
         cancelPendingRetry();
-        attempts = 0;
         startInternal(startPositionMs);
     }
 
@@ -149,8 +155,9 @@ final class ExoPlayerSession {
         attempts++;
         retryPositionMs = Math.max(0, player.getCurrentPosition());
         cancelPendingRetry();
-        App.post(retryRunnable, PlaybackRecoveryPolicy.retryDelayMs(attempts - 1));
-        return PlayerEngine.ErrorAction.RECOVERED;
+        // PlayerManager owns the retry schedule (toast + budget + fatal).
+        // Do not also post retryRunnable here or the stream restarts twice.
+        return PlayerEngine.ErrorAction.RETRY;
     }
 
     private void retryTransient() {

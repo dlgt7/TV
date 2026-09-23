@@ -28,6 +28,13 @@ public class DlnaEntryAdapter extends RecyclerView.Adapter<DlnaEntryAdapter.View
         notifyDataSetChanged();
     }
 
+    public void addItems(List<DlnaEntry> list) {
+        if (list == null || list.isEmpty()) return;
+        int start = items.size();
+        items.addAll(list);
+        notifyItemRangeInserted(start, list.size());
+    }
+
     @Override
     public int getItemCount() {
         return items.size();

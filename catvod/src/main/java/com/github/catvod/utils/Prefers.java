@@ -75,15 +75,15 @@ public class Prefers {
     public static void put(String key, Object obj) {
         if (obj == null) return;
         if (obj instanceof String val) {
-            getPrefers().edit().putString(key, val).apply();
+            getPrefers().edit().putString(key, val).commit();
         } else if (obj instanceof Boolean val) {
-            getPrefers().edit().putBoolean(key, val).apply();
+            getPrefers().edit().putBoolean(key, val).commit();
         } else if (obj instanceof Float val) {
-            getPrefers().edit().putFloat(key, val).apply();
+            getPrefers().edit().putFloat(key, val).commit();
         } else if (obj instanceof Integer val) {
-            getPrefers().edit().putInt(key, val).apply();
+            getPrefers().edit().putInt(key, val).commit();
         } else if (obj instanceof Long val) {
-            getPrefers().edit().putLong(key, val).apply();
+            getPrefers().edit().putLong(key, val).commit();
         } else if (obj instanceof Number val) {
             if (val.toString().contains(".")) put(key, val.floatValue());
             else put(key, val.intValue());
@@ -91,6 +91,6 @@ public class Prefers {
     }
 
     public static void remove(String key) {
-        getPrefers().edit().remove(key).apply();
+        getPrefers().edit().remove(key).commit();
     }
 }

@@ -12,6 +12,8 @@ import org.jupnp.transport.spi.NetworkAddressFactory;
 import org.jupnp.transport.spi.StreamClient;
 import org.jupnp.transport.spi.StreamServer;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 
 public class DLNAServiceConfiguration extends AndroidUpnpServiceConfiguration {
@@ -59,13 +61,21 @@ public class DLNAServiceConfiguration extends AndroidUpnpServiceConfiguration {
 
     @Override
     protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort, int multicastResponsePort) {
-        if (!bindPreferredOnly) return super.createNetworkAddressFactory(streamListenPort, multicastResponsePort);
+        // Always bind only the real LAN iface (and IPv4). Hosts like rk3588 + Docker expose
+        // docker0/br-*/tailscale0 and dozens of IPv6 temps; binding them multiplies SSDP
+        // sockets and delays MediaServer discovery (e.g. slow IPTV boxes).
         String iface = DlnaSetting.resolveInterfaceName();
         return new AndroidNetworkAddressFactory(streamListenPort, multicastResponsePort) {
             @Override
             protected boolean isUsableNetworkInterface(NetworkInterface networkInterface) throws Exception {
                 if (!super.isUsableNetworkInterface(networkInterface)) return false;
+                if (!DlnaNetwork.isCandidate(networkInterface)) return false;
                 return TextUtils.isEmpty(iface) || iface.equals(networkInterface.getName());
+            }
+
+            @Override
+            protected boolean isUsableAddress(NetworkInterface networkInterface, InetAddress address) {
+                return address instanceof Inet4Address && super.isUsableAddress(networkInterface, address);
             }
         };
     }

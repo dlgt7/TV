@@ -16,7 +16,7 @@ import org.jupnp.android.AndroidUpnpService;
 import org.jupnp.controlpoint.ControlPoint;
 import org.jupnp.model.action.ActionInvocation;
 import org.jupnp.model.message.UpnpResponse;
-import org.jupnp.model.message.header.STAllHeader;
+import org.jupnp.model.message.header.DeviceTypeHeader;
 import org.jupnp.model.meta.RemoteDevice;
 import org.jupnp.model.meta.RemoteService;
 import org.jupnp.model.types.UDADeviceType;
@@ -43,18 +43,22 @@ public class DlnaMediaManager extends DefaultRegistryListener implements Service
 
     private static final UDADeviceType SERVER_TYPE = new UDADeviceType("MediaServer", 1);
     private static final UDAServiceType CDS_TYPE = new UDAServiceType("ContentDirectory", 1);
-    private static final long BROWSE_COUNT = 200L;
+    private static final long BROWSE_COUNT = 500L;
     private static final int MAX_BROWSE_ENTRIES = 2000;
     private static final int MAX_TITLE_LENGTH = 512;
     private static final int MAX_URL_LENGTH = 8192;
     private static final int MAX_ATTACH_RETRIES = 10;
     private static final long ATTACH_RETRY_MS = 150L;
-    private static final long RESCAN_DELAY_MS = 3_000L;
-    private static final long RESCAN_EXTRA_DELAY_MS = 8_000L;
+    // IPTV boxes (e.g. IPNP-iptv) often answer M-SEARCH late; retry early and often
+    // instead of making the user stare at an empty list for 3–8s.
+    private static final long RESCAN_DELAY_MS = 400L;
+    private static final long RESCAN_EXTRA_DELAY_MS = 1_200L;
+    private static final long RESCAN_LATE_DELAY_MS = 3_500L;
 
     private final Set<DeviceListener> deviceListeners = new CopyOnWriteArraySet<>();
     private final Runnable firstRescan = this::searchIfBound;
     private final Runnable secondRescan = this::searchIfBound;
+    private final Runnable lateRescan = this::searchIfBound;
     private AndroidUpnpService upnpService;
     private Context appContext;
     private int bindCount;
@@ -112,22 +116,31 @@ public class DlnaMediaManager extends DefaultRegistryListener implements Service
         appContext = context.getApplicationContext();
         bindCount++;
         // Search immediately; attach completion will search again once registry is ready.
-        search();
-        scheduleRescan();
+        searchWithRescan();
         if (!bound) bind(appContext);
     }
 
     public void search() {
         ControlPoint control = getControlPoint();
-        if (control != null) control.search(new STAllHeader());
+        // Target MediaServer:1 instead of ssdp:all — far fewer description fetches on
+        // a busy LAN, so the IPTV box can show up sooner.
+        if (control != null) control.search(new DeviceTypeHeader(SERVER_TYPE));
+    }
+
+    /** Immediate search plus early retries for devices that answer M-SEARCH late. */
+    public void searchWithRescan() {
+        search();
+        scheduleRescan();
     }
 
     /** Bounded follow-up searches catch slow UPnP devices (IPTV boxes) that answer late. */
     private synchronized void scheduleRescan() {
         App.removeCallbacks(firstRescan);
         App.removeCallbacks(secondRescan);
+        App.removeCallbacks(lateRescan);
         App.post(firstRescan, RESCAN_DELAY_MS);
         App.post(secondRescan, RESCAN_EXTRA_DELAY_MS);
+        App.post(lateRescan, RESCAN_LATE_DELAY_MS);
     }
 
     private synchronized void searchIfBound() {
@@ -215,11 +228,19 @@ public class DlnaMediaManager extends DefaultRegistryListener implements Service
                         : didl == null ? 0 : didl.getContainers().size() + didl.getItems().size();
                 long next = start + returned;
                 boolean serverHasMore = totalMatches > 0 ? next < totalMatches : returned >= BROWSE_COUNT;
+                if (callback != null) {
+                    // Emit only this page so the UI can append without duplicating
+                    // the accumulated list.
+                    int cap = Math.min(page.size(), Math.max(0, room));
+                    List<DlnaEntry> emit = new ArrayList<>(page.subList(0, cap));
+                    boolean firstPage = start == 0;
+                    boolean more = returned > 0 && serverHasMore && next < MAX_BROWSE_ENTRIES
+                            && accumulated.size() < MAX_BROWSE_ENTRIES;
+                    App.post(() -> callback.onPage(emit, firstPage, !more));
+                }
                 if (returned > 0 && serverHasMore && next < MAX_BROWSE_ENTRIES
                         && accumulated.size() < MAX_BROWSE_ENTRIES) {
                     browsePage(control, service, id, next, accumulated, callback);
-                } else if (callback != null) {
-                    App.post(() -> callback.onSuccess(new ArrayList<>(accumulated)));
                 }
             }
 
@@ -276,6 +297,7 @@ public class DlnaMediaManager extends DefaultRegistryListener implements Service
         if (bindCount > 0) return;
         App.removeCallbacks(firstRescan);
         App.removeCallbacks(secondRescan);
+        App.removeCallbacks(lateRescan);
         detach();
         unbind(context.getApplicationContext());
         appContext = null;
@@ -367,6 +389,9 @@ public class DlnaMediaManager extends DefaultRegistryListener implements Service
     }
 
     public interface BrowseCallback {
+
+        /** firstPage=true replace list; later pages append. done marks the last page. */
+        void onPage(List<DlnaEntry> entries, boolean firstPage, boolean done);
 
         void onSuccess(List<DlnaEntry> entries);
 

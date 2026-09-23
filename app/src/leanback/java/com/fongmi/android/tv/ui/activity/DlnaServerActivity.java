@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.SiteApi;
 import com.fongmi.android.tv.bean.Device;
@@ -49,6 +50,9 @@ public class DlnaServerActivity extends BaseActivity implements DlnaServerAdapte
     @Override
     protected void onResume() {
         super.onResume();
+        // Kick SSDP again on entry so a late IPTV box (IPNP-iptv) is re-queried
+        // without waiting for the user to press Refresh.
+        DlnaMediaManager.get().searchWithRescan();
         refreshList();
     }
 
@@ -56,10 +60,16 @@ public class DlnaServerActivity extends BaseActivity implements DlnaServerAdapte
     protected void initEvent() {
         mBinding.refresh.setOnClickListener(v -> {
             mBinding.progressLayout.showProgress();
-            DlnaMediaManager.get().search();
+            DlnaMediaManager.get().searchWithRescan();
             refreshList();
-            if (mAdapter.getServerCount() == 0) Notify.show(R.string.dlna_library_empty);
+            // Late M-SEARCH replies land at ~3.5s; only then report a truly empty LAN.
+            App.post(this::showEmptyIfStillEmpty, 4_000L);
         });
+    }
+
+    private void showEmptyIfStillEmpty() {
+        if (isFinishing() || isDestroyed()) return;
+        if (mAdapter.getServerCount() == 0) Notify.show(R.string.dlna_library_empty);
     }
 
     private void refreshList() {

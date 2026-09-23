@@ -72,7 +72,8 @@ public class TVBus implements Source.Extractor, Listener {
 
     private void change() throws Exception {
         LiveSetting.putBoot(true);
-        App.post(() -> System.exit(0), 100);
+        // Do not kill the process here: exit() already stops the core and the
+        // caller surfaces extract failure. System.exit destroyed the whole app.
         throw new ExtractException(ResUtil.getString(R.string.error_play_url));
     }
 

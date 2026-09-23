@@ -59,6 +59,8 @@ public class VodFallbackPolicy {
 
     private void fallbackToNextLineOrSource() {
         if (!host.isSiteChangeable()) return;
+        // Single-URL playback has no next line; searching the title would restart a dead URL.
+        if (state.getFlags().isEmpty() && !state.hasSources()) return;
         if (fallbackToNextLine()) return;
         fallbackToNextSource(false);
     }

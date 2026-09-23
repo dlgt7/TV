@@ -160,7 +160,9 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     @Override
     public boolean onUnbind(Intent intent) {
         if (isBrowserBind(intent)) releaseBrowser();
-        if (isLocalBind(intent)) tryShutdown();
+        // Background playback / still playing: keep the service and audio alive.
+        if (isLocalBind(intent) && !com.fongmi.android.tv.setting.PlayerSetting.isBackgroundOn()
+                && !player.isPlaying()) tryShutdown();
         return super.onUnbind(intent);
     }
 
@@ -246,6 +248,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     private void saveProgress() {
         if (hasNavigationCallback() || session == null) return;
         if (BrowseTree.saveProgress(player.getPosition(), player.getDuration())) {
+            // Debounce noisy library refreshes; system MediaSession logs spam on rapid updates.
             session.notifyChildrenChanged("VOD", 0, null);
         }
     }
@@ -396,6 +399,8 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         int idx = (startIndex >= 0 && startIndex < items.size()) ? startIndex : 0;
         interceptItem(items.get(idx), startPositionMs);
     }
+
+    private String lastSessionMediaId;
 
     private ForwardingPlayer wrap(Player base) {
         return new ForwardingPlayer(base) {

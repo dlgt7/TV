@@ -87,7 +87,7 @@ public class DlnaNetwork {
         }
     }
 
-    private static boolean isCandidate(NetworkInterface nif) throws Exception {
+    static boolean isCandidate(NetworkInterface nif) throws Exception {
         if (nif == null || !nif.isUp() || nif.isLoopback() || nif.isPointToPoint() || nif.isVirtual()) return false;
         String name = nif.getName().toLowerCase(Locale.US);
         String display = nif.getDisplayName() == null ? "" : nif.getDisplayName().toLowerCase(Locale.US);
