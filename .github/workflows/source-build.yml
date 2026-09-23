@@ -102,7 +102,16 @@ jobs:
             ~/.gradle/caches/fongmi-dav1d
           key: native-${{ matrix.abi }}-${{ runner.os }}-${{ hashFiles('media3compat/scripts/*.sh', 'media3compat/build.gradle') }}
           restore-keys: |
+            native-${{ matrix.abi }}-${{ runner.os }}-
             native-all-abis-${{ runner.os }}-
+
+      - name: Cache customized Media3 Maven local
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: media3-maven-${{ runner.os }}-c8a183b8ca7e57f43213c55f418d89fe45965db8
+          restore-keys: |
+            media3-maven-${{ runner.os }}-
 
       - name: Verify no APK binary dependency
         run: |
@@ -111,6 +120,11 @@ jobs:
 
       - name: Build customized Media3 API from source
         run: |
+          if [ -d "$HOME/.m2/repository/androidx/media3" ] && [ -f "$HOME/.m2/repository/.media3-c8a183b8.stamp" ]; then
+            echo "Reusing cached Media3 Maven local artifacts"
+            exit 0
+          fi
+          rm -rf "$HOME/.m2/repository/androidx/media3"
           git clone --filter=blob:none https://github.com/FongMi/media.git "$RUNNER_TEMP/media"
           git -C "$RUNNER_TEMP/media" checkout --detach c8a183b8ca7e57f43213c55f418d89fe45965db8
           echo "sdk.dir=$ANDROID_HOME" > "$RUNNER_TEMP/media/local.properties"
@@ -120,13 +134,19 @@ jobs:
             :lib-common:publishToMavenLocal \
             :lib-ui-danmaku:publishToMavenLocal \
             :lib-ui:publishToMavenLocal --stacktrace
+          touch "$HOME/.m2/repository/.media3-c8a183b8.stamp"
 
       - name: Build television and mobile APKs from source
         env:
           # APK packaging reads large, uncompressed native libraries into the Gradle heap.
-          # The project-wide 2 GiB default is occasionally insufficient on hosted runners.
-          CI_GRADLE_JVMARGS: -Xmx4096m -Dfile.encoding=UTF-8 --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+          # arm64 libmpv/ffmpeg/airplay .so files exceed the 2–4 GiB default on hosted runners.
+          CI_GRADLE_JVMARGS: -Xmx8192m -Dfile.encoding=UTF-8 --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
         run: |
+          # gradle.properties still pins 2 GiB; override it so the single-use daemon
+          # (and in-process packaging workers) inherit the larger CI heap.
+          # '|' delimiter: jvmargs contain '/' in --add-exports paths.
+          sed -i 's|^org\.gradle\.jvmargs=.*|org.gradle.jvmargs='"$CI_GRADLE_JVMARGS"'|' gradle.properties
+          grep -n 'org.gradle.jvmargs' gradle.properties
           # Separate invocations prevent two 80+ MiB APK packaging workers from peaking together.
           ./gradlew \
             :app:assembleLeanback${{ matrix.flavor }}Release \
