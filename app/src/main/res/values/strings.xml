@@ -238,7 +238,10 @@
     <string name="error_play_url">Unable to load url</string>
     <string name="error_play_flag">No flag data</string>
     <string name="error_play_timeout">Timed out</string>
+    <string name="error_play_retry">Retrying playback…</string>
     <string name="error_decode_fallback">Hardware decoding failed, switched to software decoding</string>
+    <string name="player_sub_decode_hint">External subtitles need compatible hardware or software decode; switched automatically</string>
+    <string name="player_engine_requires_exo">This source requires ExoPlayer; switched automatically</string>
     <string name="error_play_tvbus">Error code: <xliff:g name="name">%s</xliff:g></string>
     <string name="error_detail">No play data</string>
     <string name="error_empty">Nothing here 👀</string>

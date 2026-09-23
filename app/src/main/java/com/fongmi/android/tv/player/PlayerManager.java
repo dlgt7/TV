@@ -52,6 +52,8 @@ import java.util.concurrent.TimeUnit;
 public class PlayerManager implements ParseCallback {
 
     private final Runnable runnable;
+    private final Runnable firstFrameRunnable;
+    private final Runnable sourceRetryRunnable;
     private final Callback callback;
     private final PlayerEffectManager effects;
     private PlayerEngine engine;
@@ -69,8 +71,13 @@ public class PlayerManager implements ParseCallback {
     private boolean danmakuEnabled;
     private boolean initTrack;
     private boolean mpvFallbackUsed;
+    private boolean subtitleDecodeHintShown;
     private int retry;
+    private int sourceRetry;
+    private int firstFrameExtendCount;
     private int decode;
+    /** Bitmask of decode modes already tried for the current item (avoids HARD↔SOFT oscillation). */
+    private int decodeTriedMask;
     private int preferredEngine;
     private long secondarySubtitleOffsetMs;
     private long playStartRealtimeMs;
@@ -80,6 +87,8 @@ public class PlayerManager implements ParseCallback {
     public PlayerManager(Callback callback) {
         this.callback = callback;
         this.runnable = this::onPlayTimeout;
+        this.firstFrameRunnable = this::onFirstFrameTimeout;
+        this.sourceRetryRunnable = this::onSourceRetry;
         this.preferredEngine = PlayerSetting.getVodEngine();
         // PlaybackService may be created only for MediaSession browsing. Do not reserve libmpv's
         // process-global instance until an actual VOD/live source selects it.
@@ -99,7 +108,9 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void release() {
-        App.removeCallbacks(runnable);
+        App.removeCallbacks(runnable, firstFrameRunnable, sourceRetryRunnable);
+        stopParse();
+        spec = null;
         if (player != null) player.removeListener(listener);
         if (engine != null) engine.release();
         engine = null;
@@ -324,6 +335,7 @@ public class PlayerManager implements ParseCallback {
             else PlayerSetting.putVodEngine(targetEngine);
         }
         decode = PlayerSetting.getDecode(liveMode, targetEngine);
+        decodeTriedMask = 0;
         callback.onDecodeChanged();
         if (isEmpty()) {
             // The service starts with a lightweight Exo instance and may have no PlaySpec yet.
@@ -332,6 +344,11 @@ public class PlayerManager implements ParseCallback {
             return;
         }
         if (samePreference && getEngine() == targetEngine) return;
+        if (targetEngine == PlayerSetting.ENGINE_MPV && spec != null
+                && PlayerEngineFactory.requiresExo(spec)) {
+            Notify.show(R.string.player_engine_requires_exo);
+        }
+        beginFreshAttempt();
         startCurrent();
     }
 
@@ -622,9 +639,13 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void reset() {
-        App.removeCallbacks(runnable);
+        App.removeCallbacks(runnable, firstFrameRunnable, sourceRetryRunnable);
         retry = 0;
+        sourceRetry = 0;
+        decodeTriedMask = 0;
+        firstFrameExtendCount = 0;
         mpvFallbackUsed = false;
+        openReported = false;
     }
 
     public void clear() {
@@ -638,42 +659,114 @@ public class PlayerManager implements ParseCallback {
 
     /** User-initiated decode switch: persists the choice so it survives restarts. */
     public void toggleDecode() {
-        applyDecodeToggle(true);
+        switchDecode(true, true);
     }
 
     /**
      * Automatic fallback after a decode error. Deliberately does NOT persist.
-     * <p>
-     * A one-off, transient hardware-decoder failure (e.g. the codec was momentarily held by another
-     * app, or a single stream is unsupported) must not be written back as a standing preference.
-     * If it were, every later stream in this scene would be pinned to software decode until the user
-     * manually toggled it back — a silent, permanent quality regression. Codec-level fallback within
-     * a session is already handled by {@code DefaultRenderersFactory.setEnableDecoderFallback(true)}.
+     * Only unused decode modes are tried for this item (decodeTriedMask), so HARD↔SOFT
+     * cannot oscillate. Codec-level fallback is also handled inside DefaultRenderersFactory.
      */
     private void toggleDecodeTransient() {
-        applyDecodeToggle(false);
+        switchDecode(false, false);
     }
 
-    private void applyDecodeToggle(boolean persist) {
-        decode = engine.getType() == PlayerEngine.Type.MPV
-                ? (decode + 1) % (PlayerEngine.HARD_PERFORMANCE + 1)
-                : (isHard() ? PlayerEngine.SOFT : PlayerEngine.HARD);
-        if (persist) PlayerSetting.putDecode(liveMode, getEngine(), decode);
+    private void switchDecode(boolean persist, boolean freshAttempt) {
         long position = Math.max(0, getPosition());
+        boolean mpv = engine.getType() == PlayerEngine.Type.MPV;
+        if (persist) {
+            decode = nextDecode(decode, mpv);
+        } else {
+            decodeTriedMask |= 1 << decode;
+            int next = nextUnusedDecode(decode, mpv);
+            if (next < 0) {
+                handleFatalError(null);
+                return;
+            }
+            decode = next;
+        }
+        if (persist) PlayerSetting.putDecode(liveMode, getEngine(), decode);
         boolean rebuild = engine.setDecode(decode);
         callback.onDecodeChanged();
-        if (!rebuild) return;
-        setPlayer(engine.rebuild());
+        if (rebuild) setPlayer(engine.rebuild());
+        if (freshAttempt) beginFreshAttempt();
+        // Changing hwdec does not replace an already-open decoder; always reload the item.
         startCurrent(position);
     }
 
+    /** Hardware-first fallback: performance → compatible → soft (last resort). */
+    private static int nextDecode(int current, boolean mpv) {
+        if (!mpv) return current == PlayerEngine.HARD ? PlayerEngine.SOFT : PlayerEngine.HARD;
+        return switch (current) {
+            case PlayerEngine.HARD_PERFORMANCE -> PlayerEngine.HARD;
+            case PlayerEngine.HARD -> PlayerEngine.SOFT;
+            default -> PlayerEngine.HARD_PERFORMANCE;
+        };
+    }
+
+    /** Next decode mode that has not failed for this item; -1 if all candidates exhausted. */
+    private int nextUnusedDecode(int current, boolean mpv) {
+        int candidate = nextDecode(current, mpv);
+        for (int i = 0; i < 3; i++) {
+            if ((decodeTriedMask & (1 << candidate)) == 0) return candidate;
+            candidate = nextDecode(candidate, mpv);
+        }
+        return -1;
+    }
+
     private void handleDecodeError(PlaybackException e) {
-        if (++retry > 1) {
-            callback.onError(engine.getErrorMessage(e));
+        decodeTriedMask |= 1 << decode;
+        if (++retry > 2 || nextUnusedDecode(decode, engine.getType() == PlayerEngine.Type.MPV) < 0) {
+            handleFatalError(e);
         } else {
             Notify.show(R.string.error_decode_fallback);
             toggleDecodeTransient();
         }
+    }
+
+    private void handleSourceRetry(PlaybackException e) {
+        if (++sourceRetry > 2) {
+            App.removeCallbacks(sourceRetryRunnable);
+            handleFatalError(e);
+            return;
+        }
+        if (sourceRetry == 1) Notify.show(R.string.error_play_retry);
+        App.removeCallbacks(sourceRetryRunnable);
+        App.post(sourceRetryRunnable, sourceRetry * 800L);
+    }
+
+    private void onSourceRetry() {
+        if (spec == null || isReleased()) return;
+        // Keep sourceRetry across the restart so retries cannot run forever.
+        startCurrent(Math.max(0, getPosition()));
+    }
+
+    private void handleFatalError(PlaybackException e) {
+        if (spec != null) LineQualityStore.recordFailure(spec.getUrl());
+        callback.onError(e == null ? ResUtil.getString(R.string.error_play_timeout) : engine.getErrorMessage(e));
+    }
+
+    /** External/soft subtitles need a gpu path; zero-copy embed cannot render them. */
+    private void ensureDecodeForSubs(PlaySpec playSpec) {
+        if (engine.getType() != PlayerEngine.Type.MPV) return;
+        if (decode != PlayerEngine.HARD_PERFORMANCE) return;
+        if (playSpec == null || playSpec.getSubs() == null || playSpec.getSubs().isEmpty()) return;
+        decode = PlayerEngine.HARD;
+        if (engine.setDecode(decode)) setPlayer(engine.rebuild());
+        if (!subtitleDecodeHintShown) {
+            subtitleDecodeHintShown = true;
+            Notify.show(R.string.player_sub_decode_hint);
+        }
+        callback.onDecodeChanged();
+    }
+
+    /** Clear IO/decode retry state for a user- or parse-initiated (re)start. */
+    private void beginFreshAttempt() {
+        App.removeCallbacks(sourceRetryRunnable);
+        retry = 0;
+        sourceRetry = 0;
+        decodeTriedMask = 0;
+        firstFrameExtendCount = 0;
     }
 
     private boolean isHard() {
@@ -682,7 +775,18 @@ public class PlayerManager implements ParseCallback {
 
     private void onPlayTimeout() {
         stop();
-        callback.onError(ResUtil.getString(R.string.error_play_timeout));
+        handleFatalError(null);
+    }
+
+    private void onFirstFrameTimeout() {
+        if (openReported || spec == null || isReleased()) return;
+        // MPV may advance position before STATE_READY; extend a few times, then fail.
+        if (engine.getType() == PlayerEngine.Type.MPV && getPosition() > 0 && firstFrameExtendCount < 3) {
+            firstFrameExtendCount++;
+            scheduleFirstFrameTimeout();
+            return;
+        }
+        onPlayTimeout();
     }
 
     private void ensureEngine(PlaySpec spec) {
@@ -765,15 +869,29 @@ public class PlayerManager implements ParseCallback {
 
     private void setMediaItem(long timeout, long startPositionMs) {
         if (spec == null || spec.getUrl() == null) return;
+        // Drop stale play/first-frame timeouts before engine.start; keep sourceRetry across retries.
+        App.removeCallbacks(runnable, firstFrameRunnable);
         ensureEngine(spec.checkUa());
         pendingPreload = null;
         openReported = false;
+        firstFrameExtendCount = 0;
         playStartRealtimeMs = SystemClock.elapsedRealtime();
+        ensureDecodeForSubs(spec);
         engine.start(spec, startPositionMs);
         setDanmakus(spec.getDanmakus());
         App.post(runnable, timeout);
+        scheduleFirstFrameTimeout();
         callback.onPrepare();
         initTrack = false;
+    }
+
+    private void scheduleFirstFrameTimeout() {
+        // FFmpeg-backed MPV may inspect every rendition in an HLS master before the first frame.
+        // Keep Exo's fast failure, but give MPV the full play timeout instead of aborting a healthy load.
+        long timeout = liveMode
+                ? (engine.getType() == PlayerEngine.Type.MPV ? Constant.TIMEOUT_PLAY : Constant.TIMEOUT_FIRST_FRAME_LIVE)
+                : Constant.TIMEOUT_FIRST_FRAME_VOD;
+        App.post(firstFrameRunnable, timeout);
     }
 
     private void startCurrent() {
@@ -861,7 +979,7 @@ public class PlayerManager implements ParseCallback {
 
         @Override
         public void onPlaybackStateChanged(int state) {
-            if (state == Player.STATE_READY || state == Player.STATE_ENDED) App.removeCallbacks(runnable);
+            if (state == Player.STATE_READY || state == Player.STATE_ENDED) App.removeCallbacks(runnable, firstFrameRunnable);
             if (state == Player.STATE_READY) {
                 engine.resetErrorBudget();
                 if (!openReported && liveMode && spec != null) {
@@ -902,13 +1020,14 @@ public class PlayerManager implements ParseCallback {
         public void onPlayerError(@NonNull PlaybackException e) {
             if (spec == null) return;
             PlayerEngine.ErrorAction action = engine.handleError(e);
-            if (action != PlayerEngine.ErrorAction.RECOVERED) App.removeCallbacks(runnable);
+            if (action != PlayerEngine.ErrorAction.RECOVERED) App.removeCallbacks(runnable, firstFrameRunnable);
             switch (action) {
                 case DECODE -> handleDecodeError(e);
+                case RETRY -> handleSourceRetry(e);
                 case RECOVERED -> setDanmakus(spec.getDanmakus());
                 case FATAL -> {
                     if (liveMode && e.errorCode >= 2000 && e.errorCode < 3000) LineQualityStore.recordFailure(spec.getUrl());
-                    if (!fallbackMpvToExo()) callback.onError(engine.getErrorMessage(e));
+                    if (!fallbackMpvToExo()) handleFatalError(e);
                 }
             }
         }

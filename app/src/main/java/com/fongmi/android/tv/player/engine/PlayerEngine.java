@@ -88,6 +88,8 @@ public interface PlayerEngine {
     enum ErrorAction {
         RECOVERED,
         DECODE,
+        /** Transient/source-level failure: PlayerManager restarts the item with backoff. */
+        RETRY,
         FATAL
     }
 

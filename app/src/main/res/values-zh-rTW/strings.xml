@@ -237,7 +237,10 @@
     <string name="error_play_url">播放網址載入失敗</string>
     <string name="error_play_flag">暫無線路資料</string>
     <string name="error_play_timeout">連線逾時</string>
+    <string name="error_play_retry">正在重試播放…</string>
     <string name="error_decode_fallback">硬解失敗，已切換軟解</string>
+    <string name="player_sub_decode_hint">外掛字幕需要相容硬解/軟解，已自動切換</string>
+    <string name="player_engine_requires_exo">此片源需要 ExoPlayer，已自動切換</string>
     <string name="error_play_tvbus">錯誤代碼：<xliff:g name="name">%s</xliff:g></string>
     <string name="error_detail">暫無播放資料</string>
     <string name="error_empty">這裡什麼都沒有 👀</string>

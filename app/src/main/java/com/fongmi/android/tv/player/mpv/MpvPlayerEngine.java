@@ -170,6 +170,10 @@ public class MpvPlayerEngine implements PlayerEngine {
         return switch (e.errorCode) {
             case PlaybackException.ERROR_CODE_DECODER_INIT_FAILED, PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED, PlaybackException.ERROR_CODE_DECODING_FAILED -> ErrorAction.DECODE;
             case PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> retryHls();
+            case PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+                 PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+                 PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                 PlaybackException.ERROR_CODE_TIMEOUT -> ErrorAction.RETRY;
             default -> ErrorAction.FATAL;
         };
     }

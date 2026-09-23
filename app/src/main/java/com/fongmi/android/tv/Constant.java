@@ -16,6 +16,9 @@ public class Constant {
     public static final long TIMEOUT_PARSE_DEF = TimeUnit.SECONDS.toMillis(15);
     public static final long TIMEOUT_PARSE_WEB = TimeUnit.SECONDS.toMillis(15);
     public static final long TIMEOUT_PARSE_LIVE = TimeUnit.SECONDS.toMillis(10);
+    /** First-frame watchdog: fail faster than TIMEOUT_PLAY when nothing is on screen. */
+    public static final long TIMEOUT_FIRST_FRAME_LIVE = TimeUnit.SECONDS.toMillis(8);
+    public static final long TIMEOUT_FIRST_FRAME_VOD = TimeUnit.SECONDS.toMillis(20);
     public static final long HISTORY_TIME = TimeUnit.DAYS.toMillis(60);
 
     public static long getOpEdLimit(long duration) {
