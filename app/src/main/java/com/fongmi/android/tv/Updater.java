@@ -59,9 +59,10 @@ public class Updater implements Download.Callback, UpdateListener {
     private void doInBackground(FragmentActivity activity) {
         try {
             JSONObject object = new JSONObject(OkHttp.string(getJson()));
-            String name = object.optString("tag_name");
-            if (name.isEmpty()) name = object.optString("name");
-            String desc = object.optString("body");
+            String tag = object.optString("tag_name");
+            if (tag.isEmpty()) tag = object.optString("name");
+            final String name = tag;
+            final String desc = object.optString("body");
             int code = Github.parseCode(name);
             if (code <= BuildConfig.VERSION_CODE) return;
             App.post(() -> show(activity, name, desc));
