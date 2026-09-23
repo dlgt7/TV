@@ -94,11 +94,11 @@ public class DlnaBrowseActivity extends BaseActivity implements DlnaEntryAdapter
                 if (firstPage) {
                     mAdapter.setItems(entries);
                     mBinding.recycler.setSelectedPosition(0);
+                    // Show first page immediately; keep list visible while later pages append.
                     mBinding.progressLayout.showContent(true, mAdapter.getItemCount());
                 } else {
                     mAdapter.addItems(entries);
                 }
-                if (!done) mBinding.progressLayout.showProgress();
             }
 
             @Override
