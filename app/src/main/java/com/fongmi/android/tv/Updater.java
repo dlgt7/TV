@@ -38,7 +38,7 @@ public class Updater implements Download.Callback, UpdateListener {
     }
 
     private String getJson() {
-        return Github.getJson(BuildConfig.FLAVOR_mode);
+        return Github.getJson();
     }
 
     private String getApk() {
@@ -59,9 +59,10 @@ public class Updater implements Download.Callback, UpdateListener {
     private void doInBackground(FragmentActivity activity) {
         try {
             JSONObject object = new JSONObject(OkHttp.string(getJson()));
-            String name = object.optString("name");
-            String desc = object.optString("desc");
-            int code = object.optInt("code");
+            String name = object.optString("tag_name");
+            if (name.isEmpty()) name = object.optString("name");
+            String desc = object.optString("body");
+            int code = Github.parseCode(name);
             if (code <= BuildConfig.VERSION_CODE) return;
             App.post(() -> show(activity, name, desc));
         } catch (Exception e) {
