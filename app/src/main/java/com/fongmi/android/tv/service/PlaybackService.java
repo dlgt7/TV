@@ -248,8 +248,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     private void saveProgress() {
         if (hasNavigationCallback() || session == null) return;
         if (BrowseTree.saveProgress(player.getPosition(), player.getDuration())) {
-            // Debounce noisy library refreshes; system MediaSession logs spam on rapid updates.
-            session.notifyChildrenChanged("VOD", 0, null);
+            notifyVodChildrenDebounced();
         }
     }
 
@@ -258,7 +257,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         if (session == null) return;
         if (event.isVod()) {
             BrowseTree.clearVod();
-            session.notifyChildrenChanged("VOD", 0, null);
+            notifyVodChildrenDebounced();
         } else if (event.isLive()) {
             BrowseTree.clearLive();
             session.notifyChildrenChanged("LIVE", 0, null);
@@ -400,7 +399,24 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         interceptItem(items.get(idx), startPositionMs);
     }
 
-    private String lastSessionMediaId;
+    private long lastChildrenNotifyAt;
+    private final Runnable childrenNotifyRunnable = () -> {
+        if (session == null) return;
+        session.notifyChildrenChanged("VOD", 0, null);
+    };
+
+    /** Collapse rapid identical library refreshes that spam system MediaSession. */
+    private void notifyVodChildrenDebounced() {
+        if (session == null) return;
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - lastChildrenNotifyAt < 800L) {
+            App.removeCallbacks(childrenNotifyRunnable);
+            App.post(childrenNotifyRunnable, 800L);
+            return;
+        }
+        lastChildrenNotifyAt = now;
+        session.notifyChildrenChanged("VOD", 0, null);
+    }
 
     private ForwardingPlayer wrap(Player base) {
         return new ForwardingPlayer(base) {
