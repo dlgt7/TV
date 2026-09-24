@@ -4,9 +4,11 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.util.DisplayMetrics;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -81,13 +83,22 @@ public abstract class BaseActivity extends AppCompatActivity {
         });
     }
 
+    // design_width_in_dp=960 on leanback; density must track window width / 960.
+    private static final float DESIGN_WIDTH_DP = 960f;
+
     private Resources hackResources(Resources resources) {
+        // Re-apply AutoSize only when density drifts (system reset / early call).
+        // Doing it on every getResources() floods the main thread (high input latency);
+        // doing it once leaves the UI at system density (icons look shrunken).
         try {
-            AutoSizeCompat.autoConvertDensityOfGlobal(resources);
-            return resources;
+            DisplayMetrics dm = resources.getDisplayMetrics();
+            float expected = dm.widthPixels / DESIGN_WIDTH_DP;
+            if (expected > 0 && Math.abs(dm.density - expected) >= 0.05f) {
+                AutoSizeCompat.autoConvertDensityOfGlobal(resources);
+            }
         } catch (Exception ignored) {
-            return resources;
         }
+        return resources;
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -108,7 +119,11 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) Util.hideSystemUI(this);
+        // hideSystemUI is already applied in onCreate; repeating it on every focus
+        // bounce (dialogs, IME, multi-window) adds main-thread work right after clicks.
+        if (hasFocus && getWindow() != null && (getWindow().getAttributes().flags & WindowManager.LayoutParams.FLAG_FULLSCREEN) == 0) {
+            Util.hideSystemUI(this);
+        }
     }
 
     protected void onBackInvoked() {

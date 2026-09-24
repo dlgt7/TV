@@ -34,4 +34,34 @@ public class Github {
             return 0;
         }
     }
+
+    /**
+     * Source build number from tags like {@code v5.5.6-source.8}; 0 when absent.
+     * Same X.Y.Z can ship several source drops — treat a higher source number as newer.
+     */
+    public static int parseSourceRevision(String tag) {
+        if (tag == null) return 0;
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(?i)-source\\.(\\d+)")
+                .matcher(tag.trim());
+        if (!m.find()) return 0;
+        try {
+            return Integer.parseInt(m.group(1));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * @param tag               GitHub release tag (e.g. {@code v5.5.6-source.8})
+     * @param currentCode       BuildConfig.VERSION_CODE (5.5.6 -> 556)
+     * @param currentSource     installed source revision, 0 if unknown
+     */
+    public static boolean isNewer(String tag, int currentCode, int currentSource) {
+        int code = parseCode(tag);
+        if (code <= 0) return false;
+        if (code != currentCode) return code > currentCode;
+        int src = parseSourceRevision(tag);
+        return src > currentSource;
+    }
 }

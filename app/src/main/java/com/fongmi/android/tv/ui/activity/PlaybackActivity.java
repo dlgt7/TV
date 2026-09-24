@@ -68,6 +68,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private boolean stop;
     private boolean lock;
 
+    @Override
+    protected boolean customWall() {
+        // Player pages are fullscreen; skip the wallpaper inflate/decode on enter.
+        return false;
+    }
+
     protected MediaController controller() {
         return mController;
     }

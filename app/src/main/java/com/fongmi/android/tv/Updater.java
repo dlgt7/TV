@@ -63,8 +63,8 @@ public class Updater implements Download.Callback, UpdateListener {
             if (tag.isEmpty()) tag = object.optString("name");
             final String name = tag;
             final String desc = object.optString("body");
-            int code = Github.parseCode(name);
-            if (code <= BuildConfig.VERSION_CODE) return;
+            int currentSource = Github.parseSourceRevision(BuildConfig.VERSION_NAME);
+            if (!Github.isNewer(name, BuildConfig.VERSION_CODE, currentSource)) return;
             App.post(() -> show(activity, name, desc));
         } catch (Exception e) {
             e.printStackTrace();

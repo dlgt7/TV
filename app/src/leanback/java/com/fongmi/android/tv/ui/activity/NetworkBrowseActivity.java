@@ -12,6 +12,7 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.SiteApi;
 import com.fongmi.android.tv.databinding.ActivityNetworkBrowseBinding;
 import com.fongmi.android.tv.storage.NetworkEntry;
+import com.fongmi.android.tv.storage.NetworkMediaTypes;
 import com.fongmi.android.tv.storage.NetworkStorage;
 import com.fongmi.android.tv.storage.NetworkStorageStore;
 import com.fongmi.android.tv.storage.SmbClientHelper;
@@ -134,10 +135,16 @@ public class NetworkBrowseActivity extends BaseActivity implements NetworkEntryA
     public void onItemClick(NetworkEntry item) {
         if (item.isDirectory()) {
             load(item.getPath());
-        } else {
-            String playUrl = mStorage.toPlayUrl(item.getPath());
-            VideoActivity.start(this, SiteApi.PUSH, playUrl, item.getName());
+            return;
         }
+        // Never push arbitrary files (e.g. .txt) into VideoActivity — that crashes the player.
+        if (!NetworkMediaTypes.isPlayable(item.getName())) {
+            Notify.show(getString(R.string.network_storage_unsupported_file,
+                    NetworkMediaTypes.supportedLabel()));
+            return;
+        }
+        String playUrl = mStorage.toPlayUrl(item.getPath());
+        VideoActivity.start(this, SiteApi.PUSH, playUrl, item.getName());
     }
 
     @Override

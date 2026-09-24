@@ -156,6 +156,8 @@ public class NetworkStorage {
     public String displaySubtitle() {
         if (isSmb()) {
             String share = getShare();
+            // Never render a bare "smb://" for incomplete rows (empty host/share).
+            if (TextUtils.isEmpty(getHost()) && TextUtils.isEmpty(share)) return "";
             return "smb://" + getHost() + (TextUtils.isEmpty(share) ? "" : "/" + share);
         }
         return webDavBaseUrl();

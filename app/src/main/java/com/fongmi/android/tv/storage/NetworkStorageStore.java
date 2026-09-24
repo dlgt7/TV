@@ -32,6 +32,12 @@ public class NetworkStorageStore {
                 migrated = migratePlaintextCredentials(json, list);
             } catch (Exception ignored) {
             }
+            // Drop anonymous stubs left by older add/edit flows (no id and no host).
+            // They render as a bare "smb://" tile and cannot be deleted by id.
+            int before = list.size();
+            list.removeIf(item -> item == null
+                    || (TextUtils.isEmpty(item.getId()) && TextUtils.isEmpty(item.getHost())));
+            if (list.size() != before) migrated = true;
             for (NetworkStorage item : list) hydrateCredentials(item);
             if (migrated) Prefers.put(KEY, GSON.toJson(list));
             return list;
@@ -148,11 +154,17 @@ public class NetworkStorageStore {
     }
 
     public static synchronized void delete(String id) {
-        if (TextUtils.isEmpty(id)) return;
         List<NetworkStorage> list = getAll();
-        list.removeIf(item -> id.equals(item.getId()));
+        if (TextUtils.isEmpty(id)) {
+            // Anonymous stubs have no id; treat delete as "remove remaining stubs".
+            list.removeIf(item -> TextUtils.isEmpty(item.getId()));
+        } else {
+            list.removeIf(item -> id.equals(item.getId()));
+        }
         Prefers.put(KEY, GSON.toJson(list));
-        NetworkCredentialStore.remove(id);
-        clearHomeIf(id);
+        if (!TextUtils.isEmpty(id)) {
+            NetworkCredentialStore.remove(id);
+            clearHomeIf(id);
+        }
     }
 }

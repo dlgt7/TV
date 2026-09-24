@@ -20,11 +20,13 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.palette.graphics.Palette;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.ViewWallBinding;
 import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.setting.Setting;
+import com.fongmi.android.tv.utils.Task;
 import com.github.catvod.utils.Path;
 
 import org.greenrobot.eventbus.EventBus;
@@ -68,8 +70,49 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
 
     private void refresh() {
         stop();
-        load();
-        theme();
+        // Built-in wallpapers are cheap; custom image/gif decode + Palette must leave
+        // the main thread or every activity enter pays for it (high input latency).
+        int wall = Setting.getWall();
+        int type = Setting.getWallType();
+        if (isBuiltIn(wall, type)) {
+            loadRes(WALL_PAPERS[wall]);
+            applyThemeColor(getWallColor());
+            return;
+        }
+        Task.execute(() -> {
+            if (type == TYPE_VIDEO) {
+                int color = getWallColor();
+                Drawable poster = cache();
+                App.post(() -> {
+                    if (binding == null) return;
+                    loadVideo(Path.wall(wall), poster);
+                    applyThemeColor(color);
+                });
+                return;
+            }
+            GifDrawable gifDraw = type == TYPE_GIF ? gif(Path.wall(wall)) : null;
+            Drawable decoded = gifDraw != null ? gifDraw : cache();
+            int color = getWallColor();
+            App.post(() -> {
+                if (binding == null) return;
+                if (gifDraw != null) {
+                    drawable = gifDraw;
+                    binding.image.setImageDrawable(gifDraw);
+                } else if (decoded != null) {
+                    binding.image.setImageDrawable(decoded);
+                } else {
+                    binding.image.setImageResource(R.drawable.wallpaper_1);
+                }
+                applyThemeColor(color);
+            });
+        });
+    }
+
+    private void applyThemeColor(int newColor) {
+        int oldColor = Setting.getWallColor();
+        if (newColor == oldColor) return;
+        Setting.putWallColor(newColor);
+        if (Setting.getThemeColor() == 0) RefreshEvent.theme();
     }
 
     private void stop() {
@@ -88,47 +131,18 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
         }
     }
 
-    private void load() {
-        int wall = Setting.getWall();
-        int type = Setting.getWallType();
-        if (isBuiltIn(wall, type)) loadRes(WALL_PAPERS[wall]);
-        else if (type == TYPE_VIDEO) loadVideo(Path.wall(wall));
-        else if (type == TYPE_GIF) loadGif(Path.wall(wall));
-        else loadImage();
-    }
-
-    private void theme() {
-        int newColor = getWallColor();
-        int oldColor = Setting.getWallColor();
-        if (newColor == oldColor) return;
-        Setting.putWallColor(newColor);
-        if (Setting.getThemeColor() == 0) RefreshEvent.theme();
-    }
-
     private void loadRes(int resId) {
         binding.image.setImageResource(resId);
     }
 
-    private void loadImage() {
-        Drawable cache = cache();
-        if (cache != null) binding.image.setImageDrawable(cache);
-        else binding.image.setImageResource(R.drawable.wallpaper_1);
-    }
-
-    private void loadVideo(File file) {
+    private void loadVideo(File file, Drawable poster) {
         ensurePlayer();
         ensureVideoView();
         video.setPlayer(player);
         video.setVisibility(VISIBLE);
-        binding.image.setImageDrawable(cache());
+        binding.image.setImageDrawable(poster);
         player.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)));
         player.prepare();
-    }
-
-    private void loadGif(File file) {
-        drawable = gif(file);
-        if (drawable != null) binding.image.setImageDrawable(drawable);
-        else loadImage();
     }
 
     private Drawable cache() {
