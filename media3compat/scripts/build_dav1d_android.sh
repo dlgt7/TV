@@ -44,7 +44,7 @@ fi
 git -C "$media_dir" checkout --detach "$media_revision"
 
 if [[ ! -d "$dav1d_dir/.git" ]]; then
-    git clone --filter=blob:none https://code.videolan.org/videolan/dav1d.git "$dav1d_dir"
+    git clone --filter=blob:none https://github.com/videolan/dav1d.git "$dav1d_dir"
 fi
 git -C "$dav1d_dir" checkout --detach "$dav1d_revision"
 
