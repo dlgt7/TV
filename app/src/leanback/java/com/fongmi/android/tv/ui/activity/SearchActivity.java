@@ -87,7 +87,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         mBinding.keyword.addTextChangedListener(new CustomTextListener() {
             @Override
             public void afterTextChanged(Editable s) {
-                getWord(s.toString());
+                scheduleWord(s.toString());
             }
         });
         mBinding.mic.setOnClickListener(v -> mBinding.mic.start());
@@ -96,6 +96,43 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
             public void onResults(String result) {
                 if (!result.isEmpty()) setKeyword(result);
                 mBinding.keyword.requestFocus();
+            }
+        });
+    }
+
+    private String pendingWord = "";
+    private okhttp3.Call suggestCall;
+    private long wordSeq;
+    private final Runnable wordRunnable = () -> fetchWord(pendingWord);
+
+    private void scheduleWord(String text) {
+        pendingWord = text == null ? "" : text;
+        App.removeCallbacks(wordRunnable);
+        // Debounce typing so every keystroke does not fire a suggest request.
+        App.post(wordRunnable, 280L);
+    }
+
+    private void fetchWord(String text) {
+        long seq = ++wordSeq;
+        if (suggestCall != null) {
+            suggestCall.cancel();
+            suggestCall = null;
+        }
+        if (text == null || text.isEmpty()) {
+            getHot();
+            return;
+        }
+        mBinding.word.setText(R.string.search_suggest);
+        suggestCall = OkHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + URLEncoder.encode(ZhuToPin.get(text)));
+        suggestCall.enqueue(new Callback() {
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                String result = response.body() == null ? "" : response.body().string();
+                if (TextUtils.isEmpty(result)) return;
+                App.post(() -> {
+                    if (seq != wordSeq) return;
+                    setAdapter(result, false);
+                });
             }
         });
     }
@@ -121,19 +158,14 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     }
 
     private void getWord(String text) {
-        if (text.isEmpty()) getHot();
-        else getSuggest(text);
+        pendingWord = text == null ? "" : text;
+        fetchWord(pendingWord);
     }
 
     private void getHot() {
         mBinding.word.setText(R.string.search_hot);
         mWordAdapter.setItems(Word.objectFrom(Setting.getHot()).getData());
         OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Map.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(getCallback(true));
-    }
-
-    private void getSuggest(String text) {
-        mBinding.word.setText(R.string.search_suggest);
-        OkHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + URLEncoder.encode(ZhuToPin.get(text))).enqueue(getCallback(false));
     }
 
     private Callback getCallback(boolean hot) {
@@ -313,6 +345,11 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     @Override
     protected void onDestroy() {
+        App.removeCallbacks(wordRunnable);
+        if (suggestCall != null) {
+            suggestCall.cancel();
+            suggestCall = null;
+        }
         super.onDestroy();
         mBinding.mic.destroy();
     }
