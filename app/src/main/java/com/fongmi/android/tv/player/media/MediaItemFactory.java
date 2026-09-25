@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.player.media;
 
+import android.text.TextUtils;
+
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 
@@ -36,9 +38,12 @@ public final class MediaItemFactory {
 
     private static List<MediaItem.SubtitleConfiguration> buildSubtitleConfigs(List<Sub> subs) {
         List<MediaItem.SubtitleConfiguration> configs = new ArrayList<>();
-        if (subs == null || subs.isEmpty()) return configs;
-        SubtitleFlags flags = SubtitleFlags.create(subs);
-        for (int i = 0; i < subs.size(); i++) configs.add(buildSubConfig(subs.get(i), flags.get(subs.get(i), i)));
+        if (subs == null) return configs;
+        List<Sub> valid = new ArrayList<>();
+        for (Sub sub : subs) if (sub != null && !sub.isEmpty()) valid.add(sub);
+        if (valid.isEmpty()) return configs;
+        SubtitleFlags flags = SubtitleFlags.create(valid);
+        for (int i = 0; i < valid.size(); i++) configs.add(buildSubConfig(valid.get(i), flags.get(valid.get(i), i)));
         return configs;
     }
 
@@ -47,7 +52,9 @@ public final class MediaItemFactory {
     }
 
     private static MediaItem.SubtitleConfiguration buildSubConfig(Sub sub, int flag) {
-        return new MediaItem.SubtitleConfiguration.Builder(sub.getUri()).setLabel(sub.getName()).setMimeType(sub.getFormat()).setSelectionFlags(flag).setLanguage(sub.getLang()).build();
+        String mimeType = sub.getFormat();
+        if (TextUtils.isEmpty(mimeType)) mimeType = PlayerHelper.getSubtitleMimeType(sub.getUri().getPath());
+        return new MediaItem.SubtitleConfiguration.Builder(sub.getUri()).setLabel(sub.getName()).setMimeType(mimeType).setSelectionFlags(flag).setLanguage(sub.getLang()).build();
     }
 
     private static int findPreferredSubtitleIndex(List<Sub> subs) {
