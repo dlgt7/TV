@@ -6,7 +6,6 @@ import android.util.AttributeSet
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,7 +18,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -129,6 +127,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
     private var secondaryText by mutableStateOf("")
     private var tertiaryText by mutableStateOf("")
     private var playing by mutableStateOf(false)
+    private var livePlayback by mutableStateOf(false)
     private var repeating by mutableStateOf(false)
     private var previousVisible by mutableStateOf(true)
     private var nextVisible by mutableStateOf(true)
@@ -181,6 +180,10 @@ class JetStreamVodControlView @JvmOverloads constructor(
         mediaTitle = title?.toString().orEmpty()
         secondaryText = secondary?.toString().orEmpty()
         tertiaryText = tertiary?.toString().orEmpty()
+    }
+
+    fun setLiveMode(live: Boolean) {
+        livePlayback = live
     }
 
     fun setPlaybackState(isPlaying: Boolean, isRepeating: Boolean) {
@@ -334,16 +337,18 @@ class JetStreamVodControlView @JvmOverloads constructor(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(horizontal = 56.dp)
-                .padding(top = 8.dp, bottom = 32.dp)
+                .padding(horizontal = 48.dp)
+                .padding(top = 8.dp, bottom = 36.dp)
         ) {
-            HeaderRow(isPlaying)
+            MediaTitle(Modifier.fillMaxWidth())
             Spacer(Modifier.height(16.dp))
             SeekerRow(
                 isPlaying = isPlaying,
                 positionMs = positionMs,
                 durationMs = durationMs
             )
+            Spacer(Modifier.height(14.dp))
+            HeaderRow(isPlaying)
         }
     }
 
@@ -417,14 +422,14 @@ class JetStreamVodControlView @JvmOverloads constructor(
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .clip(RoundedCornerShape(28.dp))
-                .background(colorScheme.surface.copy(alpha = 0.82f))
+                .clip(RoundedCornerShape(16.dp))
+                .background(colorScheme.surface.copy(alpha = 0.88f))
                 .padding(horizontal = 32.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(56.dp)
                     .clip(CircleShape)
                     .background(colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
@@ -432,7 +437,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                 Icon(
                     painter = painterResource(id = centerInfoIcon()),
                     contentDescription = null,
-                    modifier = Modifier.size(42.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = colorScheme.onPrimaryContainer
                 )
             }
@@ -477,9 +482,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
         ) {
-            MediaTitle(Modifier.weight(1f))
             Row(
-                modifier = Modifier.padding(bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -504,8 +507,10 @@ class JetStreamVodControlView @JvmOverloads constructor(
                         listener?.onRepeat()
                     }
                 }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 commandGroups.filter { hasVisibleCommands(it.key) }.forEach { group ->
-                    ControlIcon(group.icon, isPlaying, true, activeGroup == group.key, groupLabel(group)) {
+                    ControlIcon(group.icon, isPlaying, true, activeGroup == group.key, groupLabel(group), showLabel = true) {
                         toggleGroup(group.key)
                     }
                 }
@@ -521,7 +526,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
             Text(
                 text = mediaTitle,
                 color = colorScheme.onSurface,
-                fontSize = 28.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -550,35 +555,50 @@ class JetStreamVodControlView @JvmOverloads constructor(
         LaunchedEffect(settingsCloseFocus) {
             if (settingsCloseFocus > 0L) runCatching { playFocusRequester.requestFocus() }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ControlIcon(
-                icon = if (isPlaying) R.drawable.msr_pause else R.drawable.msr_play_arrow,
-                isPlaying = isPlaying,
-                enabled = true,
-                selected = false,
-                contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                focusRequester = playFocusRequester
-            ) {
-                listener?.onPlayPause()
+        Column {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                ControlIcon(
+                    icon = if (isPlaying) R.drawable.msr_pause else R.drawable.msr_play_arrow,
+                    isPlaying = isPlaying,
+                    enabled = true,
+                    selected = false,
+                    contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                    focusRequester = playFocusRequester
+                ) { listener?.onPlayPause() }
+                Spacer(Modifier.width(12.dp))
+                if (livePlayback && durationMs <= 0) {
+                    Text(
+                        text = stringResource(R.string.playback_live_now),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(RoundedCornerShape(5.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                    Spacer(Modifier.weight(1f))
+                } else {
+                    ControllerText(formatTime(if (seekActive) (durationMs * seekFraction).roundToLong() else positionMs))
+                    ControllerIndicator(
+                        progress = progress(positionMs, durationMs),
+                        durationMs = durationMs,
+                        selected = seekActive,
+                        seekProgress = seekFraction,
+                        onSelectedChange = { seekActive = it },
+                        onSeekProgressChange = { seekFraction = it },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ControllerText(formatTime(durationMs))
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            ControllerText(
-                text = formatTime(if (seekActive) (durationMs * seekFraction).roundToLong() else positionMs),
-                color = if (seekActive) MaterialTheme.colorScheme.primary else null
-            )
-            ControllerIndicator(
-                progress = progress(positionMs, durationMs),
-                durationMs = durationMs,
-                selected = seekActive,
-                seekProgress = seekFraction,
-                onSelectedChange = { seekActive = it },
-                onSeekProgressChange = { seekFraction = it },
-                modifier = Modifier.weight(1f)
-            )
-            ControllerText(formatTime(durationMs))
+            Box(Modifier.height(24.dp)) {
+                if (seekActive) Text(
+                    text = stringResource(R.string.playback_seek_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 56.dp, top = 8.dp)
+                )
+            }
         }
     }
 
@@ -623,11 +643,11 @@ class JetStreamVodControlView @JvmOverloads constructor(
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(328.dp)
-                    .padding(vertical = 28.dp, horizontal = 28.dp)
-                    .clip(RoundedCornerShape(28.dp))
+                    .width(368.dp)
+                    .padding(vertical = 48.dp, horizontal = 24.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(colorScheme.surface.copy(alpha = 0.94f))
-                    .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(28.dp))
+
                     .focusRequester(drawerFocus)
                     .onPreviewKeyEvent { event ->
                         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
@@ -641,7 +661,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                                 true
                             }
                             Key.DirectionCenter, Key.Enter -> {
-                                visibleCommands.getOrNull(focusedIndex)?.let { triggerCommand(it.first, false) }
+                                if (event.nativeKeyEvent.repeatCount == 0) visibleCommands.getOrNull(focusedIndex)?.let { triggerCommand(it.first, false) }
                                 true
                             }
                             Key.DirectionLeft, Key.Back -> {
@@ -740,6 +760,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
         selected: Boolean,
         contentDescription: String,
         focusRequester: FocusRequester? = null,
+        showLabel: Boolean = false,
         onClick: () -> Unit
     ) {
         val colorScheme = MaterialTheme.colorScheme
@@ -752,8 +773,8 @@ class JetStreamVodControlView @JvmOverloads constructor(
         )
         val background by animateColorAsState(
             targetValue = when {
-                selected -> colorScheme.secondaryContainer
                 focused -> colorScheme.primaryContainer
+                selected -> colorScheme.secondaryContainer
                 enabled -> colorScheme.surfaceVariant.copy(alpha = 0.82f)
                 else -> colorScheme.surfaceVariant.copy(alpha = 0.42f)
             },
@@ -763,8 +784,8 @@ class JetStreamVodControlView @JvmOverloads constructor(
         val contentColor by animateColorAsState(
             targetValue = when {
                 !enabled -> colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                selected -> colorScheme.onSecondaryContainer
                 focused -> colorScheme.onPrimaryContainer
+                selected -> colorScheme.onSecondaryContainer
                 else -> colorScheme.onSurfaceVariant
             },
             animationSpec = JetStreamAnimations.ColorTween,
@@ -773,9 +794,9 @@ class JetStreamVodControlView @JvmOverloads constructor(
 
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .then(if (showLabel) Modifier.height(38.dp) else Modifier.size(44.dp))
                 .graphicsLayer(scaleX = scale, scaleY = scale)
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(if (showLabel) 10.dp else 22.dp))
                 .background(background)
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .clickable(
@@ -789,20 +810,18 @@ class JetStreamVodControlView @JvmOverloads constructor(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            AnimatedContent(
-                targetState = icon,
-                transitionSpec = {
-                    (scaleIn(initialScale = 0.7f, animationSpec = tween(220)) + fadeIn(tween(220)))
-                        .togetherWith(scaleOut(targetScale = 0.7f, animationSpec = tween(180)) + fadeOut(tween(180)))
-                },
-                label = "iconMorph"
-            ) { targetIcon ->
+            Row(
+                modifier = Modifier.padding(horizontal = if (showLabel) 12.dp else 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Icon(
-                    painter = painterResource(id = targetIcon),
-                    contentDescription = contentDescription,
-                    modifier = Modifier.size(24.dp),
+                    painter = painterResource(id = icon),
+                    contentDescription = if (showLabel) null else contentDescription,
+                    modifier = Modifier.size(if (showLabel) 18.dp else 24.dp),
                     tint = contentColor
                 )
+                if (showLabel) Text(contentDescription, color = contentColor, fontSize = 12.sp, maxLines = 1)
             }
             if (selected) {
                 Canvas(Modifier.fillMaxSize()) {
@@ -842,7 +861,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
     ) {
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
-        val height by animateDpAsState(if (focused) 10.dp else 4.dp, label = "indicatorHeight")
+        val height by animateDpAsState(if (focused) 8.dp else 4.dp, animationSpec = tween(JetStreamAnimations.DurationFocus), label = "indicatorHeight")
         val colorScheme = MaterialTheme.colorScheme
         val progressColor = if (selected) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.92f)
         val trackColor = colorScheme.outlineVariant.copy(alpha = 0.72f)
@@ -870,6 +889,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                     if (event.type != KeyEventType.KeyDown || durationMs <= 0) return@onPreviewKeyEvent false
                     when (event.key) {
                         Key.DirectionCenter, Key.Enter -> {
+                            if (event.nativeKeyEvent.repeatCount != 0) return@onPreviewKeyEvent true
                             if (selected) listener?.onSeekTo((durationMs * seekProgress).roundToLong())
                             else onSeekProgressChange(progress)
                             onSelectedChange(!selected)
