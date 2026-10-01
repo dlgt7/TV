@@ -4,24 +4,24 @@ import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.KeyEvent
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,16 +37,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fongmi.android.tv.R
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
-import com.fongmi.android.tv.ui.theme.JetStreamAnimations
-import com.fongmi.android.tv.ui.theme.JetStreamShapes
-import com.fongmi.android.tv.ui.theme.JetStreamBorders
 
 class JetStreamHomeNavView @JvmOverloads constructor(
     context: Context,
@@ -93,7 +88,7 @@ class JetStreamHomeNavView @JvmOverloads constructor(
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
         navFocused = gainFocus
-        if (gainFocus) normalizeFocus()
+        if (gainFocus) normalizeFocus() else centerLongPressed = false
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -158,7 +153,7 @@ class JetStreamHomeNavView @JvmOverloads constructor(
                     .fillMaxHeight()
                     .padding(horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items.forEachIndexed { index, item ->
                     NavButton(
@@ -178,88 +173,55 @@ class JetStreamHomeNavView @JvmOverloads constructor(
     private fun NavButton(item: NavItem, selected: Boolean, focused: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
         val interactionSource = remember { MutableInteractionSource() }
         val scale by animateFloatAsState(
-            if (focused) JetStreamAnimations.FocusScaleMedium else 1.0f,
-            animationSpec = JetStreamAnimations.ScaleSpring,
+            if (focused) 1.04f else 1f,
+            animationSpec = tween(120),
             label = "navScale"
         )
         val background by animateColorAsState(
-            targetValue = when {
-                focused -> MaterialTheme.colorScheme.primaryContainer
-                selected -> MaterialTheme.colorScheme.secondaryContainer
-                else -> Color.Transparent
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
+            if (focused) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+            animationSpec = tween(120),
             label = "navBackground"
         )
-        val border by animateColorAsState(
-            targetValue = if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "navBorder"
-        )
         val contentColor by animateColorAsState(
-            targetValue = when {
-                focused -> MaterialTheme.colorScheme.onPrimaryContainer
-                selected -> MaterialTheme.colorScheme.onSecondaryContainer
+            when {
+                focused -> MaterialTheme.colorScheme.background
+                selected -> MaterialTheme.colorScheme.onSurface
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
-            animationSpec = JetStreamAnimations.ColorTween,
+            animationSpec = tween(120),
             label = "navContent"
         )
-
-        Row(
+        Column(
             modifier = Modifier
-                .height(34.dp)
-                .widthIn(min = 54.dp)
+                .height(42.dp)
+                .widthIn(min = 62.dp)
                 .graphicsLayer(scaleX = scale, scaleY = scale)
-                .clip(JetStreamShapes.Button)
+                .clip(RoundedCornerShape(24.dp))
                 .background(background)
-                .then(
-                    if (focused) Modifier.border(
-                        JetStreamBorders.Thin,
-                        border,
-                        JetStreamShapes.Button
-                    )
-                    else Modifier
-                )
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = onClick,
                     onLongClick = onLongClick
                 )
-                .padding(horizontal = 11.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                painter = painterResource(id = iconFor(item.drawableRes)),
-                contentDescription = item.text,
-                modifier = Modifier.size(19.dp),
-                tint = contentColor
-            )
-            Spacer(Modifier.width(6.dp))
             Text(
                 text = item.text,
                 color = contentColor,
-                fontSize = 13.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                fontSize = 15.sp,
+                fontWeight = if (selected || focused) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            Spacer(Modifier.height(3.dp))
+            Box(Modifier.width(16.dp).height(2.dp).background(
+                if (selected && !focused) contentColor else Color.Transparent,
+                RoundedCornerShape(1.dp)
+            ))
         }
     }
 
-    companion object {
-        @DrawableRes
-        private fun iconFor(resId: Int): Int {
-            return when (resId) {
-                R.drawable.ic_home_live -> R.drawable.msr_live_tv
-                R.drawable.ic_home_search -> R.drawable.msr_search
-                R.drawable.ic_home_keep -> R.drawable.msr_bookmark_border
-                R.drawable.ic_home_push -> R.drawable.msr_cloud_upload
-                R.drawable.ic_home_setting -> R.drawable.msr_settings
-                R.drawable.ic_home_discover -> R.drawable.ic_home_discover
-                else -> R.drawable.msr_movie
-            }
-        }
-    }
 }

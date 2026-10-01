@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -18,6 +19,7 @@ import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
+import androidx.leanback.widget.Presenter;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
@@ -40,6 +42,7 @@ import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Style;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.ActivityHomeBinding;
+import com.fongmi.android.tv.databinding.AdapterHomeEmptyBinding;
 import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.event.CastEvent;
 import com.fongmi.android.tv.event.ConfigEvent;
@@ -75,7 +78,6 @@ import com.fongmi.android.tv.utils.Task;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.net.OkHttp;
-import com.google.common.collect.Lists;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -89,13 +91,14 @@ import java.util.function.BooleanSupplier;
 
 public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, JetStreamHomeNavView.Listener, HistoryPresenter.OnClickListener {
 
-    private static final int HOME_HORIZONTAL_PADDING = 44;
-    private static final int HOME_HORIZONTAL_SPACING = 16;
+    private static final int HOME_HORIZONTAL_PADDING = 48;
+    private static final int HOME_HORIZONTAL_SPACING = 20;
 
     private ActivityHomeBinding mBinding;
     private ArrayObjectAdapter mHistoryAdapter;
     private ArrayObjectAdapter mAdapter;
     private HistoryPresenter mPresenter;
+    private FeaturedVodPresenter mFeaturedPresenter;
     private SiteViewModel mViewModel;
     private Result mResult;
     private Clock mClock;
@@ -183,14 +186,28 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @SuppressLint("RestrictedApi")
     private void setRecyclerView() {
         CustomSelector selector = new CustomSelector();
-        selector.addPresenter(Integer.class, new HeaderPresenter());
+        selector.addPresenter(Integer.class, new HeaderPresenter(HOME_HORIZONTAL_PADDING) {
+            @Override
+            public void onBindViewHolder(@NonNull Presenter.ViewHolder holder, Object object) {
+                boolean emptyHistory = (int) object == R.string.home_history && mHistoryAdapter.size() == 0;
+                holder.view.setVisibility(emptyHistory ? View.GONE : View.VISIBLE);
+                ViewGroup.LayoutParams params = holder.view.getLayoutParams();
+                if (params == null) params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.height = emptyHistory ? 0 : ViewGroup.LayoutParams.WRAP_CONTENT;
+                holder.view.setLayoutParams(params);
+                String title = (int) object == R.string.home_history ? getString(R.string.home_continue_watching)
+                        : getString(R.string.home_source_recommendations, TextUtils.isEmpty(getHome().getName()) ? getString(R.string.app_name) : getHome().getName());
+                super.onBindViewHolder(holder, title);
+            }
+        });
         selector.addPresenter(String.class, new ProgressPresenter());
-        selector.addPresenter(FeaturedVodRow.class, new FeaturedVodPresenter(this));
+        selector.addPresenter(FeaturedVodRow.class, mFeaturedPresenter = new FeaturedVodPresenter(this));
+        selector.addPresenter(EmptyHome.class, new EmptyHomePresenter());
         selector.addPresenter(Vod.class, new VodPresenter(this, Style.list()));
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE), VodPresenter.class);
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ALIGNED), HistoryPresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, HOME_HORIZONTAL_PADDING), VodPresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ALIGNED, HOME_HORIZONTAL_PADDING), HistoryPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
-        mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(10));
+        mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
     }
 
     @SuppressLint("RestrictedApi")
@@ -212,7 +229,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     private void setAdapter() {
         mHistoryCid = VodConfig.getCid();
-        mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHomeSpec(Style.rect())));
+        mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHistorySpec()));
         mAdapter.add(R.string.home_history);
         mAdapter.add(R.string.home_recommend);
     }
@@ -345,7 +362,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         if (mAdapter == null || index < 0 || index >= mAdapter.size()) return false;
         Object item = mAdapter.get(index);
         if (item == null || item instanceof Integer || "progress".equals(item)) return false;
-        return item instanceof ListRow || item instanceof FeaturedVodRow || item instanceof Vod;
+        return item instanceof ListRow || item instanceof FeaturedVodRow || item instanceof Vod || item instanceof EmptyHome;
     }
 
     private void requestHistoryFocus(int position) {
@@ -483,21 +500,31 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private void addVideo(Result result) {
         setFeatured(result.getList());
         Style style = result.getStyle(getHome().getStyle());
-        if (style.isList()) mAdapter.addAll(mAdapter.size(), result.getList());
+        if (result.getList().isEmpty()) mAdapter.add(new EmptyHome());
+        else if (style.isList()) mAdapter.addAll(mAdapter.size(), result.getList());
         else addGrid(result.getList(), style);
+        int header = mAdapter.indexOf(R.string.home_recommend);
+        if (header >= 0) mAdapter.notifyArrayItemRangeChanged(header, 1);
     }
 
     private void setFeatured(List<Vod> items) {
         List<Vod> featured = getFeatured(items, true);
         if (featured.isEmpty()) featured = getFeatured(items, false);
         if (!featured.isEmpty()) mAdapter.add(getFeaturedIndex(), FeaturedVodRow.create(featured));
+        mBinding.recycler.setPadding(0, featured.isEmpty() ? ResUtil.dp2px(80) : 0, 0, ResUtil.dp2px(48));
     }
 
     private List<Vod> getFeatured(List<Vod> items, boolean requirePic) {
         List<Vod> featured = new ArrayList<>();
+        // Prefer a real backdrop when the source provides one, without fabricating a ranking.
         for (Vod item : items) {
             if (featured.size() >= 5) break;
-            if (item.isAction()) continue;
+            if (item.isAction() || TextUtils.isEmpty(item.getBackdrop()) || TextUtils.equals(item.getBackdrop(), item.getPic())) continue;
+            featured.add(item);
+        }
+        for (Vod item : items) {
+            if (featured.size() >= 5) break;
+            if (item.isAction() || featured.contains(item)) continue;
             if (requirePic && TextUtils.isEmpty(item.getPic())) continue;
             featured.add(item);
         }
@@ -508,6 +535,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         for (int i = 0; i < mAdapter.size(); i++) {
             if (!(mAdapter.get(i) instanceof FeaturedVodRow)) continue;
             mAdapter.removeItems(i, 1);
+            mBinding.recycler.setPadding(0, ResUtil.dp2px(80), 0, ResUtil.dp2px(48));
             return;
         }
     }
@@ -518,14 +546,14 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void addGrid(List<Vod> items, Style style) {
-        List<ListRow> rows = new ArrayList<>();
         VodPresenter presenter = new VodPresenter(this, style, getHomeSpec(style));
-        for (List<Vod> part : Lists.partition(items, Product.getColumn(style))) {
-            ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
-            adapter.addAll(0, part);
-            rows.add(new ListRow(adapter));
-        }
-        mAdapter.addAll(mAdapter.size(), rows);
+        ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
+        adapter.addAll(0, items);
+        mAdapter.add(new ListRow(adapter));
+    }
+
+    private int[] getHistorySpec() {
+        return new int[]{Math.round((ResUtil.getScreenWidth() - ResUtil.dp2px(136)) / 3.15f), ResUtil.dp2px(124)};
     }
 
     private int[] getHomeSpec(Style style) {
@@ -537,14 +565,14 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     private void setFunc() {
         List<JetStreamHomeNavView.NavItem> items = new ArrayList<>();
-        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_vod), getString(R.string.home_vod), R.drawable.ic_home_vod));
-        if (LiveConfig.hasUrl()) items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_live), getString(R.string.home_live), R.drawable.ic_home_live));
+        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_tab_home), getString(R.string.home_tab_home), R.drawable.ic_home_vod));
+        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_vod), getString(R.string.home_tab_library), R.drawable.ic_home_vod));
         items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_discover), getString(R.string.home_discover), R.drawable.ic_home_discover));
+        if (LiveConfig.hasUrl()) items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_live), getString(R.string.home_live), R.drawable.ic_home_live));
         items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_search), getString(R.string.home_search), R.drawable.ic_home_search));
-        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_keep), getString(R.string.home_keep), R.drawable.ic_home_keep));
-        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_push), getString(R.string.home_push), R.drawable.ic_home_push));
-        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_setting), getString(R.string.home_setting), R.drawable.ic_home_setting));
+        items.add(new JetStreamHomeNavView.NavItem(String.valueOf(R.string.home_tab_my), getString(R.string.home_tab_my), R.drawable.ic_home_setting));
         mBinding.nav.setItems(items);
+        mBinding.nav.setSelectedKey(String.valueOf(R.string.home_tab_home));
     }
 
     private void getHistory() {
@@ -583,10 +611,12 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         int recommendIndex = getRecommendIndex();
         boolean exist = recommendIndex - historyIndex == 2;
         int selectedHistoryPosition = getSelectedHistoryPosition(historyIndex);
-        if (renew) mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHomeSpec(Style.rect())));
+        if (renew) mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHistorySpec()));
         if ((items.isEmpty() && exist) || (renew && exist)) mAdapter.removeItems(historyIndex, 1);
         if (!items.isEmpty() && (!exist || renew)) mAdapter.add(historyIndex, new ListRow(mHistoryAdapter));
         mHistoryAdapter.setItems(items, new BaseDiffCallback<History>());
+        int header = mAdapter.indexOf(R.string.home_history);
+        if (header >= 0) mAdapter.notifyArrayItemRangeChanged(header, 1);
         if (items.isEmpty()) mPresenter.setDelete(false);
         if (selectedHistoryPosition == RecyclerView.NO_POSITION) return;
         requestHistoryFocus(clampHistoryPosition(selectedHistoryPosition));
@@ -693,17 +723,20 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     public void onNavClick(String key) {
         int resId = Integer.parseInt(key);
-        if (resId == R.string.home_vod) VodActivity.start(this, mResult);
+        if (resId == R.string.home_tab_home) requestRecyclerFocus(firstFocusableRowIndex());
+        else if (resId == R.string.home_vod) VodActivity.start(this, mResult);
         else if (resId == R.string.home_live) LiveActivity.start(this);
         else if (resId == R.string.home_discover) DiscoverActivity.start(this);
         else if (resId == R.string.home_keep) KeepActivity.start(this);
         else if (resId == R.string.home_push) PushActivity.start(this);
         else if (resId == R.string.home_search) SearchActivity.start(this);
         else if (resId == R.string.home_setting) SettingActivity.start(this);
+        else if (resId == R.string.home_tab_my) MyActivity.start(this);
     }
 
     @Override
     public void onNavLongClick(String key) {
+        showDialog();
     }
 
     @Override
@@ -772,7 +805,10 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (KeyUtil.isActionDown(event)) mHistoryFocusGeneration++;
+        if (KeyUtil.isActionDown(event)) {
+            mHistoryFocusGeneration++;
+            if (mFeaturedPresenter != null) mFeaturedPresenter.onUserInteraction();
+        }
         if (KeyUtil.isMenuKey(event)) showDialog();
         if (KeyUtil.isActionDown(event) && KeyUtil.isDownKey(event) && getCurrentFocus() == mBinding.title) {
             View child = mBinding.recycler.getChildAt(0);
@@ -855,5 +891,30 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         Source.get().exit();
         Server.get().stop();
         super.onDestroy();
+    }
+
+    private static final class EmptyHome {
+    }
+
+    private class EmptyHomePresenter extends Presenter {
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+            AdapterHomeEmptyBinding binding = AdapterHomeEmptyBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+            binding.choose.setOnClickListener(view -> {
+                if (VodConfig.get().getSites().isEmpty()) SettingActivity.start(HomeActivity.this);
+                else showDialog();
+            });
+            return new ViewHolder(binding.getRoot());
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, Object object) {
+        }
+
+        @Override
+        public void onUnbindViewHolder(@NonNull ViewHolder holder) {
+        }
     }
 }
