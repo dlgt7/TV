@@ -18,6 +18,7 @@ import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
@@ -33,6 +34,7 @@ import com.fongmi.android.tv.bean.Cache;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.FeaturedVodRow;
 import com.fongmi.android.tv.bean.History;
+import com.fongmi.android.tv.bean.HistoryRequestState;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Style;
@@ -69,6 +71,7 @@ import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Task;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.net.OkHttp;
@@ -81,6 +84,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.function.BooleanSupplier;
 
 public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, JetStreamHomeNavView.Listener, HistoryPresenter.OnClickListener {
 
@@ -96,6 +101,10 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private Clock mClock;
     private boolean mToolbarVisible = true;
     private boolean mRestoreRefreshFocus;
+    private final HistoryRequestState mHistoryRequests = new HistoryRequestState();
+    private Future<?> mHistoryTask;
+    private int mHistoryCid;
+    private long mHistoryFocusGeneration;
 
     private Site getHome() {
         return VodConfig.get().getHome();
@@ -202,6 +211,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void setAdapter() {
+        mHistoryCid = VodConfig.getCid();
         mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHomeSpec(Style.rect())));
         mAdapter.add(R.string.home_history);
         mAdapter.add(R.string.home_recommend);
@@ -266,9 +276,15 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void requestRecyclerFocus(int position) {
+        mHistoryFocusGeneration++;
+        requestRecyclerFocus(position, () -> true);
+    }
+
+    private void requestRecyclerFocus(int position, BooleanSupplier current) {
         mBinding.recycler.post(() -> {
+            if (!current.getAsBoolean()) return;
             if (!hasFocusableRecyclerContent() || !canRequestFocus(mBinding.recycler)) {
-                requestNavFocus();
+                requestNavFocus(current);
                 return;
             }
             int target = position == RecyclerView.NO_POSITION ? mBinding.recycler.getSelectedPosition() : position;
@@ -281,19 +297,26 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             mBinding.recycler.setSelectedPosition(target);
             int focusTarget = target;
             mBinding.recycler.postDelayed(() -> {
+                if (!current.getAsBoolean()) return;
                 RecyclerView.ViewHolder holder = mBinding.recycler.findViewHolderForAdapterPosition(focusTarget);
                 View focus = holder == null ? null : findFocusable(holder.itemView);
                 if (focus != null && focus.requestFocus()) return;
                 if (canRequestFocus(mBinding.recycler) && mBinding.recycler.requestFocus() && mBinding.recycler.hasFocus()) return;
-                requestNavFocus();
+                requestNavFocus(current);
             }, 50);
         });
     }
 
     /** Top JetStream nav (点播/直播/搜索/…) — host focus for empty home / Back-to-toolbar. */
     private void requestNavFocus() {
+        mHistoryFocusGeneration++;
+        requestNavFocus(() -> true);
+    }
+
+    private void requestNavFocus(BooleanSupplier current) {
         setToolbarVisible(true);
         mBinding.toolbar.post(() -> {
+            if (!current.getAsBoolean()) return;
             if (!canRequestFocus(mBinding.nav)) {
                 if (canRequestFocus(mBinding.toolbar)) mBinding.toolbar.requestFocus();
                 return;
@@ -326,39 +349,52 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void requestHistoryFocus(int position) {
+        long generation = ++mHistoryFocusGeneration;
+        int cid = VodConfig.getCid();
         int historyIndex = getHistoryIndex();
+        BooleanSupplier current = () -> generation == mHistoryFocusGeneration && cid == VodConfig.getCid()
+                && (position == RecyclerView.NO_POSITION || historyIndex == getHistoryIndex())
+                && canRestoreHistoryFocus();
         if (position == RecyclerView.NO_POSITION || historyIndex < 0 || historyIndex >= mAdapter.size()) {
-            requestRecyclerFocus();
+            requestRecyclerFocus(RecyclerView.NO_POSITION, current);
             return;
         }
         mBinding.recycler.post(() -> {
+            if (!current.getAsBoolean()) return;
             if (!canRequestFocus(mBinding.recycler)) {
-                requestRecyclerFocus();
+                requestRecyclerFocus(RecyclerView.NO_POSITION, current);
                 return;
             }
             mBinding.recycler.setSelectedPosition(historyIndex);
             mBinding.recycler.postDelayed(() -> {
+                if (!current.getAsBoolean()) return;
                 RecyclerView row = findHistoryRecycler(historyIndex);
                 if (row == null) {
-                    requestRecyclerFocus();
+                    requestRecyclerFocus(RecyclerView.NO_POSITION, current);
                     return;
                 }
                 if (row instanceof HorizontalGridView) ((HorizontalGridView) row).setSelectedPosition(position);
                 else row.scrollToPosition(position);
                 row.postDelayed(() -> {
+                    if (!current.getAsBoolean()) return;
                     if (requestItemFocus(row, position)) return;
                     if (canRequestFocus(row) && row.requestFocus()) return;
-                    requestRecyclerFocus();
+                    requestRecyclerFocus(RecyclerView.NO_POSITION, current);
                 }, 50);
             }, 50);
         });
     }
 
     private int getSelectedHistoryPosition(int historyIndex) {
-        if (historyIndex < 0 || mBinding.recycler.getSelectedPosition() != historyIndex || !mBinding.recycler.hasFocus()) return RecyclerView.NO_POSITION;
+        if (!canRestoreHistoryFocus() || historyIndex < 0 || mBinding.recycler.getSelectedPosition() != historyIndex || !mBinding.recycler.hasFocus()) return RecyclerView.NO_POSITION;
         RecyclerView row = findHistoryRecycler(historyIndex);
         if (row instanceof HorizontalGridView) return ((HorizontalGridView) row).getSelectedPosition();
         return 0;
+    }
+
+    private boolean canRestoreHistoryFocus() {
+        return hasWindowFocus() && !isFinishing() && !isDestroyed()
+                && getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED);
     }
 
     private int clampHistoryPosition(int position) {
@@ -516,18 +552,44 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void getHistory(boolean renew) {
-        List<History> items = History.get();
+        if (isFinishing() || isDestroyed()) return;
+        cancelHistoryLoad();
+        HistoryRequestState.Request request = mHistoryRequests.begin(VodConfig.getCid(), renew);
+        if (mHistoryCid != request.cid()) {
+            // Do not leave the previous config's history clickable while its replacement loads.
+            applyHistory(new ArrayList<>(), false);
+            mHistoryCid = request.cid();
+        }
+        mHistoryTask = Task.submit(() -> {
+            List<History> items = History.get(request.cid());
+            if (Thread.currentThread().isInterrupted()) return;
+            App.post(() -> {
+                if (isFinishing() || isDestroyed() || !mHistoryRequests.isCurrent(request, VodConfig.getCid())) return;
+                mHistoryTask = null;
+                applyHistory(items, request.renew());
+                mHistoryRequests.applied(request, VodConfig.getCid());
+            });
+        });
+    }
+
+    private void cancelHistoryLoad() {
+        mHistoryRequests.invalidate();
+        if (mHistoryTask != null) mHistoryTask.cancel(true);
+        mHistoryTask = null;
+    }
+
+    private void applyHistory(List<History> items, boolean renew) {
         int historyIndex = getHistoryIndex();
         int recommendIndex = getRecommendIndex();
         boolean exist = recommendIndex - historyIndex == 2;
         int selectedHistoryPosition = getSelectedHistoryPosition(historyIndex);
         if (renew) mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHomeSpec(Style.rect())));
         if ((items.isEmpty() && exist) || (renew && exist)) mAdapter.removeItems(historyIndex, 1);
-        if ((!items.isEmpty() && !exist) || (renew && exist)) mAdapter.add(historyIndex, new ListRow(mHistoryAdapter));
+        if (!items.isEmpty() && (!exist || renew)) mAdapter.add(historyIndex, new ListRow(mHistoryAdapter));
         mHistoryAdapter.setItems(items, new BaseDiffCallback<History>());
+        if (items.isEmpty()) mPresenter.setDelete(false);
         if (selectedHistoryPosition == RecyclerView.NO_POSITION) return;
-        if (mHistoryAdapter.size() == 0) requestRecyclerFocus();
-        else requestHistoryFocus(clampHistoryPosition(selectedHistoryPosition));
+        requestHistoryFocus(clampHistoryPosition(selectedHistoryPosition));
     }
 
     private void setHistoryDelete(boolean delete) {
@@ -536,11 +598,15 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void clearHistory() {
+        if (mHistoryCid != VodConfig.getCid()) return;
+        mHistoryFocusGeneration++;
+        cancelHistoryLoad();
         mAdapter.removeItems(getHistoryIndex(), 1);
         History.delete(VodConfig.getCid());
         mPresenter.setDelete(false);
         mHistoryAdapter.clear();
-        requestRecyclerFocus();
+        getHistory();
+        requestHistoryFocus(RecyclerView.NO_POSITION);
     }
 
     private int getHistoryIndex() {
@@ -661,20 +727,25 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     public void onItemClick(History item) {
+        if (item.getCid() != VodConfig.getCid()) return;
         VideoActivity.start(this, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic());
     }
 
     @Override
     public void onItemDelete(History item) {
+        if (item.getCid() != VodConfig.getCid() || mHistoryAdapter.indexOf(item) < 0) return;
+        mHistoryFocusGeneration++;
+        cancelHistoryLoad();
         int position = mHistoryAdapter.indexOf(item);
         mHistoryAdapter.remove(item.delete());
+        getHistory();
         if (mHistoryAdapter.size() > 0) {
             requestHistoryFocus(clampHistoryPosition(position));
             return;
         }
         mAdapter.removeItems(getHistoryIndex(), 1);
         mPresenter.setDelete(false);
-        requestRecyclerFocus();
+        requestHistoryFocus(RecyclerView.NO_POSITION);
     }
 
     @Override
@@ -701,6 +772,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (KeyUtil.isActionDown(event)) mHistoryFocusGeneration++;
         if (KeyUtil.isMenuKey(event)) showDialog();
         if (KeyUtil.isActionDown(event) && KeyUtil.isDownKey(event) && getCurrentFocus() == mBinding.title) {
             View child = mBinding.recycler.getChildAt(0);
@@ -721,6 +793,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     protected void onPause() {
         super.onPause();
+        mHistoryFocusGeneration++;
         mClock.stop();
     }
 
@@ -771,6 +844,9 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     protected void onDestroy() {
+        mHistoryFocusGeneration++;
+        cancelHistoryLoad();
+        mHistoryRequests.close();
         DLNARendererService.stop(this);
         LiveConfig.get().clear();
         VodConfig.get().clear();

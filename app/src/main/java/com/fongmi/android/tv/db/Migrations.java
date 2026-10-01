@@ -57,4 +57,11 @@ public class Migrations {
             database.execSQL("ALTER TABLE History ADD COLUMN endingSource TEXT DEFAULT 'unknown'");
         }
     };
+
+    public static final Migration MIGRATION_36_37 = new Migration(36, 37) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_History_cid_createTime` ON `History` (`cid`, `createTime`)");
+        }
+    };
 }
