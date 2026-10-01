@@ -3,6 +3,7 @@ package com.fongmi.android.tv.api;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 
 import com.fongmi.android.tv.App;
@@ -26,9 +27,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
 
 import okhttp3.Call;
 import okhttp3.Response;
@@ -38,10 +42,21 @@ public class SiteApi {
     public static final String PUSH = "push_agent";
 
     public static String call(@NonNull Site site, @NonNull ArrayMap<String, String> params) throws IOException {
+        return call(site, params, null);
+    }
+
+    private static String call(@NonNull Site site, @NonNull ArrayMap<String, String> params, @Nullable SearchRequest request) throws IOException {
         if (!site.getExt().isEmpty()) params.put("extend", site.getExt());
         Call call = site.getExt().length() <= 1000 ? OkHttp.newCall(site.getApi(), site.getHeader(), params) : OkHttp.newCall(site.getApi(), site.getHeader(), OkHttp.toBody(params));
+        return execute(call, request);
+    }
+
+    private static String execute(@NonNull Call call, @Nullable SearchRequest request) throws IOException {
+        if (request != null) request.attach(call);
         try (Response response = call.execute()) {
             return response.body().string();
+        } finally {
+            if (request != null) request.detach(call);
         }
     }
 
@@ -193,6 +208,12 @@ public class SiteApi {
 
     @NonNull
     public static Result searchContent(@NonNull Site site, @NonNull String keyword, boolean quick, @NonNull String page) throws Exception {
+        return searchContent(site, keyword, quick, page, null);
+    }
+
+    @NonNull
+    public static Result searchContent(@NonNull Site site, @NonNull String keyword, boolean quick, @NonNull String page, @Nullable SearchRequest request) throws Exception {
+        if (request != null) request.checkCancelled();
         SpiderDebug.log("search", "site=%s,keyword=%s,quick=%s,page=%s", site.getName(), keyword, quick, page);
         boolean hasPage = !page.equals("1");
         Result result;
@@ -206,10 +227,11 @@ public class SiteApi {
             params.put("quick", String.valueOf(quick));
             params.put("extend", "");
             if (hasPage) params.put("pg", page);
-            String searchContent = call(site, params);
+            String searchContent = call(site, params, request);
             SpiderDebug.log("search", searchContent);
-            result = fetchPic(site, Result.fromType(site.getType(), searchContent));
+            result = fetchPic(site, Result.fromType(site.getType(), searchContent), request);
         }
+        if (request != null) request.checkCancelled();
         for (Vod vod : result.getList()) vod.setSite(site);
         return SearchResultFilter.apply(result, keyword);
     }
@@ -225,6 +247,12 @@ public class SiteApi {
 
     @NonNull
     public static Result fetchPic(@NonNull Site site, @NonNull Result result) throws Exception {
+        return fetchPic(site, result, null);
+    }
+
+    @NonNull
+    private static Result fetchPic(@NonNull Site site, @NonNull Result result, @Nullable SearchRequest request) throws Exception {
+        if (request != null) request.checkCancelled();
         if (site.getType() > 2 || result.getList().isEmpty() || !result.getVod().getPic().isEmpty()) return result;
         ArrayList<String> ids = new ArrayList<>();
         boolean empty = site.getCategories().isEmpty();
@@ -233,9 +261,41 @@ public class SiteApi {
         ArrayMap<String, String> params = new ArrayMap<>();
         params.put("ac", ac(site.getType()));
         params.put("ids", TextUtils.join(",", ids));
-        try (Response response = OkHttp.newCall(site.getApi(), site.getHeader(), params).execute()) {
-            result.setList(Result.fromType(site.getType(), response.body().string()).getList());
-            return result;
+        String content = execute(OkHttp.newCall(site.getApi(), site.getHeader(), params), request);
+        result.setList(Result.fromType(site.getType(), content).getList());
+        return result;
+    }
+
+    /** Cancels only the built-in HTTP calls belonging to one media-library search. */
+    public static final class SearchRequest {
+
+        private final Set<Call> calls = new HashSet<>();
+        private boolean cancelled;
+
+        synchronized void checkCancelled() {
+            if (cancelled || Thread.currentThread().isInterrupted()) throw new CancellationException();
+        }
+
+        synchronized void attach(Call call) {
+            if (cancelled || Thread.currentThread().isInterrupted()) {
+                call.cancel();
+                throw new CancellationException();
+            }
+            calls.add(call);
+        }
+
+        synchronized void detach(Call call) {
+            calls.remove(call);
+        }
+
+        public void cancel() {
+            List<Call> pending;
+            synchronized (this) {
+                cancelled = true;
+                pending = new ArrayList<>(calls);
+                calls.clear();
+            }
+            for (Call call : pending) call.cancel();
         }
     }
 

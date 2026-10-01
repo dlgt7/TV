@@ -76,8 +76,20 @@ class VodBrowse {
         String keyword = searchKey(query);
         if (TextUtils.isEmpty(keyword)) return BrowseTree.searchCandidate(ImmutableList.of(), null);
         List<Site> sites = VodConfig.get().getSites().stream().filter(Site::isSearchable).toList();
-        List<ListenableFuture<List<MediaItem>>> futures = sites.stream().map(site -> Task.largeExecutor().submit(() -> searchSite(site, keyword))).toList();
-        List<MediaItem> items = collectResults(futures);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SEARCH_TIMEOUT);
+        SiteApi.SearchRequest request = new SiteApi.SearchRequest();
+        List<ListenableFuture<List<MediaItem>>> futures = new ArrayList<>();
+        List<MediaItem> items;
+        try {
+            for (Site site : sites) {
+                if (Thread.currentThread().isInterrupted() || System.nanoTime() >= deadline) break;
+                futures.add(Task.largeExecutor().submit(() -> searchSite(site, keyword, request)));
+            }
+            items = SearchResultCollector.collect(futures, SEARCH_LIMIT, deadline);
+        } finally {
+            request.cancel();
+            for (ListenableFuture<?> future : futures) if (!future.isDone()) future.cancel(true);
+        }
         items.sort((a, b) -> matchScore(b, keyword) - matchScore(a, keyword));
         ImmutableList<MediaItem> results = ImmutableList.copyOf(items.subList(0, Math.min(items.size(), SEARCH_LIMIT)));
         return BrowseTree.searchCandidate(results, () -> {
@@ -86,22 +98,9 @@ class VodBrowse {
         });
     }
 
-    private static List<MediaItem> searchSite(@NonNull Site site, @NonNull String keyword) throws Exception {
-        Result result = SiteApi.searchContent(site, keyword, false, "1");
+    private static List<MediaItem> searchSite(@NonNull Site site, @NonNull String keyword, @NonNull SiteApi.SearchRequest request) throws Exception {
+        Result result = SiteApi.searchContent(site, keyword, false, "1", request);
         return result.getList().stream().map(vod -> BrowseTree.playable(searchId(site.getKey(), vod.getId()), vod.getName(), vod.getRemarks(), vod.getPic())).toList();
-    }
-
-    private static List<MediaItem> collectResults(@NonNull List<ListenableFuture<List<MediaItem>>> futures) {
-        List<MediaItem> items = new ArrayList<>();
-        for (ListenableFuture<List<MediaItem>> future : futures) {
-            try {
-                List<MediaItem> result = future.get(SEARCH_TIMEOUT, TimeUnit.SECONDS);
-                if (result != null) items.addAll(result);
-                if (items.size() >= SEARCH_LIMIT) break;
-            } catch (Exception ignored) {
-            }
-        }
-        return items;
     }
 
     @NonNull
