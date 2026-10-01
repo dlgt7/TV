@@ -18,6 +18,7 @@ public final class MediaMatcher {
     private static final Pattern NOISE = Pattern.compile("(?i)(?:4k|8k|16k|2160p|1080p|720p|480p|uhd|hdr|dolby|blu[ -]?ray|web[ -]?dl|中字|中文字幕|国语|国語|粤语|高清|超清|蓝光|藍光|完结|完結|全集|全\\d+集|无删减|無刪減|纯净版|純淨版|修复版|修復版|抢先版|搶先版|导演剪辑版|導演剪輯版)");
     private static final Pattern TYPE_MOVIE = Pattern.compile("(?i)电影|電影|movie|film");
     private static final Pattern TYPE_SERIES = Pattern.compile("(?i)电视剧|電視劇|连续剧|連續劇|剧集|劇集|series|tv|anime|番剧|番劇");
+    private static final String CHINESE_DIGITS = "零〇一二两三四五六七八九十百千万";
 
     private MediaMatcher() {
     }
@@ -88,7 +89,61 @@ public final class MediaMatcher {
     }
 
     public static String normalizedEpisodeName(String value) {
-        return normalize(value).replaceAll("(?i)(?:ep(?:isode)?|第)", "").replaceAll("[^\\p{L}\\p{Nd}]", "").toLowerCase(Locale.ROOT);
+        String text = normalize(value);
+        StringBuilder unmarked = new StringBuilder();
+        for (int offset = 0; offset < text.length();) {
+            boolean ordinal = text.charAt(offset) == '第';
+            int englishPrefix = englishEpisodePrefixLength(text, offset);
+            int start = skipWhitespace(text, offset + (ordinal ? 1 : englishPrefix));
+            int end = start;
+            while (end < text.length()) {
+                char digit = text.charAt(end);
+                if (!(digit >= '0' && digit <= '9') && !(englishPrefix == 0 && CHINESE_DIGITS.indexOf(digit) >= 0)) break;
+                end++;
+            }
+            if (end > start) {
+                int suffixStart = skipWhitespace(text, end);
+                boolean suffix = suffixStart < text.length() && "集话話期".indexOf(text.charAt(suffixStart)) >= 0;
+                int next = suffix ? suffixStart + 1 : end;
+                // Only strip actual episode markers; keep titles such as 第一现场 and 集结号.
+                if ((ordinal || englishPrefix > 0 || suffix) && (isNameBoundary(text, next) || suffix && isEpisodeModifier(text, next))) {
+                    unmarked.append(text, start, end);
+                    offset = next;
+                    continue;
+                }
+            }
+            int next = Math.max(offset + 1, end);
+            unmarked.append(text, offset, next);
+            offset = next;
+        }
+        StringBuilder result = new StringBuilder();
+        for (int offset = 0; offset < unmarked.length();) {
+            int character = unmarked.codePointAt(offset);
+            if (Character.isLetter(character) || Character.isDigit(character)) result.appendCodePoint(character);
+            offset += Character.charCount(character);
+        }
+        return result.toString().toLowerCase(Locale.ROOT);
+    }
+
+    private static int englishEpisodePrefixLength(String text, int offset) {
+        if (offset > 0 && Character.isLetter(text.codePointBefore(offset))) return 0;
+        if (text.regionMatches(true, offset, "episode", 0, 7)) return 7;
+        return text.regionMatches(true, offset, "ep", 0, 2) ? 2 : 0;
+    }
+
+    private static int skipWhitespace(String text, int offset) {
+        while (offset < text.length() && Character.isWhitespace(text.charAt(offset))) offset++;
+        return offset;
+    }
+
+    private static boolean isNameBoundary(String text, int offset) {
+        return offset >= text.length() || !Character.isLetterOrDigit(text.codePointAt(offset));
+    }
+
+    private static boolean isEpisodeModifier(String text, int offset) {
+        if (offset >= text.length()) return false;
+        int length = text.startsWith("预告", offset) ? 2 : "上中下".indexOf(text.charAt(offset)) >= 0 ? 1 : 0;
+        return length > 0 && isNameBoundary(text, offset + length);
     }
 
     private static String normalizeTitle(String value, Integer season, String year) {
