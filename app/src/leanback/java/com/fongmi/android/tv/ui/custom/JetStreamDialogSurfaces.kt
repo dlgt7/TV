@@ -40,10 +40,17 @@ object JetStreamDialogDecor {
 
     @JvmStatic
     fun tintButtons(dialog: AlertDialog) {
-        val color = JetStreamPalette.primaryInt()
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(color)
+        for (which in intArrayOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)) {
+            val button = dialog.getButton(which) ?: continue
+            button.setTextColor(JetStreamPalette.controlText())
+            button.background = android.graphics.drawable.StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
+                    cornerRadius = button.jetStreamDp(12)
+                    setColor(JetStreamPalette.primaryContainerInt())
+                })
+                addState(intArrayOf(), android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            }
+        }
     }
 }
 
@@ -57,7 +64,7 @@ class JetStreamDialogScrollView @JvmOverloads constructor(
         setFillViewport(true)
         overScrollMode = View.OVER_SCROLL_NEVER
         background = jetStreamDialogBackground(cornerRadii = FloatArray(8) { jetStreamDp(28) })
-        elevation = jetStreamDp(12)
+        elevation = 0f
         clipToOutline = true
     }
 }
@@ -104,7 +111,7 @@ class JetStreamDialogSurfaceLayout @JvmOverloads constructor(
         clipChildren = false
         clipToPadding = false
         background = jetStreamDialogBackground(cornerRadii = FloatArray(8) { jetStreamDp(28) })
-        elevation = jetStreamDp(12)
+        elevation = 0f
         clipToOutline = true
     }
 }
@@ -119,7 +126,7 @@ class JetStreamDialogRelativeLayout @JvmOverloads constructor(
         clipChildren = false
         clipToPadding = false
         background = jetStreamDialogBackground(cornerRadii = FloatArray(8) { jetStreamDp(28) })
-        elevation = jetStreamDp(12)
+        elevation = 0f
         clipToOutline = true
     }
 }
@@ -316,13 +323,8 @@ class JetStreamCheckBox @JvmOverloads constructor(
 ) : MaterialCheckBox(context, attrs, defStyleAttr) {
 
     init {
-        val typedArray = context.obtainStyledAttributes(attrs, intArrayOf(com.google.android.material.R.attr.buttonTint), defStyleAttr, 0)
-        val hasButtonTint = typedArray.hasValue(0)
-        typedArray.recycle()
-
-        if (!hasButtonTint) {
-            buttonTintList = jetStreamColorStateList(R.color.jetstream_control_text)
-        }
+        buttonTintList = jetStreamColorStateList(R.color.jetstream_control_text)
+        buttonIconTintList = jetStreamColorStateList(R.color.jetstream_control_container)
         JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
     }
 }
@@ -534,11 +536,11 @@ private fun TextView.applyJetStreamDialogInputSurface(
 
     includeFontPadding = true
     if (!hasTextSize && !hasTextAppearance) setTextSize(TypedValue.COMPLEX_UNIT_SP, defaultTextSizeSp)
-    setHintTextColor(jetStreamColorStateList(R.color.jetstream_list_supporting_text))
-    setTextColor(jetStreamColorStateList(R.color.jetstream_list_title_text))
+    setHintTextColor(jetStreamColor(R.color.jetstream_on_surface_variant))
+    setTextColor(jetStreamColor(R.color.jetstream_on_surface))
     applyJetStreamTypeface()
     background = StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamDialogInputDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamDialogInputDrawable(R.color.jetstream_surface_container_high, R.color.jetstream_primary, 2))
         addState(intArrayOf(), jetStreamDialogInputDrawable(R.color.jetstream_surface_container_high, R.color.jetstream_outline_variant, 1))
     }
 }
@@ -609,7 +611,7 @@ private fun LinearLayoutCompat.applyJetStreamDialogSectionSurface() {
         orientation = GradientDrawable.Orientation.TL_BR,
         cornerRadii = FloatArray(8) { jetStreamDp(24) }
     )
-    elevation = jetStreamDp(8)
+    elevation = 0f
     clipToOutline = true
     if (paddingLeft == 0 && paddingTop == 0 && paddingRight == 0 && paddingBottom == 0) {
         setPadding(0, jetStreamDpInt(12), 0, jetStreamDpInt(12))
@@ -664,7 +666,7 @@ private fun LinearLayoutCompat.applyJetStreamDialogActionRailSurface() {
         orientation = GradientDrawable.Orientation.TL_BR,
         cornerRadii = FloatArray(8) { jetStreamDp(24) }
     )
-    elevation = jetStreamDp(8)
+    elevation = 0f
     clipToOutline = true
     if (paddingLeft == 0 && paddingTop == 0 && paddingRight == 0 && paddingBottom == 0) {
         val padding = jetStreamDpInt(10)

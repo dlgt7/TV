@@ -209,13 +209,13 @@ class JetStreamSettingView @JvmOverloads constructor(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 48.dp, vertical = 32.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp)
+                horizontalArrangement = Arrangement.spacedBy(40.dp)
             ) {
                 NavigationPanel(
                     sections = visibleSections,
                     selectedKey = selectedSection?.key.orEmpty(),
                     modifier = Modifier
-                        .width(220.dp)
+                        .width(200.dp)
                         .fillMaxHeight()
                 )
                 ContentPanel(
@@ -236,10 +236,7 @@ class JetStreamSettingView @JvmOverloads constructor(
     private fun NavigationPanel(sections: List<SectionSpec>, selectedKey: String, modifier: Modifier) {
         Column(
             modifier = modifier
-                .clip(JetStreamShapes.Card)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.86f))
-                .border(JetStreamBorders.Thin, MaterialTheme.colorScheme.outlineVariant, JetStreamShapes.Card)
-                .padding(JetStreamSpacing.ButtonHorizontalPadding)
+                .padding(top = 4.dp, end = 8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -290,15 +287,12 @@ class JetStreamSettingView @JvmOverloads constructor(
     ) {
         Column(
             modifier = modifier
-                .clip(JetStreamShapes.Card)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.80f))
-                .border(JetStreamBorders.Thin, MaterialTheme.colorScheme.outlineVariant, JetStreamShapes.Card)
-                .padding(horizontal = JetStreamSpacing.CardPadding, vertical = JetStreamSpacing.ButtonHorizontalPadding)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
                 text = section?.label.orEmpty(),
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 25.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -334,7 +328,7 @@ class JetStreamSettingView @JvmOverloads constructor(
             targetValue = when {
                 focused -> MaterialTheme.colorScheme.primaryContainer
                 selected -> MaterialTheme.colorScheme.secondaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
+                else -> Color.Transparent
             },
             animationSpec = JetStreamAnimations.ColorTween,
             label = "sectionBackground"
@@ -356,7 +350,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                 .fillMaxWidth()
                 .height(44.dp)
                 .graphicsLayer(scaleX = scale, scaleY = scale)
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(background)
                 .combinedClickable(
                     interactionSource = interactionSource,
@@ -469,7 +463,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    row.actions.forEach { ActionChip(row.key, it) }
+                    row.actions.forEach { ActionChip(row.key, it, focused) }
                 }
             } else if (value.isNotEmpty()) {
                 Text(
@@ -486,7 +480,7 @@ class JetStreamSettingView @JvmOverloads constructor(
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
-    private fun ActionChip(rowKey: String, action: ActionSpec) {
+    private fun ActionChip(rowKey: String, action: ActionSpec, rowFocused: Boolean) {
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
         val selected = action.selected
@@ -499,7 +493,7 @@ class JetStreamSettingView @JvmOverloads constructor(
             targetValue = when {
                 focused -> MaterialTheme.colorScheme.primaryContainer
                 selected -> MaterialTheme.colorScheme.secondaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
+                else -> Color.Transparent
             },
             animationSpec = JetStreamAnimations.ColorTween,
             label = "chipBackground"
@@ -508,13 +502,18 @@ class JetStreamSettingView @JvmOverloads constructor(
             targetValue = when {
                 focused -> MaterialTheme.colorScheme.onPrimaryContainer
                 selected -> MaterialTheme.colorScheme.onSecondaryContainer
+                rowFocused -> MaterialTheme.colorScheme.onPrimaryContainer
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
             animationSpec = JetStreamAnimations.ColorTween,
             label = "chipContent"
         )
         val outlineColor by animateColorAsState(
-            targetValue = if (focused || selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+            targetValue = when {
+                focused || selected -> MaterialTheme.colorScheme.primary
+                rowFocused -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.55f)
+                else -> MaterialTheme.colorScheme.outlineVariant
+            },
             animationSpec = JetStreamAnimations.ColorTween,
             label = "chipOutline"
         )
@@ -635,6 +634,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                             ActionSpec(KEY_WALL_REFRESH, context.getString(R.string.setting_refresh), R.drawable.msr_refresh)
                         )
                     ),
+                    RowSpec(KEY_WALL_VISIBLE, context.getString(R.string.setting_wall_visible), toggle = true),
                     RowSpec(
                         key = KEY_TMDB_PROXY,
                         label = context.getString(R.string.setting_tmdb_proxy)
@@ -737,6 +737,7 @@ class JetStreamSettingView @JvmOverloads constructor(
         const val KEY_VOD = "vod"
         const val KEY_LIVE = "live"
         const val KEY_WALL = "wall"
+        const val KEY_WALL_VISIBLE = "wall_visible"
         const val KEY_TMDB_PROXY = "tmdb_proxy"
         const val KEY_VOD_HOME = "vod_home"
         const val KEY_VOD_HISTORY = "vod_history"

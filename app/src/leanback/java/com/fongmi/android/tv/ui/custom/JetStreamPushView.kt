@@ -286,7 +286,7 @@ class JetStreamPushView @JvmOverloads constructor(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .background(colorScheme.surface)
-                    .border(1.dp, colorScheme.outlineVariant.copy(alpha = 0.52f), RoundedCornerShape(20.dp))
+
                     .padding(
                         start = if (compact) 20.dp else 24.dp,
                         top = if (compact) 4.dp else 8.dp,
@@ -473,7 +473,7 @@ class JetStreamPushView @JvmOverloads constructor(
                 .shadow(22.dp, panelShape, clip = false)
                 .clip(panelShape)
                 .background(colorScheme.surface)
-                .border(1.dp, colorScheme.outlineVariant.copy(alpha = 0.32f), panelShape)
+
                 .padding(
                     horizontal = if (compact) 32.dp else 56.dp,
                     vertical = if (compact) 28.dp else 56.dp
