@@ -124,16 +124,16 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
     @SuppressLint("RestrictedApi")
     private void setRecyclerView() {
         CustomSelector selector = new CustomSelector();
-        selector.addPresenter(Integer.class, new HeaderPresenter(24));
+        selector.addPresenter(Integer.class, new HeaderPresenter(48));
         selector.addPresenter(String.class, new ProgressPresenter());
         selector.addPresenter(DiscoverHero.class, new DiscoverHeroPresenter(this));
         selector.addPresenter(DiscoverFilterPanel.class, new DiscoverFilterPanelPresenter(this));
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(16, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, 24), VodPresenter.class);
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(18, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, 24), DiscoverLandscapePresenter.class);
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(10, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, 24), DiscoverRankPresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(16, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, 48), VodPresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(18, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, 48), DiscoverLandscapePresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(10, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, 48), DiscoverRankPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
         mBinding.recycler.setItemAnimator(null);
-        mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(10));
+        mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
         mBinding.recycler.setOnKeyInterceptListener(this::interceptFocusBoundary);
         mBinding.recycler.addOnScrollListener(scroller = new CustomScroller(this));
         mBinding.progressLayout.showProgress();
@@ -424,7 +424,7 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         List<Object> rows = new ArrayList<>();
         if (loading) rows.add("discover_filter_progress");
         else {
-            VodPresenter presenter = new VodPresenter(this, Style.rect());
+            VodPresenter presenter = resultPresenter();
             for (List<Vod> part : Lists.partition(values, Product.getColumn(Style.rect()))) {
                 ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
                 adapter.addAll(0, part);
@@ -436,6 +436,12 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         resultRowCount = rows.size();
         int delta = resultRowCount - previousCount;
         if (delta != 0) sectionPositions.replaceAll((title, position) -> position >= resultStartPosition ? position + delta : position);
+    }
+
+    private VodPresenter resultPresenter() {
+        int column = Product.getColumn(Style.rect());
+        int space = ResUtil.dp2px(96 + 16 * (column - 1));
+        return new VodPresenter(this, Style.rect(), Product.getSpec(space, column, Style.rect()));
     }
 
     private void appendResultRows(List<Vod> values) {
@@ -451,7 +457,7 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
             }
         }
         if (offset >= values.size()) return;
-        VodPresenter presenter = new VodPresenter(this, Style.rect());
+        VodPresenter presenter = resultPresenter();
         List<Object> rows = new ArrayList<>();
         for (List<Vod> part : Lists.partition(values.subList(offset, values.size()), column)) {
             ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
