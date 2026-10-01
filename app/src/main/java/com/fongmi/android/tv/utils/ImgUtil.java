@@ -31,16 +31,13 @@ import com.fongmi.android.tv.impl.CustomTarget;
 import com.github.catvod.utils.Json;
 import com.google.common.net.HttpHeaders;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import jahirfiquitiva.libs.textdrawable.TextDrawable;
 
 public class ImgUtil {
 
-    private static final Set<String> failed = Collections.synchronizedSet(new HashSet<>());
+    private static final ImageRetryPolicy failed = new ImageRetryPolicy();
 
     private static final DrawableCrossFadeFactory CROSS_FADE = new DrawableCrossFadeFactory.Builder(260).setCrossFadeEnabled(true).build();
 
@@ -104,10 +101,14 @@ public class ImgUtil {
     private static void load(String text, String url, ImageView view, boolean vod, boolean blurred, boolean keepCurrentOnError, @Nullable LoadCallback callback) {
         view.setScaleType(vod ? CENTER_CROP : FIT_CENTER);
         if (!vod) view.setVisibility(TextUtils.isEmpty(url) ? View.GONE : View.VISIBLE);
-        if (TextUtils.isEmpty(url) || failed.contains(url)) {
-            view.setImageDrawable(getTextDrawable(text, vod));
-            notifyLoad(callback, false);
-        } else try {
+        try {
+            if (TextUtils.isEmpty(url) || !failed.canLoad(url)) {
+                // A recycled view may still have a request which would overwrite this placeholder.
+                clear(view);
+                view.setImageDrawable(getTextDrawable(text, vod));
+                notifyLoad(callback, false);
+                return;
+            }
             RequestBuilder<Drawable> builder = Glide.with(view).load(getUrl(url)).transition(DrawableTransitionOptions.withCrossFade(CROSS_FADE)).listener(getListener(text, url, view, vod, keepCurrentOnError, callback));
             if (blurred) builder.transform(new CenterCrop(), new GaussianBlurTransformation()).into(view);
             else if (vod) builder.centerCrop().into(view);
@@ -148,13 +149,14 @@ public class ImgUtil {
             @Override
             public boolean onLoadFailed(@Nullable GlideException e, Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
                 if (!keepCurrentOnError) view.setImageDrawable(getTextDrawable(text, vod));
-                failed.add(url);
+                failed.onFailure(url);
                 notifyLoad(callback, false);
                 return true;
             }
 
             @Override
             public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                failed.onSuccess(url);
                 notifyLoad(callback, true);
                 return false;
             }

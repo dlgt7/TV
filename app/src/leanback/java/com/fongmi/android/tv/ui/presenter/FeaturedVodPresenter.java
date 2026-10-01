@@ -23,6 +23,7 @@ import com.fongmi.android.tv.ui.custom.JetStreamFeaturedIndicatorDotView;
 import com.fongmi.android.tv.ui.custom.JetStreamAnimator;
 import com.fongmi.android.tv.ui.theme.JetStreamAmbient;
 import com.fongmi.android.tv.utils.FeaturedPosterCache;
+import com.fongmi.android.tv.utils.ImageRetryPolicy;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.TmdbLogoHelper;
@@ -91,6 +92,7 @@ public class FeaturedVodPresenter extends Presenter {
         private final ViewTreeObserver.OnWindowFocusChangeListener windowFocusListener;
         private final Map<String, String> artworkCache;
         private final Set<String> artworkMissing;
+        private final ImageRetryPolicy artworkRetry;
         private final FeaturedPosterCache posterCache;
         private FeaturedVodRow row;
         private ShapeableImageView front;
@@ -107,6 +109,7 @@ public class FeaturedVodPresenter extends Presenter {
             this.handler = new Handler(Looper.getMainLooper());
             this.artworkCache = new HashMap<>();
             this.artworkMissing = new HashSet<>();
+            this.artworkRetry = new ImageRetryPolicy();
             this.posterCache = new FeaturedPosterCache();
             this.rotate = () -> {
                 // 页面失去窗口焦点（进后台/被覆盖）时跳过本轮，避免向全局 JetStreamAmbient 推送污染前台页面背景
@@ -151,6 +154,7 @@ public class FeaturedVodPresenter extends Presenter {
             if (posterCache.prepare(row.getItems())) {
                 artworkCache.clear();
                 artworkMissing.clear();
+                artworkRetry.clear();
             }
             binding.imageA.animate().cancel();
             binding.imageB.animate().cancel();
@@ -203,23 +207,22 @@ public class FeaturedVodPresenter extends Presenter {
             String cached = posterCache.get(item);
             if (!TextUtils.isEmpty(cached)) {
                 artworkCache.put(key, cached);
-                loadArtwork(item, cached, target, null);
+                loadArtwork(item, cached, target, key, generation);
                 return;
             }
             cached = artworkCache.get(key);
             if (!TextUtils.isEmpty(cached)) {
-                loadArtwork(item, cached, target, null);
+                loadArtwork(item, cached, target, key, generation);
                 return;
             }
-            loadFallbackArtwork(item, target, key, generation, !TextUtils.isEmpty(item.getName()) && !artworkMissing.contains(key));
-            if (TextUtils.isEmpty(item.getName()) || artworkMissing.contains(key)) {
-                revealFallbackArtwork(item, target, key, generation);
-                return;
-            }
+            boolean lookup = !TextUtils.isEmpty(item.getName()) && !artworkMissing.contains(key) && artworkRetry.canLoad(key);
+            loadFallbackArtwork(item, target, key, generation, lookup);
+            if (!lookup) return;
             TmdbLogoHelper.findPoster(BuildConfig.TMDB_API_KEY, item.getName(), item.getYear(), item.getTypeName(), new TmdbLogoHelper.ImageCallback() {
                 @Override
                 public void onFound(@NonNull String imageUrl) {
                     if (!posterCache.isCurrent(requestSignature)) return;
+                    artworkRetry.onSuccess(key);
                     artworkCache.put(key, imageUrl);
                     if (isArtworkRequestActive(key, generation)) transitionToArtwork(item, imageUrl, target, key, generation);
                     posterCache.put(requestSignature, item, imageUrl, new FeaturedPosterCache.Callback() {
@@ -244,19 +247,20 @@ public class FeaturedVodPresenter extends Presenter {
                 @Override
                 public void onError(@NonNull Exception error) {
                     if (!posterCache.isCurrent(requestSignature)) return;
-                    artworkMissing.add(key);
+                    artworkRetry.onFailure(key);
                     revealFallbackArtwork(item, target, key, generation);
                 }
             });
         }
 
         private void loadFallbackArtwork(Vod item, ShapeableImageView target, String key, long generation, boolean blurred) {
+            // Only a clear image satisfies a later transition to this URL.
+            target.setTag(blurred ? null : item.getPic());
             ImgUtil.LoadCallback callback = success -> {
                 if (!success && isArtworkRequestActive(key, generation)) target.setAlpha(1f);
             };
             if (blurred) ImgUtil.loadBlurred(item.getName(), item.getPic(), target, callback);
             else ImgUtil.load(item.getName(), item.getPic(), target, callback);
-            target.setTag(item.getPic());
             setCurrentArtwork(item.getPic());
         }
 
@@ -280,6 +284,8 @@ public class FeaturedVodPresenter extends Presenter {
                     next.setVisibility(View.GONE);
                     target.setAlpha(1f);
                     target.setVisibility(View.VISIBLE);
+                    // Leave the Glide callback before reusing its target for a clear source poster.
+                    if (!TextUtils.equals(url, item.getPic())) handler.post(() -> revealFallbackArtwork(item, target, key, generation));
                     return;
                 }
                 front = next;
@@ -293,9 +299,13 @@ public class FeaturedVodPresenter extends Presenter {
             });
         }
 
-        private void loadArtwork(Vod item, String url, ShapeableImageView target, ImgUtil.LoadCallback callback) {
+        private void loadArtwork(Vod item, String url, ShapeableImageView target, String key, long generation) {
             target.setTag(url);
-            ImgUtil.load(item.getName(), url, target, callback);
+            ImgUtil.load(item.getName(), url, target, success -> {
+                if (!success) handler.post(() -> {
+                    if (isArtworkRequestActive(key, generation)) loadFallbackArtwork(item, target, key, generation, false);
+                });
+            });
             setCurrentArtwork(url);
         }
 
