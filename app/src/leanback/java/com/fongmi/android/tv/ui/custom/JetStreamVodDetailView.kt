@@ -270,6 +270,7 @@ class JetStreamVodDetailView @JvmOverloads constructor(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 28.sp,
+                lineHeight = 34.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -295,7 +296,8 @@ class JetStreamVodDetailView @JvmOverloads constructor(
             text = items.joinToString("  ·  "),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
-            maxLines = 2,
+            lineHeight = 18.sp,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }

@@ -168,6 +168,12 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     }
 
     @Override
+    protected void onThemeChanged() {
+        // BaseActivity already refreshes JetStreamThemeController; Compose updates in place.
+        // Keep the PlayerView and its service connection, including while this page is stopped.
+    }
+
+    @Override
     protected void initView(Bundle savedInstanceState) {
         super.initView(savedInstanceState);
         mClock = Clock.create(mBinding.widget.clock);

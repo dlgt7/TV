@@ -32,6 +32,13 @@ class HomeArtworkView @JvmOverloads constructor(
         composeArtwork()
     }
 
+    override fun onDraw(canvas: Canvas) {
+        val checkpoint = canvas.save()
+        canvas.clipRect(0, 0, width, height)
+        super.onDraw(canvas)
+        canvas.restoreToCount(checkpoint)
+    }
+
     private fun composeArtwork() {
         val image = drawable ?: return
         val placement = HomeArtworkPolicy.place(width, height, image.intrinsicWidth, image.intrinsicHeight)

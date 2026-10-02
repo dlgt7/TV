@@ -374,6 +374,7 @@ class JetStreamSettingView @JvmOverloads constructor(
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun SettingRow(row: RowSpec, focusRequester: FocusRequester?) {
+        val hasActions = row.actions.isNotEmpty()
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
         val scale by animateFloatAsState(
@@ -399,6 +400,12 @@ class JetStreamSettingView @JvmOverloads constructor(
         val value = rowValues[row.key].orEmpty()
         val onText = context.getString(R.string.setting_on)
         val requesterModifier = focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier
+        val mainActionModifier = Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = { triggerSettingAction(row.key, false) },
+            onLongClick = { triggerSettingAction(row.key, true) }
+        )
         LaunchedEffect(focused) {
             if (focused) focusedRowKey = row.key
         }
@@ -407,16 +414,12 @@ class JetStreamSettingView @JvmOverloads constructor(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(JetStreamSizes.CardMinHeight)
-                .graphicsLayer(scaleX = scale, scaleY = scale)
+                .graphicsLayer(scaleX = if (hasActions) 1f else scale, scaleY = if (hasActions) 1f else scale)
                 .clip(JetStreamShapes.Large)
-                .background(background)
+                .background(if (hasActions) MaterialTheme.colorScheme.surfaceVariant else background)
                 .then(requesterModifier)
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = { triggerSettingAction(row.key, false) },
-                    onLongClick = { triggerSettingAction(row.key, true) }
-                )
+                // Compound rows must not put a focus target above their action chips.
+                .then(if (hasActions) Modifier else mainActionModifier)
                 .padding(horizontal = JetStreamSpacing.CardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -424,6 +427,17 @@ class JetStreamSettingView @JvmOverloads constructor(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 16.dp)
+                    .then(
+                        if (hasActions && row.key != KEY_THEME_COLOR) Modifier
+                            .fillMaxHeight()
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
+                            .clip(JetStreamShapes.Medium)
+                            .background(if (focused) background else Color.Transparent)
+                            .then(mainActionModifier)
+                            .padding(horizontal = 8.dp)
+                        else Modifier
+                    ),
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = row.label,
@@ -463,7 +477,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    row.actions.forEach { ActionChip(row.key, it, focused) }
+                    row.actions.forEach { ActionChip(row.key, it) }
                 }
             } else if (value.isNotEmpty()) {
                 Text(
@@ -480,7 +494,7 @@ class JetStreamSettingView @JvmOverloads constructor(
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
-    private fun ActionChip(rowKey: String, action: ActionSpec, rowFocused: Boolean) {
+    private fun ActionChip(rowKey: String, action: ActionSpec) {
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
         val selected = action.selected
@@ -502,7 +516,6 @@ class JetStreamSettingView @JvmOverloads constructor(
             targetValue = when {
                 focused -> MaterialTheme.colorScheme.onPrimaryContainer
                 selected -> MaterialTheme.colorScheme.onSecondaryContainer
-                rowFocused -> MaterialTheme.colorScheme.onPrimaryContainer
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
             animationSpec = JetStreamAnimations.ColorTween,
@@ -511,7 +524,6 @@ class JetStreamSettingView @JvmOverloads constructor(
         val outlineColor by animateColorAsState(
             targetValue = when {
                 focused || selected -> MaterialTheme.colorScheme.primary
-                rowFocused -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.55f)
                 else -> MaterialTheme.colorScheme.outlineVariant
             },
             animationSpec = JetStreamAnimations.ColorTween,

@@ -329,6 +329,12 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     @Override
+    protected void onThemeChanged() {
+        // BaseActivity already refreshes JetStreamThemeController; Compose updates in place.
+        // Recreating for a color change would detach the active player and reset playback UI.
+    }
+
+    @Override
     protected void initView(Bundle savedInstanceState) {
         super.initView(savedInstanceState);
         mFrameParams = mBinding.video.getLayoutParams();
