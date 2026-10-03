@@ -17,8 +17,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
+import com.fongmi.android.tv.ui.components.TvFocusStyle
 import com.fongmi.android.tv.R
 import com.fongmi.android.tv.ui.theme.JetStreamPalette
 import com.google.android.material.button.MaterialButton
@@ -46,7 +48,8 @@ object JetStreamDialogDecor {
             button.background = android.graphics.drawable.StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
                     cornerRadius = button.jetStreamDp(12)
-                    setColor(JetStreamPalette.primaryContainerInt())
+                    setColor(TvFocusStyle.FocusedContainer.toArgb())
+                    setStroke(button.jetStreamDpInt(1), TvFocusStyle.FocusOutline.toArgb())
                 })
                 addState(intArrayOf(), android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
             }
@@ -209,7 +212,7 @@ class JetStreamDialogButton @JvmOverloads constructor(
     init {
         applyJetStreamDialogButtonSurface()
         clipToOutline = true
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1f, 0)
     }
 }
 
@@ -235,7 +238,7 @@ class JetStreamFilterChip @JvmOverloads constructor(
         applyJetStreamFilterChipSurface()
         minimumHeight = maxOf(minimumHeight, jetStreamDpInt(40))
         clipToOutline = true
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1f, 0)
     }
 }
 
@@ -323,9 +326,9 @@ class JetStreamCheckBox @JvmOverloads constructor(
 ) : MaterialCheckBox(context, attrs, defStyleAttr) {
 
     init {
-        buttonTintList = jetStreamColorStateList(R.color.jetstream_control_text)
-        buttonIconTintList = jetStreamColorStateList(R.color.jetstream_control_container)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        buttonTintList = JetStreamPalette.controlText()
+        buttonIconTintList = JetStreamPalette.controlContainer()
+        JetStreamAnimator.bindFocus(this, 1f, 0)
     }
 }
 
@@ -389,7 +392,7 @@ open class JetStreamSettingControlRowLayout @JvmOverloads constructor(
 
     init {
         applyJetStreamSettingControlRowSurface()
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1f, 0)
     }
 }
 
@@ -566,43 +569,53 @@ private fun MaterialTextView.applyJetStreamDialogTextDefaults(
 
 private fun View.applyJetStreamSubtitleIconSurface() {
     background = StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused, android.R.attr.state_pressed), jetStreamSubtitleIconDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamSubtitleIconDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamSubtitleIconDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(), jetStreamSubtitleIconDrawable(R.color.jetstream_surface_container_high, R.color.jetstream_outline_variant, 1))
+        addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
+            cornerRadius = jetStreamDp(10)
+            setColor(TvFocusStyle.FocusedContainer.toArgb())
+            setStroke(jetStreamDpInt(1), TvFocusStyle.FocusOutline.toArgb())
+        })
+        addState(intArrayOf(), GradientDrawable().apply {
+            cornerRadius = jetStreamDp(10)
+            setColor(TvFocusStyle.Container.toArgb())
+        })
     }
     minimumWidth = jetStreamDpInt(40)
     minimumHeight = jetStreamDpInt(40)
+    setPadding(jetStreamDpInt(10), jetStreamDpInt(10), jetStreamDpInt(10), jetStreamDpInt(10))
 }
 
 private fun AppCompatImageView.applyJetStreamControlIconTint() {
     if (ImageViewCompat.getImageTintList(this) == null) {
-        ImageViewCompat.setImageTintList(this, jetStreamColorStateList(R.color.jetstream_control_text))
+        ImageViewCompat.setImageTintList(this, JetStreamPalette.controlText())
     }
 }
 
 private fun MaterialButton.applyJetStreamDialogButtonSurface() {
     minimumHeight = maxOf(minimumHeight, jetStreamDpInt(40))
-    setTextColor(jetStreamColorStateList(R.color.jetstream_control_text))
-    backgroundTintList = jetStreamColorStateList(R.color.jetstream_control_container)
-    iconTint = jetStreamColorStateList(R.color.jetstream_control_text)
+    insetTop = 0
+    insetBottom = 0
+    iconPadding = jetStreamDpInt(8)
+    setPaddingRelative(maxOf(paddingStart, jetStreamDpInt(16)), paddingTop, maxOf(paddingEnd, jetStreamDpInt(16)), paddingBottom)
+    setTextColor(JetStreamPalette.controlText())
+    backgroundTintList = JetStreamPalette.controlContainer()
+    iconTint = JetStreamPalette.controlText()
     rippleColor = jetStreamColorStateList(R.color.jetstream_scrim_medium)
-    strokeColor = jetStreamColorStateList(R.color.jetstream_control_outline)
+    strokeColor = JetStreamPalette.controlOutline()
     strokeWidth = jetStreamDpInt(1)
-    shapeAppearanceModel = shapeAppearanceModel.toBuilder().setAllCornerSizes(jetStreamDp(22)).build()
+    shapeAppearanceModel = shapeAppearanceModel.toBuilder().setAllCornerSizes(jetStreamDp(10)).build()
     applyJetStreamTypeface()
 }
 
 private fun Chip.applyJetStreamFilterChipSurface() {
     isCheckable = true
     isCheckedIconVisible = true
-    setTextColor(jetStreamColorStateList(R.color.jetstream_control_text))
-    checkedIconTint = jetStreamColorStateList(R.color.jetstream_control_text)
-    chipBackgroundColor = jetStreamColorStateList(R.color.jetstream_control_container)
-    chipStrokeColor = jetStreamColorStateList(R.color.jetstream_control_outline)
+    setTextColor(JetStreamPalette.controlText())
+    checkedIconTint = JetStreamPalette.controlText()
+    chipBackgroundColor = JetStreamPalette.controlContainer()
+    chipStrokeColor = JetStreamPalette.controlOutline()
     chipStrokeWidth = jetStreamDp(1)
     rippleColor = jetStreamColorStateList(R.color.jetstream_scrim_medium)
-    shapeAppearanceModel = shapeAppearanceModel.toBuilder().setAllCornerSizes(jetStreamDp(22)).build()
+    shapeAppearanceModel = shapeAppearanceModel.toBuilder().setAllCornerSizes(jetStreamDp(10)).build()
     applyJetStreamTypeface()
 }
 
@@ -719,14 +732,6 @@ private fun View.jetStreamDialogRowDrawable(): GradientDrawable {
 private fun View.jetStreamDialogInputDrawable(colorRes: Int, strokeColorRes: Int, strokeWidthDp: Int): GradientDrawable {
     return GradientDrawable().apply {
         cornerRadius = jetStreamDp(20)
-        setColor(jetStreamColor(colorRes))
-        setStroke(jetStreamDpInt(strokeWidthDp), jetStreamColor(strokeColorRes))
-    }
-}
-
-private fun View.jetStreamSubtitleIconDrawable(colorRes: Int, strokeColorRes: Int, strokeWidthDp: Int): GradientDrawable {
-    return GradientDrawable().apply {
-        shape = GradientDrawable.OVAL
         setColor(jetStreamColor(colorRes))
         setStroke(jetStreamDpInt(strokeWidthDp), jetStreamColor(strokeColorRes))
     }

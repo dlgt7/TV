@@ -198,7 +198,7 @@ object JetStreamPalette {
         val accent = current()
         return accent.copy(
             primary = 0xFFF2F2F2.toInt(), onPrimary = 0xFF17181C.toInt(),
-            primaryContainer = 0xFFF2F2F2.toInt(), onPrimaryContainer = 0xFF17181C.toInt(),
+            primaryContainer = 0xFF41454E.toInt(), onPrimaryContainer = 0xFFF2F2F2.toInt(),
             secondary = 0xFFD2D3D8.toInt(), onSecondary = 0xFF17181C.toInt(),
             secondaryContainer = 0xFF35373D.toInt(), onSecondaryContainer = 0xFFF2F2F2.toInt(),
             tertiary = accent.primary, onTertiary = accent.onPrimary,
@@ -291,12 +291,12 @@ object JetStreamPalette {
         return ColorStateList(
             controlStates,
             intArrayOf(
-                palette.primaryContainer,
-                palette.primaryContainer,
-                palette.secondaryContainer,
-                palette.secondaryContainer,
-                palette.secondaryContainer,
-                SURFACE_CONTAINER_HIGH
+                0xFF41454E.toInt(),
+                0xFF505560.toInt(),
+                0xFF35383F.toInt(),
+                0xFF35383F.toInt(),
+                0xFF35383F.toInt(),
+                0xFF24262B.toInt()
             )
         )
     }
@@ -307,11 +307,11 @@ object JetStreamPalette {
         return ColorStateList(
             controlStates,
             intArrayOf(
-                palette.primary,
-                palette.primary,
-                palette.secondary,
-                palette.secondary,
-                palette.secondary,
+                0xFFC5C8D0.toInt(),
+                0xFFC5C8D0.toInt(),
+                OUTLINE,
+                OUTLINE,
+                OUTLINE,
                 OUTLINE_VARIANT
             )
         )

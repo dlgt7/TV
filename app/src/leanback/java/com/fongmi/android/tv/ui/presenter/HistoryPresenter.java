@@ -42,7 +42,7 @@ public class HistoryPresenter extends Presenter {
 
     private void setLayoutSize() {
         width = Math.round((ResUtil.getScreenWidth() - ResUtil.dp2px(136)) / 3.15f);
-        height = ResUtil.dp2px(124);
+        height = ResUtil.dp2px(112);
     }
 
     public boolean isDelete() {

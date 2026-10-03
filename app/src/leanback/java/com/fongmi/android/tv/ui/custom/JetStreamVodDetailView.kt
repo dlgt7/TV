@@ -5,42 +5,39 @@ import android.graphics.drawable.Drawable
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.util.AttributeSet
-import android.view.KeyEvent
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
@@ -57,8 +54,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.fongmi.android.tv.R
-import com.fongmi.android.tv.ui.theme.JetStreamAnimations
-import com.fongmi.android.tv.ui.theme.JetStreamShapes
+import com.fongmi.android.tv.ui.components.TvActionButton
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
 
 class JetStreamVodDetailView @JvmOverloads constructor(
@@ -106,9 +102,8 @@ class JetStreamVodDetailView @JvmOverloads constructor(
     private var summaryEnabled by mutableStateOf(false)
     private var keepSelected by mutableStateOf(false)
     private var selectedAction by mutableStateOf(0)
-    private var detailFocused by mutableStateOf(false)
+    private var entryFocusToken by mutableStateOf(0L)
     private var logoLoadFailed by mutableStateOf(false)
-    private var centerPressed = false
 
     init {
         isFocusable = true
@@ -125,59 +120,22 @@ class JetStreamVodDetailView @JvmOverloads constructor(
 
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: android.graphics.Rect?) {
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
-        detailFocused = gainFocus
-        if (!gainFocus) centerPressed = false
-        if (gainFocus) normalizeSelectedAction()
-    }
-
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        when (event.keyCode) {
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> return handleCenterKey(event)
+        if (gainFocus) {
+            normalizeSelectedAction()
+            entryFocusToken++
         }
-        if (event.action != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(event)
-        return when (event.keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (selectedAction > 1 && actions().subList(1, selectedAction).any { it.enabled } && moveSelection(-1)) true
-                else listener?.let {
-                    it.onFocusVideo()
-                    true
-                } ?: super.dispatchKeyEvent(event)
-            }
-            KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (selectedAction == 0) true else moveSelection(1) || super.dispatchKeyEvent(event)
-            }
-            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                if (selectedAction == 0) {
-                    selectedAction = actions().indexOfFirst { it.action != DetailAction.WATCH && it.enabled }
-                    return true
-                }
-                listener?.let {
-                    it.onFocusList()
-                    true
-                } ?: super.dispatchKeyEvent(event)
-            }
-            KeyEvent.KEYCODE_DPAD_UP -> if (selectedAction > 0) { selectedAction = 0; true } else super.dispatchKeyEvent(event)
-            else -> super.dispatchKeyEvent(event)
-        }
-    }
-
-    // ACTION_UP 触发，吞掉长按 repeat，避免焦点停在“收藏”上长按 OK 时反复开关收藏。
-    private fun handleCenterKey(event: KeyEvent): Boolean {
-        if (event.action == KeyEvent.ACTION_DOWN) {
-            if (event.repeatCount == 0) centerPressed = true
-            return true
-        }
-        if (event.action == KeyEvent.ACTION_UP) {
-            if (!centerPressed) return true
-            centerPressed = false
-            performSelectedAction()
-            return true
-        }
-        return true
     }
 
     fun setListener(listener: Listener?) {
         this.listener = listener
+    }
+
+    fun restoreActionFocus() {
+        if (!isShown || !isEnabled || !requestFocus()) return
+        normalizeSelectedAction()
+        // The saved Android focus may be the Compose host rather than its button.
+        // Restore the remembered action after making the detail surface visible.
+        entryFocusToken++
     }
 
     fun setTitle(title: CharSequence?) {
@@ -213,21 +171,23 @@ class JetStreamVodDetailView @JvmOverloads constructor(
     }
 
     fun setActions(summaryEnabled: Boolean, keepSelected: Boolean) {
+        val previousAction = selectedAction
         this.summaryEnabled = summaryEnabled
         this.keepSelected = keepSelected
         normalizeSelectedAction()
+        if (previousAction != selectedAction && hasFocus()) entryFocusToken++
     }
 
     @Composable
     private fun DetailSurface() {
         Column(modifier = Modifier.fillMaxSize()) {
             TitleBlock()
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             MetadataRow()
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             PeopleBlock()
             Spacer(Modifier.weight(1f))
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             ActionRow()
         }
     }
@@ -269,8 +229,8 @@ class JetStreamVodDetailView @JvmOverloads constructor(
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 28.sp,
-                lineHeight = 34.sp,
+                fontSize = 24.sp,
+                lineHeight = 28.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -281,7 +241,8 @@ class JetStreamVodDetailView @JvmOverloads constructor(
             Text(
                 text = remark.toString(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 15.sp,
+                fontSize = 13.sp,
+                lineHeight = 16.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -346,108 +307,71 @@ class JetStreamVodDetailView @JvmOverloads constructor(
     @Composable
     private fun ActionRow() {
         val specs = actions()
+        val requesters = remember { List(4) { FocusRequester() } }
+        LaunchedEffect(entryFocusToken) {
+            if (entryFocusToken > 0L && hasFocus()) requesters[selectedAction].requestFocus()
+        }
+        fun actionModifier(index: Int, modifier: Modifier): Modifier = modifier
+            .focusRequester(requesters[index])
+            .onFocusChanged { if (it.isFocused) selectedAction = index }
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionLeft -> {
+                        if (index <= 1 || specs.subList(1, index).none { it.enabled }) {
+                            listener?.onFocusVideo()
+                            true
+                        } else false
+                    }
+                    Key.DirectionDown -> {
+                        if (index > 0) {
+                            listener?.onFocusList()
+                            true
+                        } else false
+                    }
+                    else -> false
+                }
+            }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionButton(
-                spec = specs.first(),
-                active = detailFocused && selectedAction == 0,
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { selectedAction = 0; performAction(DetailAction.WATCH) }
-            )
+            ActionButton(specs.first(), actionModifier(0, Modifier.fillMaxWidth())) {
+                performAction(DetailAction.WATCH)
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 specs.drop(1).forEachIndexed { index, spec ->
-                    ActionButton(
-                        spec = spec,
-                        active = detailFocused && selectedAction == index + 1,
-                        modifier = Modifier.weight(1f),
-                        onClick = { selectedAction = index + 1; performAction(spec.action) }
-                    )
+                    ActionButton(spec, actionModifier(index + 1, Modifier.weight(1f))) {
+                        performAction(spec.action)
+                    }
                 }
             }
         }
     }
 
     @Composable
-    private fun ActionButton(spec: ActionSpec, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    private fun ActionButton(spec: ActionSpec, modifier: Modifier, onClick: () -> Unit) {
         val primary = spec.action == DetailAction.WATCH
-        val colorScheme = MaterialTheme.colorScheme
-        val interactionSource = remember { MutableInteractionSource() }
-        val scale by animateFloatAsState(
-            if (active) JetStreamAnimations.FocusScaleMedium else 1.0f,
-            animationSpec = JetStreamAnimations.ScaleSpring,
-            label = "detailActionScale"
-        )
-        val background by animateColorAsState(
-            targetValue = when {
-                !spec.enabled -> colorScheme.surfaceVariant.copy(alpha = 0.42f)
-                active -> colorScheme.onSurface
-                primary -> colorScheme.onSurface.copy(alpha = 0.16f)
-                spec.selected -> colorScheme.onSurface.copy(alpha = 0.16f)
-                else -> colorScheme.onSurface.copy(alpha = 0.08f)
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "detailActionBackground"
-        )
-        val contentColor by animateColorAsState(
-            targetValue = when {
-                !spec.enabled -> colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                active -> colorScheme.surface
-                primary || spec.selected -> colorScheme.onSurface
-                else -> colorScheme.onSurfaceVariant
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "detailActionContent"
-        )
-        Row(
-            modifier = modifier
-                .requiredHeight(if (primary) 44.dp else 36.dp)
-                .graphicsLayer(scaleX = scale, scaleY = scale)
-                .clip(JetStreamShapes.Button)
-                .background(background)
-                .clickable(
-                    enabled = spec.enabled,
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick
-                )
-                .padding(horizontal = if (primary) 18.dp else 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        TvActionButton(
+            onClick = onClick,
+            modifier = modifier.height(40.dp),
+            enabled = spec.enabled,
+            selected = spec.selected,
+            contentPadding = PaddingValues(horizontal = if (primary) 16.dp else 8.dp, vertical = 6.dp)
         ) {
             Icon(
                 painter = painterResource(id = spec.icon),
-                contentDescription = spec.label,
-                modifier = Modifier.requiredSize(if (primary) 20.dp else 16.dp),
-                tint = contentColor
+                contentDescription = null,
+                modifier = Modifier.requiredSize(if (primary) 20.dp else 16.dp)
             )
-            Spacer(Modifier.width(if (primary) 10.dp else 5.dp))
+            Spacer(Modifier.width(if (primary) 8.dp else 5.dp))
             Text(
                 text = spec.label,
-                color = contentColor,
-                fontSize = if (primary) 16.sp else 12.sp,
+                fontSize = if (primary) 15.sp else 12.sp,
                 fontWeight = FontWeight.Medium,
-                lineHeight = 20.sp,
+                lineHeight = 18.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
             )
         }
-    }
-
-    private fun performSelectedAction() {
-        actions().getOrNull(selectedAction)?.let { performAction(it.action) }
-    }
-
-    private fun moveSelection(step: Int): Boolean {
-        val specs = actions()
-        var index = selectedAction + step
-        while (index in specs.indices) {
-            if (specs[index].enabled) {
-                selectedAction = index
-                return true
-            }
-            index += step
-        }
-        return false
     }
 
     private fun normalizeSelectedAction() {

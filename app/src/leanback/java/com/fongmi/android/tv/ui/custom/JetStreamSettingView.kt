@@ -3,12 +3,8 @@ package com.fongmi.android.tv.ui.custom
 import android.content.Context
 import android.util.AttributeSet
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -50,10 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
@@ -63,14 +56,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fongmi.android.tv.R
 import com.fongmi.android.tv.setting.Setting
+import com.fongmi.android.tv.ui.components.TvActionButton
+import com.fongmi.android.tv.ui.components.TvFocusableSurface
 import com.fongmi.android.tv.ui.components.JetStreamPageScrim
 import com.fongmi.android.tv.ui.theme.JetStreamPalette
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
-import com.fongmi.android.tv.ui.theme.JetStreamAnimations
-import com.fongmi.android.tv.ui.theme.JetStreamShapes
-import com.fongmi.android.tv.ui.theme.JetStreamBorders
 import com.fongmi.android.tv.ui.theme.JetStreamSpacing
-import com.fongmi.android.tv.ui.theme.JetStreamSizes
 
 class JetStreamSettingView @JvmOverloads constructor(
     context: Context,
@@ -225,7 +216,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(),
-                    contentPadding = PaddingValues(vertical = 6.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                     listState = listState
                 )
             }
@@ -266,13 +257,13 @@ class JetStreamSettingView @JvmOverloads constructor(
             Spacer(Modifier.height(JetStreamSpacing.ExtraLarge))
             Column(verticalArrangement = Arrangement.spacedBy(JetStreamSpacing.IconPadding)) {
                 sections.forEach { section ->
-	                    SectionButton(
-	                        section = section,
-	                        selected = section.key == selectedKey,
-	                        onClick = { selectSection(section.key) }
-	                    )
-	                }
-	            }
+                    SectionButton(
+                        section = section,
+                        selected = section.key == selectedKey,
+                        onClick = { selectSection(section.key) }
+                    )
+                }
+            }
         }
     }
 
@@ -302,7 +293,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = contentPadding,
-                verticalArrangement = Arrangement.spacedBy(JetStreamSpacing.Medium)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(rows, key = { it.key }) { row ->
                     SettingRow(
@@ -314,55 +305,23 @@ class JetStreamSettingView @JvmOverloads constructor(
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun SectionButton(section: SectionSpec, selected: Boolean, onClick: () -> Unit) {
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
-        val scale by animateFloatAsState(
-            if (focused) JetStreamAnimations.FocusScaleMedium else 1.0f,
-            animationSpec = JetStreamAnimations.ScaleSpring,
-            label = "sectionScale"
-        )
-        val background by animateColorAsState(
-            targetValue = when {
-                focused -> MaterialTheme.colorScheme.primaryContainer
-                selected -> MaterialTheme.colorScheme.secondaryContainer
-                else -> Color.Transparent
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "sectionBackground"
-        )
-        val textColor by animateColorAsState(
-            targetValue = when {
-                focused -> MaterialTheme.colorScheme.onPrimaryContainer
-                selected -> MaterialTheme.colorScheme.onSecondaryContainer
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "sectionText"
-        )
         LaunchedEffect(focused) {
             if (focused) focusedSectionKey = section.key
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp)
-                .graphicsLayer(scaleX = scale, scaleY = scale)
-                .clip(RoundedCornerShape(10.dp))
-                .background(background)
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick
-                )
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
+        TvFocusableSurface(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            selected = selected,
+            containerColor = Color.Transparent,
+            interactionSource = interactionSource
         ) {
             Text(
                 text = section.label,
-                color = textColor,
+                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp),
                 fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
@@ -371,226 +330,115 @@ class JetStreamSettingView @JvmOverloads constructor(
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun SettingRow(row: RowSpec, focusRequester: FocusRequester?) {
-        val hasActions = row.actions.isNotEmpty()
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
-        val scale by animateFloatAsState(
-            if (focused) JetStreamAnimations.FocusScaleSmall else 1.0f,
-            animationSpec = JetStreamAnimations.ScaleSpring,
-            label = "rowScale"
-        )
-        val background by animateColorAsState(
-            targetValue = if (focused) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "rowBackground"
-        )
-        val labelColor by animateColorAsState(
-            targetValue = if (focused) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "rowLabel"
-        )
-        val valueColor by animateColorAsState(
-            targetValue = if (focused) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f) else MaterialTheme.colorScheme.onSurfaceVariant,
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "rowValue"
-        )
         val value = rowValues[row.key].orEmpty()
-        val onText = context.getString(R.string.setting_on)
         val requesterModifier = focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier
-        val mainActionModifier = Modifier.combinedClickable(
-            interactionSource = interactionSource,
-            indication = null,
-            onClick = { triggerSettingAction(row.key, false) },
-            onLongClick = { triggerSettingAction(row.key, true) }
-        )
         LaunchedEffect(focused) {
             if (focused) focusedRowKey = row.key
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(JetStreamSizes.CardMinHeight)
-                .graphicsLayer(scaleX = if (hasActions) 1f else scale, scaleY = if (hasActions) 1f else scale)
-                .clip(JetStreamShapes.Large)
-                .background(if (hasActions) MaterialTheme.colorScheme.surfaceVariant else background)
-                .then(requesterModifier)
-                // Compound rows must not put a focus target above their action chips.
-                .then(if (hasActions) Modifier else mainActionModifier)
-                .padding(horizontal = JetStreamSpacing.CardPadding),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        if (row.key == KEY_THEME_COLOR) {
+            // The label has no action. All five theme buttons are peer focus targets.
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 16.dp)
-                    .then(
-                        if (hasActions && row.key != KEY_THEME_COLOR) Modifier
-                            .fillMaxHeight()
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                            .clip(JetStreamShapes.Medium)
-                            .background(if (focused) background else Color.Transparent)
-                            .then(mainActionModifier)
-                            .padding(horizontal = 8.dp)
-                        else Modifier
-                    ),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    .then(requesterModifier).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = row.label,
-                    color = labelColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (value.isNotEmpty() && row.actions.isNotEmpty()) {
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        text = value,
-                        color = valueColor,
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            if (row.toggle) {
-                Switch(
-                    checked = value == onText,
-                    onCheckedChange = null,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        checkedBorderColor = MaterialTheme.colorScheme.primary,
-                        uncheckedThumbColor = if (focused) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        uncheckedTrackColor = Color.Transparent,
-                        uncheckedBorderColor = if (focused) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outline
-                    )
-                )
-            } else if (row.actions.isNotEmpty()) {
+                Text(row.label, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp)
                 Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) { row.actions.forEach { ActionChip(row.key, it) } }
+            }
+        } else if (row.actions.isNotEmpty()) {
+            // Never put a focusable parent above the secondary buttons: D-pad search
+            // must see the main action and every auxiliary action as siblings.
+            Row(
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    .then(requesterModifier).padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TvFocusableSurface(
+                    onClick = { triggerSettingAction(row.key, false) },
+                    onLongClick = { triggerSettingAction(row.key, true) },
+                    modifier = Modifier.weight(1f).height(60.dp),
+                    containerColor = Color.Transparent,
+                    interactionSource = interactionSource
                 ) {
+                    Column(Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp)) {
+                        Text(row.label, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (value.isNotEmpty()) {
+                            Spacer(Modifier.height(3.dp))
+                            Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 6.dp)) {
                     row.actions.forEach { ActionChip(row.key, it) }
                 }
-            } else if (value.isNotEmpty()) {
-                Text(
-                    text = value,
-                    modifier = Modifier.widthIn(max = 320.dp),
-                    color = valueColor,
-                    fontSize = 17.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            }
+        } else {
+            TvFocusableSurface(
+                onClick = { triggerSettingAction(row.key, false) },
+                onLongClick = { triggerSettingAction(row.key, true) },
+                modifier = Modifier.fillMaxWidth().height(60.dp).then(requesterModifier),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                interactionSource = interactionSource
+            ) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Text(row.label, modifier = Modifier.weight(1f), fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (row.toggle) {
+                        Switch(
+                            checked = value == context.getString(R.string.setting_on),
+                            onCheckedChange = null,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                uncheckedTrackColor = Color.Transparent,
+                                uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+                    } else if (value.isNotEmpty()) {
+                        Text(value, modifier = Modifier.widthIn(max = 260.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
             }
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun ActionChip(rowKey: String, action: ActionSpec) {
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
-        val selected = action.selected
-        val scale by animateFloatAsState(
-            if (focused) JetStreamAnimations.FocusScaleMedium else 1.0f,
-            animationSpec = JetStreamAnimations.ScaleSpring,
-            label = "chipScale"
-        )
-        val background by animateColorAsState(
-            targetValue = when {
-                focused -> MaterialTheme.colorScheme.primaryContainer
-                selected -> MaterialTheme.colorScheme.secondaryContainer
-                else -> Color.Transparent
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "chipBackground"
-        )
-        val contentColor by animateColorAsState(
-            targetValue = when {
-                focused -> MaterialTheme.colorScheme.onPrimaryContainer
-                selected -> MaterialTheme.colorScheme.onSecondaryContainer
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "chipContent"
-        )
-        val outlineColor by animateColorAsState(
-            targetValue = when {
-                focused || selected -> MaterialTheme.colorScheme.primary
-                else -> MaterialTheme.colorScheme.outlineVariant
-            },
-            animationSpec = JetStreamAnimations.ColorTween,
-            label = "chipOutline"
-        )
         LaunchedEffect(focused) {
             if (focused) focusedRowKey = rowKey
         }
-        Row(
-            modifier = Modifier
-                .height(38.dp)
-                .graphicsLayer(scaleX = scale, scaleY = scale)
-                .clip(RoundedCornerShape(19.dp))
-                .background(background)
-                .border(JetStreamBorders.Thin, outlineColor, RoundedCornerShape(19.dp))
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = { triggerSettingAction(action.key, false) },
-                    onLongClick = { triggerSettingAction(action.key, true) }
-                )
-                .padding(start = JetStreamSpacing.IconPadding, end = JetStreamSpacing.ChipHorizontalPadding),
-            verticalAlignment = Alignment.CenterVertically
+        TvActionButton(
+            onClick = { triggerSettingAction(action.key, false) },
+            onLongClick = { triggerSettingAction(action.key, true) },
+            selected = action.selected,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+            interactionSource = interactionSource
         ) {
             if (action.swatch != null) {
                 val swatchColor = Color(action.swatch.toLong() and 0xFFFFFFFF)
-                Box(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    lightenColor(swatchColor, 0.28f),
-                                    swatchColor,
-                                    darkenColor(swatchColor, 0.32f)
-                                ),
-                                center = Offset(5.4f, 5.4f),
-                                radius = 22f
-                            )
-                        )
-                        .border(1.dp, contentColor.copy(alpha = 0.48f), CircleShape)
-                )
+                Box(Modifier.size(18.dp).clip(CircleShape).background(swatchColor).border(1.dp, Color.White.copy(alpha = 0.48f), CircleShape))
             } else if (action.icon != null) {
-                Icon(
-                    painter = painterResource(id = action.icon),
-                    contentDescription = action.label,
-                    modifier = Modifier.size(19.dp),
-                    tint = contentColor
-                )
+                Icon(painterResource(action.icon), contentDescription = null, modifier = Modifier.size(20.dp))
             }
-            Spacer(Modifier.width(7.dp))
-            Text(
-                text = action.label,
-                color = contentColor,
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (selected) {
+            Spacer(Modifier.width(8.dp))
+            Text(action.label, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (action.swatch != null || action.selected) {
+                // Reserve selection width so changing a color does not move its neighbors.
                 Spacer(Modifier.width(6.dp))
-                Icon(
-                    painter = painterResource(id = R.drawable.msr_check),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = contentColor
-                )
+                Box(Modifier.size(16.dp)) {
+                    if (action.selected) Icon(painterResource(R.drawable.msr_check), contentDescription = null, modifier = Modifier.size(16.dp))
+                }
             }
         }
     }
@@ -830,17 +678,3 @@ class JetStreamSettingView @JvmOverloads constructor(
         }
     }
 }
-
-private fun lightenColor(color: Color, fraction: Float): Color = Color(
-    red = color.red + (1f - color.red) * fraction,
-    green = color.green + (1f - color.green) * fraction,
-    blue = color.blue + (1f - color.blue) * fraction,
-    alpha = color.alpha
-)
-
-private fun darkenColor(color: Color, fraction: Float): Color = Color(
-    red = color.red * (1f - fraction),
-    green = color.green * (1f - fraction),
-    blue = color.blue * (1f - fraction),
-    alpha = color.alpha
-)

@@ -212,7 +212,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         mBinding.results.getRoot().setVisibility(visible ? View.VISIBLE : View.GONE);
         mBinding.recordLayout.setVisibility(!visible && mRecordAdapter != null && mRecordAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
         LinearLayout.LayoutParams suggestions = (LinearLayout.LayoutParams) mBinding.scroll.getLayoutParams();
-        suggestions.height = visible ? com.fongmi.android.tv.utils.ResUtil.dp2px(104) : 0;
+        suggestions.height = visible ? com.fongmi.android.tv.utils.ResUtil.dp2px(128) : 0;
         suggestions.weight = visible ? 0 : 1;
         mBinding.scroll.setLayoutParams(suggestions);
     }

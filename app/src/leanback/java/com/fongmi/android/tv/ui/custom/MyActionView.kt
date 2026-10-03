@@ -5,13 +5,13 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
+import android.text.TextUtils
 import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.DrawableRes
-import com.fongmi.android.tv.R
 import com.fongmi.android.tv.ui.theme.JetStreamPalette
 
 /** One native focus target for a library action and its supporting description. */
@@ -28,9 +28,9 @@ class MyActionView @JvmOverloads constructor(context: Context, attrs: AttributeS
         descendantFocusability = FOCUS_BLOCK_DESCENDANTS
         setPadding(jetStreamDpInt(24), jetStreamDpInt(16), jetStreamDpInt(24), jetStreamDpInt(16))
         background = StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_focused), surface(R.color.jetstream_primary_container))
-            addState(intArrayOf(android.R.attr.state_pressed), surface(R.color.jetstream_primary_container))
-            addState(intArrayOf(), surface(R.color.jetstream_surface_container))
+            addState(intArrayOf(android.R.attr.state_focused), surface(true))
+            addState(intArrayOf(android.R.attr.state_pressed), surface(true))
+            addState(intArrayOf(), surface(false))
         }
         icon.isDuplicateParentStateEnabled = true
         icon.imageTintList = JetStreamPalette.controlText()
@@ -47,12 +47,15 @@ class MyActionView @JvmOverloads constructor(context: Context, attrs: AttributeS
             text.applyJetStreamTypeface()
             copy.addView(text)
         }
+        title.maxLines = 1
+        title.ellipsize = TextUtils.TruncateAt.END
         title.textSize = 18f
         title.setTypeface(title.typeface, Typeface.BOLD)
         description.textSize = 12f
         description.maxLines = 2
+        description.ellipsize = TextUtils.TruncateAt.END
         description.setPadding(0, jetStreamDpInt(7), 0, 0)
-        JetStreamAnimator.bindFocus(this, 1.02f, 0)
+        JetStreamAnimator.bindFocus(this, 1f, 0)
     }
 
     fun setContent(@DrawableRes image: Int, label: String, supportingText: String) {
@@ -62,9 +65,9 @@ class MyActionView @JvmOverloads constructor(context: Context, attrs: AttributeS
         contentDescription = "$label, $supportingText"
     }
 
-    private fun surface(color: Int) = GradientDrawable().apply {
+    private fun surface(focused: Boolean) = GradientDrawable().apply {
         cornerRadius = jetStreamDp(12)
-        setColor(jetStreamColor(color))
-        setStroke(0, Color.TRANSPARENT)
+        setColor(JetStreamPalette.controlContainer().getColorForState(if (focused) intArrayOf(android.R.attr.state_enabled, android.R.attr.state_focused) else intArrayOf(android.R.attr.state_enabled), 0))
+        setStroke(if (focused) jetStreamDpInt(1) else 0, if (focused) JetStreamPalette.controlOutline().getColorForState(intArrayOf(android.R.attr.state_enabled, android.R.attr.state_focused), 0) else Color.TRANSPARENT)
     }
 }

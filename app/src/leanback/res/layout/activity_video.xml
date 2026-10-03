@@ -62,7 +62,7 @@
         <com.fongmi.android.tv.ui.custom.JetStreamVodDetailView
             android:id="@+id/detail"
             android:layout_width="match_parent"
-            android:layout_height="288dp"
+            android:layout_height="243dp"
             android:layout_alignTop="@+id/video"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="48dp"
@@ -76,10 +76,10 @@
             android:id="@+id/scroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@+id/detail"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="48dp"
-            android:layout_marginEnd="48dp"
+            android:layout_below="@+id/video"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="44dp"
+            android:layout_marginEnd="44dp"
             android:layout_marginBottom="24dp"
             android:overScrollMode="never">
 
@@ -100,12 +100,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
                         android:text="@string/playback_episodes" />
 
                     <com.fongmi.android.tv.ui.custom.JetStreamChipRow
                         android:id="@+id/episode"
                         android:layout_width="match_parent"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:visibility="gone" />
                 </com.fongmi.android.tv.ui.custom.JetStreamPlaybackSectionLayout>
 
@@ -120,12 +122,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
                         android:text="@string/playback_episode_ranges" />
 
                     <com.fongmi.android.tv.ui.custom.JetStreamChipRow
                         android:id="@+id/array"
                         android:layout_width="match_parent"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:visibility="gone" />
                 </com.fongmi.android.tv.ui.custom.JetStreamPlaybackSectionLayout>
 
@@ -140,12 +144,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
                         android:text="@string/playback_sources" />
 
                     <com.fongmi.android.tv.ui.custom.JetStreamChipRow
                         android:id="@+id/flag"
                         android:layout_width="match_parent"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:visibility="gone" />
                 </com.fongmi.android.tv.ui.custom.JetStreamPlaybackSectionLayout>
 
@@ -160,12 +166,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
                         android:text="@string/playback_quality" />
 
                     <com.fongmi.android.tv.ui.custom.JetStreamChipRow
                         android:id="@+id/quality"
                         android:layout_width="match_parent"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:visibility="gone" />
                 </com.fongmi.android.tv.ui.custom.JetStreamPlaybackSectionLayout>
 
@@ -180,12 +188,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
                         android:text="@string/playback_related" />
 
                     <com.fongmi.android.tv.ui.custom.JetStreamChipRow
                         android:id="@+id/part"
                         android:layout_width="match_parent"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:visibility="gone" />
                 </com.fongmi.android.tv.ui.custom.JetStreamPlaybackSectionLayout>
 
@@ -200,12 +210,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
                         android:text="@string/playback_quick_sources" />
 
                     <com.fongmi.android.tv.ui.custom.JetStreamChipRow
                         android:id="@+id/quick"
                         android:layout_width="match_parent"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:visibility="gone" />
                 </com.fongmi.android.tv.ui.custom.JetStreamPlaybackSectionLayout>
 

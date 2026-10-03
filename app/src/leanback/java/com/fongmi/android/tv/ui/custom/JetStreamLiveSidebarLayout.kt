@@ -32,7 +32,7 @@ class JetStreamLiveItemLayout @JvmOverloads constructor(
 
     init {
         applyJetStreamLiveItemSurface()
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 0)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -43,7 +43,7 @@ class JetStreamLiveLeftRightLayout @JvmOverloads constructor(
 
     init {
         applyJetStreamLiveItemSurface()
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 0)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -59,8 +59,8 @@ private fun View.applyJetStreamLiveItemSurface() {
 
 private fun View.jetStreamLiveItemBackground(): StateListDrawable {
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamLiveItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary_container, 0))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamLiveItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary_container, 0))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamLiveItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
+        addState(intArrayOf(android.R.attr.state_pressed), jetStreamLiveItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamLiveItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary_container, 0))
         addState(intArrayOf(android.R.attr.state_checked), jetStreamLiveItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary_container, 0))
         addState(intArrayOf(android.R.attr.state_activated), jetStreamLiveItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary_container, 0))

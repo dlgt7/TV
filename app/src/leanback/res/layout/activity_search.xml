@@ -85,7 +85,8 @@
         </LinearLayout>
 
         <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1" android:orientation="vertical">
+            android:layout_weight="1" android:orientation="vertical"
+            android:clipChildren="false" android:clipToPadding="false">
         <com.fongmi.android.tv.ui.custom.JetStreamPageContentScrollView
             android:id="@+id/scroll"
             android:layout_width="match_parent"
@@ -117,7 +118,7 @@
                         android:id="@+id/recordRecycler"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="-8dp"
+                        android:paddingStart="0dp"
                         tools:itemCount="6"
                         tools:listitem="@layout/adapter_search_record" />
 
@@ -134,7 +135,7 @@
                     android:id="@+id/wordRecycler"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="-8dp"
+                    android:paddingStart="0dp"
                     tools:itemCount="10"
                     tools:listitem="@layout/adapter_search_word" />
 

@@ -49,8 +49,8 @@ public class WatchHistoryActivity extends BaseActivity implements HistoryPresent
 
     @Override
     protected void initView(Bundle savedInstanceState) {
-        int width = (ResUtil.getScreenWidth() - ResUtil.dp2px(144)) / 3;
-        presenter = new HistoryPresenter(this, new int[]{width, ResUtil.dp2px(124)});
+        int width = (ResUtil.getScreenWidth() - ResUtil.dp2px(160)) / 3;
+        presenter = new HistoryPresenter(this, new int[]{width, ResUtil.dp2px(112)});
         items = new ArrayObjectAdapter(presenter);
         binding.recycler.setNumColumns(3);
         binding.recycler.setHorizontalSpacing(ResUtil.dp2px(24));

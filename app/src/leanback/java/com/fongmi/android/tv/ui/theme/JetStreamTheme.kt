@@ -33,8 +33,8 @@ object JetStreamColors {
     // Primary Colors - 主色调
     val Primary = Color(0xFFF2F2F2)
     val OnPrimary = Color(0xFF17181C)
-    val PrimaryContainer = Color(0xFFF2F2F2)
-    val OnPrimaryContainer = Color(0xFF17181C)
+    val PrimaryContainer = Color(0xFF41454E)
+    val OnPrimaryContainer = Color(0xFFF2F2F2)
 
     // Secondary Colors - 次要色调
     val Secondary = Color(0xFFD2D3D8)

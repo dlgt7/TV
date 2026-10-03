@@ -165,6 +165,15 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             @Override
             public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
                 setToolbarVisible(position <= 0 || mBinding.toolbar.hasFocus());
+                if (!mBinding.toolbar.hasFocus() && position >= 0 && position < mAdapter.size()) {
+                    Object row = mAdapter.get(position);
+                    // Keep scaled cards below the viewport edge; the hero and empty state
+                    // retain their own established alignment and toolbar inset.
+                    int inset = row instanceof FeaturedVodRow ? 0
+                            : row instanceof EmptyHome ? ResUtil.dp2px(80)
+                            : Math.max(mBinding.recycler.getPaddingTop(), ResUtil.dp2px(16));
+                    mBinding.recycler.setWindowAlignmentOffset(inset);
+                }
                 if (mPresenter.isDelete()) setHistoryDelete(false);
             }
         });
@@ -214,8 +223,9 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ALIGNED, HOME_HORIZONTAL_PADDING), HistoryPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
-        // Keep the first hero anchored to the top, including while the toolbar owns focus.
-        mBinding.recycler.setWindowAlignment(HorizontalGridView.WINDOW_ALIGN_LOW_EDGE);
+        // Keep the first hero at the top and stop the last row above the bottom inset.
+        mBinding.recycler.setWindowAlignment(HorizontalGridView.WINDOW_ALIGN_BOTH_EDGE);
+        mBinding.recycler.setWindowAlignmentPreferKeyLineOverHighEdge(false);
         updateHomeContentInsets(false);
         mBinding.recycler.setWindowAlignmentOffsetPercent(HorizontalGridView.WINDOW_ALIGN_OFFSET_PERCENT_DISABLED);
         mBinding.recycler.setItemAlignmentOffset(0);
@@ -591,7 +601,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private int[] getHistorySpec() {
-        return new int[]{Math.round((ResUtil.getScreenWidth() - ResUtil.dp2px(136)) / 3.15f), ResUtil.dp2px(124)};
+        return new int[]{Math.round((ResUtil.getScreenWidth() - ResUtil.dp2px(136)) / 3.15f), ResUtil.dp2px(112)};
     }
 
     private int[] getHomeSpec(Style style) {

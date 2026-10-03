@@ -149,6 +149,10 @@ class JetStreamPageContentScrollView @JvmOverloads constructor(
 
     init {
         applyJetStreamScrollableSurface()
+        // A bounded scroll viewport must not paint its off-screen content over siblings.
+        // Keep focus clearance inside the viewport through its content/padding.
+        clipChildren = true
+        clipToPadding = true
     }
 }
 
@@ -215,10 +219,10 @@ class JetStreamListItemLayout @JvmOverloads constructor(
 
     init {
         background = jetStreamChipBackground(cornerRadiusDp = 18)
-        foreground = jetStreamFocusForeground(cornerRadiusDp = 18, strokeWidthDp = 3)
+        foreground = jetStreamFocusForeground(cornerRadiusDp = 18, strokeWidthDp = 1)
         elevation = 0f
         clipToOutline = true
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -303,6 +307,7 @@ class JetStreamHomeTitleView @JvmOverloads constructor(
         applyJetStreamTypeface()
         background = jetStreamChipBackground(10)
         setTextColor(jetStreamColorStateList(R.color.jetstream_control_text))
+        setPaddingRelative(jetStreamDpInt(12), paddingTop, jetStreamDpInt(12), paddingBottom)
     }
 
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: android.graphics.Rect?) {
@@ -471,7 +476,7 @@ class JetStreamDiscoverPanelLayout @JvmOverloads constructor(
         foreground = jetStreamFocusForeground(cornerRadiusDp = 12, strokeWidthDp = 3)
         clipChildren = false
         clipToPadding = false
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 0)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -537,7 +542,7 @@ class JetStreamDiscoverFacetLayout @JvmOverloads constructor(
     init {
         background = jetStreamDiscoverPanelBackground(12)
         foreground = jetStreamFocusForeground(cornerRadiusDp = 12, strokeWidthDp = 3)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 0)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -712,7 +717,7 @@ class JetStreamMediaItemTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamMediaItemTextSurface(attrs, defStyleAttr)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -725,7 +730,7 @@ class JetStreamMediaItemLayout @JvmOverloads constructor(
     init {
         background = jetStreamMediaItemBackground()
         setPadding(jetStreamDpInt(18), jetStreamDpInt(9), jetStreamDpInt(18), jetStreamDpInt(9))
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -737,7 +742,7 @@ class JetStreamRoundItemTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamRoundItemSurface(attrs, defStyleAttr)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -749,7 +754,7 @@ class JetStreamRoundTypeView @JvmOverloads constructor(
     init {
         applyJetStreamRoundItemSurface(attrs, 0)
         TextViewCompat.setCompoundDrawableTintList(this, jetStreamColorStateList(R.color.jetstream_control_text))
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -972,7 +977,7 @@ class JetStreamChipTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamChipTextSurface(cornerRadiusDp = 18, horizontalPaddingDp = 12, minHeightDp = 36, attrs = attrs, defStyleAttr = defStyleAttr)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -983,8 +988,8 @@ class JetStreamChipRoundTextView @JvmOverloads constructor(
 ) : MaterialTextView(context, attrs, defStyleAttr) {
 
     init {
-        applyJetStreamChipTextSurface(cornerRadiusDp = 28, horizontalPaddingDp = 14, minHeightDp = 40, attrs = attrs, defStyleAttr = defStyleAttr)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        applyJetStreamChipTextSurface(cornerRadiusDp = 10, horizontalPaddingDp = 16, minHeightDp = 40, attrs = attrs, defStyleAttr = defStyleAttr)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -996,8 +1001,8 @@ class JetStreamMediumChipRoundTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamChipTextSurface(
-            cornerRadiusDp = 28,
-            horizontalPaddingDp = 14,
+            cornerRadiusDp = 10,
+            horizontalPaddingDp = 16,
             minHeightDp = 40,
             attrs = attrs,
             defStyleAttr = defStyleAttr,
@@ -1014,8 +1019,8 @@ class JetStreamLargeChipRoundTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamChipTextSurface(
-            cornerRadiusDp = 28,
-            horizontalPaddingDp = 14,
+            cornerRadiusDp = 10,
+            horizontalPaddingDp = 16,
             minHeightDp = 40,
             attrs = attrs,
             defStyleAttr = defStyleAttr,
@@ -1076,7 +1081,9 @@ class JetStreamFileIconView @JvmOverloads constructor(
 ) : AppCompatImageView(context, attrs, defStyleAttr) {
 
     init {
-        applyJetStreamSearchIconSurface()
+        // The row owns focus; its decorative icon must not show a second ring.
+        background = null
+        scaleType = ScaleType.CENTER_INSIDE
         applyJetStreamFileIconTint()
     }
 }
@@ -1197,7 +1204,7 @@ class JetStreamControlTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamControlSurface()
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -1209,7 +1216,7 @@ class JetStreamButtonTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamButtonSurface(attrs, defStyleAttr)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -1222,7 +1229,7 @@ class JetStreamPrimaryButtonTextView @JvmOverloads constructor(
     init {
         applyJetStreamButtonSurface(attrs, defStyleAttr)
         setTypeface(typeface, Typeface.BOLD)
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -1233,7 +1240,7 @@ class JetStreamControlUpDownView @JvmOverloads constructor(
 
     init {
         applyJetStreamControlSurface()
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -1245,7 +1252,7 @@ class JetStreamNumericControlUpDownView @JvmOverloads constructor(
     init {
         fontFeatureSettings = "tnum"
         applyJetStreamControlSurface()
-        JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_LIST, 8)
+        JetStreamAnimator.bindFocus(this, 1.0f, 0)
     }
 }
 
@@ -1459,8 +1466,8 @@ private fun View.hasNoPadding(): Boolean {
 
 private fun View.jetStreamMediaItemBackground(): StateListDrawable {
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamMediaItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamMediaItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamMediaItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
+        addState(intArrayOf(android.R.attr.state_pressed), jetStreamMediaItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamMediaItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
         addState(intArrayOf(android.R.attr.state_checked), jetStreamMediaItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
         addState(intArrayOf(android.R.attr.state_activated), jetStreamMediaItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
@@ -1478,8 +1485,8 @@ private fun View.jetStreamMediaItemDrawable(colorRes: Int, strokeColorRes: Int, 
 
 private fun View.jetStreamRoundItemBackground(): StateListDrawable {
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamRoundItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamRoundItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamRoundItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
+        addState(intArrayOf(android.R.attr.state_pressed), jetStreamRoundItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamRoundItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
         addState(intArrayOf(android.R.attr.state_checked), jetStreamRoundItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
         addState(intArrayOf(android.R.attr.state_activated), jetStreamRoundItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
@@ -1497,8 +1504,8 @@ private fun View.jetStreamRoundItemDrawable(colorRes: Int, strokeColorRes: Int, 
 
 private fun View.jetStreamChipBackground(cornerRadiusDp: Int): StateListDrawable {
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
+        addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
         addState(intArrayOf(android.R.attr.state_checked), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
         addState(intArrayOf(android.R.attr.state_activated), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
@@ -1516,16 +1523,16 @@ private fun View.jetStreamChipDrawable(cornerRadiusDp: Int, colorRes: Int, strok
 
 private fun View.jetStreamButtonBackground(): StateListDrawable {
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(28, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(28, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
-        addState(intArrayOf(), jetStreamChipDrawable(28, R.color.jetstream_surface_container, R.color.jetstream_outline_variant, 0))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(10, R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
+        addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(10, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
+        addState(intArrayOf(), jetStreamChipDrawable(10, R.color.jetstream_surface_container, R.color.jetstream_outline_variant, 0))
     }
 }
 
 private fun View.jetStreamSearchBackground(cornerRadiusDp: Int): StateListDrawable {
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
-        addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
+        addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
+        addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_surface_container, R.color.jetstream_outline_variant, 0))
     }
 }
@@ -1573,9 +1580,9 @@ object JetStreamVideoDecor {
 
 private fun View.jetStreamVideoWindowFocusDrawable(): GradientDrawable {
     return GradientDrawable().apply {
-        cornerRadius = jetStreamDp(12)
+        cornerRadius = resources.getDimension(R.dimen.tv_video_corner_radius)
         setColor(Color.TRANSPARENT)
-        setStroke((jetStreamDp(3) / 2f).toInt().coerceAtLeast(1), jetStreamColor(R.color.jetstream_primary))
+        setStroke(resources.getDimensionPixelSize(R.dimen.tv_video_focus_stroke).coerceAtLeast(1), jetStreamColor(R.color.jetstream_primary))
     }
 }
 

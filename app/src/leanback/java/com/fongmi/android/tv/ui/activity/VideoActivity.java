@@ -135,6 +135,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private Runnable mR4;
     private Clock mClock;
     private View mFocus1;
+    private boolean restoreDetailActionFocus;
     private View mFocus2;
     private CharSequence mDetailTitle;
     private CharSequence mDetailTmdbRating;
@@ -1004,6 +1005,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void enterFullscreen() {
         mFocus1 = getCurrentFocus();
+        restoreDetailActionFocus = mBinding.detail.hasFocus();
         if (canRequestFocus(mBinding.video)) mBinding.video.requestFocus();
         JetStreamAnimator.reset(mBinding.video);
         mBinding.video.setForeground(null);
@@ -1026,7 +1028,9 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         setFullscreen(false);
         updateFullscreenViews();
         applyWindowVideoStyle();
-        requestFocus(getFocus1(), mBinding.video);
+        if (restoreDetailActionFocus) mBinding.detail.restoreActionFocus();
+        else requestFocus(getFocus1(), mBinding.video);
+        restoreDetailActionFocus = false;
         mFocus2 = null;
         hideInfo();
     }

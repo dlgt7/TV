@@ -3,6 +3,7 @@ package com.fongmi.android.tv.ui.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+
 import android.view.KeyEvent;
 import android.view.View;
 
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.Product;
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.DiscoverMediaKey;
@@ -46,6 +48,8 @@ public class KeepActivity extends BaseActivity implements KeepAdapter.OnClickLis
     @Override
     protected void initView(Bundle savedInstanceState) {
         setRecyclerView();
+        com.fongmi.android.tv.ui.custom.JetStreamEmptyStateView empty = mBinding.progressLayout.findViewById(R.id.empty_state);
+        if (empty != null) empty.setText(R.string.tv_empty_favorites);
         getKeep();
     }
 

@@ -99,7 +99,9 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
         if (mScroller == null) mScroller = new CustomScroller(this);
         mBinding.recycler.addOnScrollListener(mScroller);
         if (!isCompact()) mBinding.recycler.setHeader(getActivity(), R.id.recyclerPanel, R.id.recycler);
-        mBinding.recycler.setPadding(0, ResUtil.dp2px(8), 0, ResUtil.dp2px(40));
+        // Insets are inside the page viewport, so scaled edge cards remain fully visible.
+        int focusInset = ResUtil.dp2px(8);
+        mBinding.recycler.setPadding(focusInset, ResUtil.dp2px(12), focusInset, ResUtil.dp2px(isCompact() ? 24 : 40));
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
     }
 
@@ -207,6 +209,7 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
         int column = getColumn();
         int available = mBinding.recycler.getWidth();
         if (available <= 0) available = ResUtil.getScreenWidth() - ResUtil.dp2px(isCompact() ? 464 : 96);
+        available -= mBinding.recycler.getPaddingLeft() + mBinding.recycler.getPaddingRight();
         int width = Math.max(1, (available - ResUtil.dp2px(ROW_HORIZONTAL_SPACING * (column - 1))) / column);
         return new int[]{width, Math.round(width / 0.75f)};
     }
@@ -216,7 +219,7 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
     }
 
     private int getColumn() {
-        return isCompact() ? 3 : Product.getColumn();
+        return isCompact() ? 4 : Product.getColumn();
     }
 
     @Override

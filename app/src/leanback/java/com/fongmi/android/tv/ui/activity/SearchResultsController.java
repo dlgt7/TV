@@ -147,7 +147,7 @@ final class SearchResultsController {
         mBinding.recycler.setClipChildren(false);
         mBinding.recycler.setClipToPadding(false);
         mBinding.recycler.setClipToOutline(false);
-        mBinding.recycler.setPadding(0, ResUtil.dp2px(6), ResUtil.dp2px(8), ResUtil.dp2px(6));
+        mBinding.recycler.setPadding(ResUtil.dp2px(8), ResUtil.dp2px(6), ResUtil.dp2px(8), ResUtil.dp2px(6));
         mBinding.recycler.setHorizontalSpacing(ResUtil.dp2px(16));
         mBinding.recycler.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.recycler.setAdapter(mAdapter = new CollectAdapter());
