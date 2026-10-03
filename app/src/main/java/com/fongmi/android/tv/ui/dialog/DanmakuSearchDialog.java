@@ -92,7 +92,7 @@ public final class DanmakuSearchDialog {
         }
     }
 
-    public static final class SideSheet extends BaseSideSheetDialog {
+    public static final class SideSheet extends BasePlaybackSideSheetDialog {
 
         private final PlayerManager player;
         private DialogDanmakuSearchBinding binding;

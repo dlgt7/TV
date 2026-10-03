@@ -14,7 +14,7 @@ import com.fongmi.android.tv.databinding.DialogParseBinding;
 import com.fongmi.android.tv.ui.adapter.ParseAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 
-public class ParseDialog extends BaseBottomSheetDialog implements ParseAdapter.OnClickListener {
+public class ParseDialog extends BasePlaybackSelectionDialog implements ParseAdapter.OnClickListener {
 
     private DialogParseBinding binding;
     private ParseAdapter adapter;

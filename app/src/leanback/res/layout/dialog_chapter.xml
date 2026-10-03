@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
     <com.fongmi.android.tv.ui.custom.JetStreamSheetHeaderView
@@ -19,14 +19,14 @@
     <com.fongmi.android.tv.ui.custom.JetStreamDialogListRecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:paddingStart="24dp"
         android:paddingTop="16dp"
         android:paddingEnd="24dp"
         android:paddingBottom="24dp"
         app:jetStreamListFramed="false"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:maxHeight="204dp"
         tools:listitem="@layout/adapter_chapter" />
 
-</com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout>
+</com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout>

@@ -59,7 +59,7 @@
             android:ellipsize="end"
             android:focusable="false"
             android:gravity="center"
-            android:maxWidth="120dp"
+            android:maxWidth="148dp"
             android:singleLine="true"
             android:text="@string/app_name" />
 

@@ -67,7 +67,7 @@ public final class OffsetDialog {
         }
     }
 
-    public static final class SideSheet extends BaseSideSheetDialog {
+    public static final class SideSheet extends BasePlaybackSideSheetDialog {
 
         private DialogOffsetBinding binding;
         private final PlayerManager player;

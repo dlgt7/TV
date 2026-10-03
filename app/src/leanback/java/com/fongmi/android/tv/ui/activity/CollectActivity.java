@@ -25,6 +25,13 @@ public class CollectActivity extends BaseActivity {
         activity.startActivity(intent);
     }
 
+    public static void startFromSuggestions(Activity activity, String keyword) {
+        Intent intent = new Intent(activity, CollectActivity.class);
+        intent.putExtra("keyword", keyword);
+        intent.putExtra("fromSuggestions", true);
+        activity.startActivity(intent);
+    }
+
     @Override
     protected ViewBinding getBinding() {
         return mBinding = ActivityCollectBinding.inflate(getLayoutInflater());
@@ -39,7 +46,12 @@ public class CollectActivity extends BaseActivity {
 
     @Override
     protected void initEvent() {
-        mBinding.edit.setOnClickListener(view -> SearchActivity.start(this, getIntent().getStringExtra("keyword")));
+        mBinding.edit.setOnClickListener(view -> {
+            if (!getIntent().getBooleanExtra("fromSuggestions", false)) {
+                SearchActivity.start(this, getIntent().getStringExtra("keyword"));
+            }
+            finish();
+        });
     }
 
     @Override

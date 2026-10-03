@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class TrackDialog extends BaseBottomSheetDialog implements TrackAdapter.OnClickListener {
+public final class TrackDialog extends BasePlaybackSelectionDialog implements TrackAdapter.OnClickListener {
 
     private final TrackNameProvider provider;
     private final TrackAdapter adapter;
@@ -120,7 +120,7 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
 
     private void onSubtitle(View view) {
         Listener listener = (Listener) requireActivity();
-        App.post(listener::onSubtitleClick, 100);
+        listener.onSubtitleClick();
         dismiss();
     }
 

@@ -58,7 +58,7 @@ class HomeContinueCardLayout @JvmOverloads constructor(
             cornerRadius = jetStreamDp(10)
             setColor(jetStreamColor(R.color.jetstream_surface_container))
         }
-        foreground = jetStreamFocusForeground(cornerRadiusDp = 10, strokeWidthDp = 2)
+        foreground = jetStreamFocusForeground(cornerRadiusDp = 10, strokeWidthDp = 3)
         clipToOutline = true
         JetStreamAnimator.bindFocus(this, JetStreamAnimator.FOCUS_SCALE_CARD, 0)
     }

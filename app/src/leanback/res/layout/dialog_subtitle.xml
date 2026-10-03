@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     app:jetStreamSheetEdge="right">
 
-    <com.fongmi.android.tv.ui.custom.JetStreamSheetToolbarLayout
+    <com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -23,7 +23,7 @@
             android:layout_weight="1"
             app:jetStreamTitle="@string/play_subtitle" />
 
-        <com.fongmi.android.tv.ui.custom.JetStreamDialogButton
+        <com.fongmi.android.tv.ui.custom.MaterialPlaybackTextButton
             android:id="@+id/reset"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -32,7 +32,7 @@
             android:nextFocusDown="@id/large"
             android:text="@string/danmaku_reset" />
 
-    </com.fongmi.android.tv.ui.custom.JetStreamSheetToolbarLayout>
+    </com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -56,141 +56,57 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout
+                <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
                     android:id="@+id/large"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/subtitle_size_larger"
+                    android:layout_marginBottom="12dp"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
                     android:nextFocusDown="@id/small"
                     android:nextFocusUp="@id/reset"
-                    android:paddingStart="20dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="20dp"
-                    android:paddingBottom="4dp">
+                    android:text="@string/subtitle_size_larger"
+                    app:icon="@drawable/msr_text_increase" />
 
-                    <com.fongmi.android.tv.ui.custom.JetStreamFunctionIconView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:duplicateParentState="true"
-                        android:padding="5dp"
-                        android:src="@drawable/msr_text_increase" />
-
-                    <com.fongmi.android.tv.ui.custom.JetStreamSliderTitleTextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:duplicateParentState="true"
-                        android:ellipsize="end"
-                        android:singleLine="true"
-                        android:text="@string/subtitle_size_larger" />
-
-                </com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout>
-
-                <com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout
+                <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
                     android:id="@+id/small"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/subtitle_size_smaller"
+                    android:layout_marginBottom="12dp"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
                     android:nextFocusDown="@id/up"
                     android:nextFocusUp="@id/large"
-                    android:paddingStart="20dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="20dp"
-                    android:paddingBottom="4dp">
+                    android:text="@string/subtitle_size_smaller"
+                    app:icon="@drawable/msr_text_decrease" />
 
-                    <com.fongmi.android.tv.ui.custom.JetStreamFunctionIconView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:duplicateParentState="true"
-                        android:padding="5dp"
-                        android:src="@drawable/msr_text_decrease" />
-
-                    <com.fongmi.android.tv.ui.custom.JetStreamSliderTitleTextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:duplicateParentState="true"
-                        android:ellipsize="end"
-                        android:singleLine="true"
-                        android:text="@string/subtitle_size_smaller" />
-
-                </com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout>
-
-                <com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout
+                <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
                     android:id="@+id/up"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/subtitle_position_up"
+                    android:layout_marginBottom="12dp"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
                     android:nextFocusDown="@id/down"
                     android:nextFocusUp="@id/small"
-                    android:paddingStart="20dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="20dp"
-                    android:paddingBottom="4dp">
+                    android:text="@string/subtitle_position_up"
+                    app:icon="@drawable/msr_arrow_upward" />
 
-                    <com.fongmi.android.tv.ui.custom.JetStreamFunctionIconView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:duplicateParentState="true"
-                        android:padding="5dp"
-                        android:src="@drawable/msr_arrow_upward" />
-
-                    <com.fongmi.android.tv.ui.custom.JetStreamSliderTitleTextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:duplicateParentState="true"
-                        android:ellipsize="end"
-                        android:singleLine="true"
-                        android:text="@string/subtitle_position_up" />
-
-                </com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout>
-
-                <com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout
+                <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
                     android:id="@+id/down"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/subtitle_position_down"
+                    android:layout_marginBottom="12dp"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
                     android:nextFocusDown="@id/down"
                     android:nextFocusUp="@id/up"
-                    android:paddingStart="20dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="20dp"
-                    android:paddingBottom="4dp">
-
-                    <com.fongmi.android.tv.ui.custom.JetStreamFunctionIconView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:duplicateParentState="true"
-                        android:padding="5dp"
-                        android:src="@drawable/msr_arrow_downward" />
-
-                    <com.fongmi.android.tv.ui.custom.JetStreamSliderTitleTextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:duplicateParentState="true"
-                        android:ellipsize="end"
-                        android:singleLine="true"
-                        android:text="@string/subtitle_position_down" />
-
-                </com.fongmi.android.tv.ui.custom.JetStreamDanmakuControlRowLayout>
+                    android:text="@string/subtitle_position_down"
+                    app:icon="@drawable/msr_arrow_downward" />
 
             </com.fongmi.android.tv.ui.custom.JetStreamDanmakuSectionLayout>
 
         </com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout>
     </androidx.core.widget.NestedScrollView>
 
-</com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout>
+</com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout>

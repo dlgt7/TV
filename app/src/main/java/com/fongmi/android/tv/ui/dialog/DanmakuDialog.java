@@ -22,7 +22,7 @@ import com.fongmi.android.tv.ui.adapter.DanmakuAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.FileChooser;
 
-public final class DanmakuDialog extends BaseBottomSheetDialog implements DanmakuAdapter.OnClickListener {
+public final class DanmakuDialog extends BasePlaybackSelectionDialog implements DanmakuAdapter.OnClickListener {
 
     private final DanmakuAdapter adapter;
     private DialogDanmakuBinding binding;

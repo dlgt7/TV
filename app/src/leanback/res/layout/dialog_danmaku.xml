@@ -1,58 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.fongmi.android.tv.ui.custom.JetStreamSheetToolbarLayout
+    <com.fongmi.android.tv.ui.custom.JetStreamSheetHeaderView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
+        app:jetStreamTitle="@string/danmaku_select" />
+
+    <com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="24dp"
-        android:paddingTop="24dp"
+        android:paddingTop="0dp"
         android:paddingBottom="16dp">
 
-        <com.fongmi.android.tv.ui.custom.JetStreamSheetHeaderView
-            android:id="@+id/title"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="16dp"
-            android:layout_weight="1"
-            app:jetStreamTitle="@string/danmaku_select" />
-
-        <com.fongmi.android.tv.ui.custom.JetStreamChipRoundIconView
+        <com.fongmi.android.tv.ui.custom.MaterialPlaybackIconButton
             android:id="@+id/search"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:contentDescription="@string/home_search"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginEnd="16dp"
             android:focusable="true"
-            android:src="@drawable/ic_action_search"
+            app:icon="@drawable/ic_action_search"
             android:visibility="gone" />
 
-        <com.fongmi.android.tv.ui.custom.JetStreamChipRoundIconView
+        <com.fongmi.android.tv.ui.custom.MaterialPlaybackIconButton
             android:id="@+id/choose"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:contentDescription="@string/setting_choose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:focusable="true"
-            android:src="@drawable/ic_action_choose" />
+            app:icon="@drawable/ic_action_choose" />
 
-        <com.fongmi.android.tv.ui.custom.JetStreamChipRoundIconView
+        <com.fongmi.android.tv.ui.custom.MaterialPlaybackIconButton
             android:id="@+id/setting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:contentDescription="@string/danmaku_setting"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="16dp"
             android:focusable="true"
-            android:src="@drawable/ic_danmaku_setting" />
+            app:icon="@drawable/ic_danmaku_setting" />
 
-    </com.fongmi.android.tv.ui.custom.JetStreamSheetToolbarLayout>
+    </com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout>
 
     <com.fongmi.android.tv.ui.custom.JetStreamDialogListRecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:nextFocusUp="@id/setting"
         android:paddingStart="24dp"
         android:paddingTop="16dp"
@@ -60,7 +64,6 @@
         android:paddingBottom="24dp"
         app:jetStreamListFramed="false"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:maxHeight="204dp"
         tools:listitem="@layout/adapter_danmaku" />
 
-</com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout>
+</com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout>

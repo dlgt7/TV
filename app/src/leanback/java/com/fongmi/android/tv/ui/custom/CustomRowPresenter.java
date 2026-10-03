@@ -49,6 +49,11 @@ public class CustomRowPresenter extends ListRowPresenter {
         vh.getGridView().setHorizontalSpacing(ResUtil.dp2px(spacing));
         vh.getGridView().setClipChildren(false);
         vh.getGridView().setClipToPadding(false);
+        // Focus scaling needs real layout room, not only disabled clipping on
+        // this child: Leanback's row ancestors still measure unscaled bounds.
+        int verticalInset = ResUtil.dp2px(8);
+        vh.getGridView().setPaddingRelative(vh.getGridView().getPaddingStart(), verticalInset,
+                vh.getGridView().getPaddingEnd(), verticalInset);
         if (vh.view instanceof ViewGroup row) {
             row.setClipChildren(false);
             row.setClipToPadding(false);

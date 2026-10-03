@@ -17,7 +17,7 @@ import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.ui.adapter.EditionAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 
-public final class EditionDialog extends BaseBottomSheetDialog implements EditionAdapter.OnClickListener {
+public final class EditionDialog extends BasePlaybackSelectionDialog implements EditionAdapter.OnClickListener {
 
     private final EditionAdapter adapter;
     private DialogEditionBinding binding;

@@ -155,7 +155,7 @@ public final class SubtitleDialog {
         }
     }
 
-    public static final class SideSheet extends BaseSideSheetDialog {
+    public static final class SideSheet extends BasePlaybackSideSheetDialog {
 
         private final SubtitleView subtitleView;
         private final PlayerManager player;

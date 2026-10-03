@@ -8,7 +8,6 @@ import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -44,11 +43,11 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     private ActivitySearchBinding mBinding;
     private RecordAdapter mRecordAdapter;
     private WordAdapter mWordAdapter;
-    private SearchResultsController results;
     private Call suggestionCall;
     private Runnable suggestionRequest;
     private long suggestionGeneration;
     private View savedFocus;
+    private boolean returnToRecord;
     private final SearchFocusGuard focus = new SearchFocusGuard(this);
     private long resumeFocusGeneration;
     private boolean restoreAfterResume;
@@ -81,9 +80,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     protected void initView(Bundle savedInstanceState) {
         CustomKeyboard.init(this, mBinding);
         setRecyclerView();
-        results = new SearchResultsController(this, mBinding.results, true, focus);
         checkKeyword();
-        onSearch();
     }
 
     @Override
@@ -130,7 +127,6 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     private void getWord(String text) {
         focus.invalidate();
-        if (text.isEmpty()) showResults(false);
         long generation = ++suggestionGeneration;
         if (suggestionRequest != null) App.removeCallbacks(suggestionRequest);
         if (suggestionCall != null) suggestionCall.cancel();
@@ -177,13 +173,12 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     @Override
     public void onItemClick(String text) {
-        setKeyword(text);
-        onSearch();
+        search(text);
     }
 
     @Override
     public void onDataChanged(int size, int deletedPosition) {
-        mBinding.recordLayout.setVisibility(size == 0 || mBinding.results.getRoot().getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+        mBinding.recordLayout.setVisibility(size == 0 ? View.GONE : View.VISIBLE);
         if (deletedPosition == RecyclerView.NO_POSITION && getCurrentFocus() != null) return;
         if (deletedPosition == RecyclerView.NO_POSITION) {
             if (size == 0 && !focusFirst(mBinding.wordRecycler)) requestKeywordFocus();
@@ -200,21 +195,23 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     public void onSearch() {
         focus.invalidate();
         if (empty()) return;
-        String keyword = mBinding.keyword.getText().toString().trim();
-        mRecordAdapter.add(keyword);
-        Util.hideKeyboard(mBinding.keyword);
-        showResults(true);
-        results.search(keyword);
-        results.requestFocus();
+        search(mBinding.keyword.getText().toString().trim());
     }
 
-    private void showResults(boolean visible) {
-        mBinding.results.getRoot().setVisibility(visible ? View.VISIBLE : View.GONE);
-        mBinding.recordLayout.setVisibility(!visible && mRecordAdapter != null && mRecordAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
-        LinearLayout.LayoutParams suggestions = (LinearLayout.LayoutParams) mBinding.scroll.getLayoutParams();
-        suggestions.height = visible ? com.fongmi.android.tv.utils.ResUtil.dp2px(128) : 0;
-        suggestions.weight = visible ? 0 : 1;
-        mBinding.scroll.setLayoutParams(suggestions);
+    private void search(String keyword) {
+        if (keyword.trim().isEmpty()) return;
+        focus.invalidate();
+        View current = getCurrentFocus();
+        returnToRecord = current != null && mBinding.recordRecycler.findContainingItemView(current) != null;
+        // Freeze this suggestion set until the user edits again; late network results
+        // must not replace the selected item behind the fullscreen result page.
+        suggestionGeneration++;
+        if (suggestionRequest != null) App.removeCallbacks(suggestionRequest);
+        if (suggestionCall != null) suggestionCall.cancel();
+        mRecordAdapter.add(keyword);
+        Util.hideKeyboard(mBinding.keyword);
+        // Keep the input and suggestion list intact so Back restores the chosen item.
+        CollectActivity.startFromSuggestions(this, keyword);
     }
 
     @Override
@@ -301,7 +298,6 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         if (mBinding.keyword.getSelectionEnd() < mBinding.keyword.getText().length()) return false;
         if (!empty()) {
             if (focusFirst(mBinding.wordRecycler)) return true;
-            if (results.hasResults()) { results.requestFocus(); return true; }
             return false;
         }
         boolean hasRecord = mBinding.recordLayout.getVisibility() == View.VISIBLE;
@@ -320,7 +316,6 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     private boolean handleWordKey(KeyEvent event, View item) {
         if (KeyUtil.isRightKey(event)) return isLastInRow(mBinding.wordRecycler, item);
         if (KeyUtil.isDownKey(event) && isLastRow(mBinding.wordRecycler, item)) {
-            if (results.hasResults()) results.requestFocus();
             return true;
         }
         if (KeyUtil.isUpKey(event) && isFirstRow(mBinding.wordRecycler, item)) {
@@ -437,17 +432,20 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     private void restoreResumedFocus() {
         restoreAfterResume = false;
+        if (returnToRecord) {
+            returnToRecord = false;
+            restoreRecordFocus(0);
+            return;
+        }
         View target = savedFocus;
         if (canRequestFocus(target)) focus.post(target, resumeFocusGeneration, 0, target::requestFocus);
-        else if (mBinding.results.getRoot().isShown() && results.hasResults()) results.requestFocus(resumeFocusGeneration);
         else if (getCurrentFocus() == null) requestKeywordFocus(resumeFocusGeneration);
     }
 
     @Override
     protected void onBackInvoked() {
         focus.invalidate();
-        if (mBinding.results.getRoot().hasFocus()) requestKeywordFocus();
-        else super.onBackInvoked();
+        super.onBackInvoked();
     }
 
     @Override
@@ -456,7 +454,6 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         suggestionGeneration++;
         if (suggestionRequest != null) App.removeCallbacks(suggestionRequest);
         if (suggestionCall != null) suggestionCall.cancel();
-        if (results != null) results.dispose();
         mBinding.mic.destroy();
         super.onDestroy();
     }

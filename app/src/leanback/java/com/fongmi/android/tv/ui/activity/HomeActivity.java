@@ -242,12 +242,13 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         mViewModel.getResult().observe(this, result -> {
             boolean restoreFocus = mRestoreRefreshFocus && mRefreshFocusGeneration == mHistoryFocusGeneration
                     && mRefreshFocusCid == VodConfig.getCid() && canRestoreHistoryFocus();
-            boolean keepTop = !restoreFocus && mBinding.toolbar.hasFocus();
+            boolean keepTop = !restoreFocus && (mInitialFocusPending || mBinding.toolbar.hasFocus());
             mRestoreRefreshFocus = false;
             mAdapter.remove("progress");
             addVideo(mResult = result);
             Cache.clear().put(result);
             if (restoreFocus) requestRecyclerFocus(mRefreshFeaturedFocus ? firstFocusableRowIndex() : getRecommendIndex());
+            else if (mInitialFocusPending) requestNavFocus();
             else if (keepTop) {
                 BooleanSupplier current = newFocusRequest();
                 // Adapter insertions can move Leanback's selected position during layout.
@@ -314,8 +315,6 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             if (!isFinishing() && !isDestroyed()) mBinding.title.setFocusable(true);
         }, 500);
         if (mInitialFocusPending) {
-            mInitialFocusPending = false;
-            mBinding.recycler.scrollToPosition(0);
             requestNavFocus();
         } else if (!mBinding.toolbar.hasFocus() && !mBinding.recycler.hasFocus()) requestNavFocus();
     }
@@ -370,11 +369,15 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         setToolbarVisible(true);
         mBinding.toolbar.post(() -> {
             if (!current.getAsBoolean()) return;
+            // Adapter insertions while a permission window owns focus can preserve
+            // the old history row at the top. Restore selection as well as scroll.
+            mBinding.recycler.setSelectedPosition(0);
+            mBinding.recycler.scrollToPosition(0);
             if (!canRequestFocus(mBinding.nav)) {
                 if (canRequestFocus(mBinding.toolbar)) mBinding.toolbar.requestFocus();
                 return;
             }
-            mBinding.nav.requestFocus();
+            if (mBinding.nav.requestFocus()) mInitialFocusPending = false;
         });
     }
 
@@ -595,9 +598,12 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     private void addGrid(List<Vod> items, Style style) {
         VodPresenter presenter = new VodPresenter(this, style, getHomeSpec(style));
-        ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
-        adapter.addAll(0, items);
-        mAdapter.add(new ListRow(adapter));
+        int columns = Math.max(1, Product.getColumn(style));
+        for (int start = 0; start < items.size(); start += columns) {
+            ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
+            adapter.addAll(0, items.subList(start, Math.min(start + columns, items.size())));
+            mAdapter.add(new ListRow(adapter));
+        }
     }
 
     private int[] getHistorySpec() {
@@ -666,7 +672,10 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         int header = mAdapter.indexOf(R.string.home_history);
         if (header >= 0) mAdapter.notifyArrayItemRangeChanged(header, 1);
         if (items.isEmpty()) mPresenter.setDelete(false);
-        if (selectedHistoryPosition == RecyclerView.NO_POSITION) return;
+        if (selectedHistoryPosition == RecyclerView.NO_POSITION) {
+            if (mInitialFocusPending || mBinding.nav.hasFocus()) requestNavFocus();
+            return;
+        }
         requestHistoryFocus(clampHistoryPosition(selectedHistoryPosition));
     }
 
@@ -864,6 +873,14 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && mBinding != null && (mInitialFocusPending || mBinding.nav.hasFocus())) {
+            requestNavFocus();
+        }
     }
 
     @Override

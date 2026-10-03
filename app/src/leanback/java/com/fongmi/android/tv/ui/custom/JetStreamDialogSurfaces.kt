@@ -49,7 +49,7 @@ object JetStreamDialogDecor {
                 addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
                     cornerRadius = button.jetStreamDp(12)
                     setColor(TvFocusStyle.FocusedContainer.toArgb())
-                    setStroke(button.jetStreamDpInt(1), TvFocusStyle.FocusOutline.toArgb())
+                    setStroke(button.jetStreamDpInt(2), TvFocusStyle.FocusOutline.toArgb())
                 })
                 addState(intArrayOf(), android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
             }
@@ -70,6 +70,43 @@ class JetStreamDialogScrollView @JvmOverloads constructor(
         elevation = 0f
         clipToOutline = true
     }
+}
+
+/** Inset playback cards share the command drawer's radius and surface. */
+class JetStreamPlaybackSheetLayout @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : LinearLayoutCompat(context, attrs, defStyleAttr) {
+    init {
+        background = GradientDrawable().apply {
+            cornerRadius = jetStreamDp(28)
+            setColor(JetStreamPalette.materialColorScheme().surfaceContainer.toArgb())
+        }
+        clipToOutline = true
+        clipChildren = false
+        clipToPadding = false
+        elevation = 0f
+    }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        val palette = JetStreamPalette.current()
+        fun tintControls(view: View) {
+            when (view) {
+                is Slider -> {
+                    view.thumbTintList = android.content.res.ColorStateList.valueOf(palette.primary)
+                    view.trackActiveTintList = android.content.res.ColorStateList.valueOf(palette.primary)
+                    view.trackInactiveTintList = android.content.res.ColorStateList.valueOf(palette.secondaryContainer)
+                }
+                is MaterialSwitch -> {
+                    val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+                    view.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(palette.onPrimary, 0xFFB9BBC2.toInt()))
+                    view.trackTintList = android.content.res.ColorStateList(states, intArrayOf(palette.primary, 0xFF373940.toInt()))
+                }
+            }
+            if (view is ViewGroup) for (index in 0 until view.childCount) tintControls(view.getChildAt(index))
+        }
+        tintControls(this)
+    }
+
 }
 
 class JetStreamSheetSurfaceLayout @JvmOverloads constructor(
@@ -225,6 +262,19 @@ class JetStreamDialogToggleGroup @JvmOverloads constructor(
     init {
         clipChildren = false
         clipToPadding = false
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        // Spaced vertical options are separate cards, not joined segments.
+        // MaterialButtonToggleGroup rewrites the corner shapes during measurement.
+        if (orientation == VERTICAL) {
+            for (index in 0 until childCount) {
+                val button = getChildAt(index) as? MaterialButton ?: continue
+                button.shapeAppearanceModel = button.shapeAppearanceModel.toBuilder()
+                    .setAllCornerSizes(jetStreamDp(12)).build()
+            }
+        }
     }
 }
 
@@ -572,7 +622,7 @@ private fun View.applyJetStreamSubtitleIconSurface() {
         addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
             cornerRadius = jetStreamDp(10)
             setColor(TvFocusStyle.FocusedContainer.toArgb())
-            setStroke(jetStreamDpInt(1), TvFocusStyle.FocusOutline.toArgb())
+            setStroke(jetStreamDpInt(2), TvFocusStyle.FocusOutline.toArgb())
         })
         addState(intArrayOf(), GradientDrawable().apply {
             cornerRadius = jetStreamDp(10)
@@ -594,6 +644,10 @@ private fun MaterialButton.applyJetStreamDialogButtonSurface() {
     minimumHeight = maxOf(minimumHeight, jetStreamDpInt(40))
     insetTop = 0
     insetBottom = 0
+    gravity = Gravity.CENTER
+    includeFontPadding = false
+    iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+    iconSize = jetStreamDpInt(20)
     iconPadding = jetStreamDpInt(8)
     setPaddingRelative(maxOf(paddingStart, jetStreamDpInt(16)), paddingTop, maxOf(paddingEnd, jetStreamDpInt(16)), paddingBottom)
     setTextColor(JetStreamPalette.controlText())
@@ -601,7 +655,7 @@ private fun MaterialButton.applyJetStreamDialogButtonSurface() {
     iconTint = JetStreamPalette.controlText()
     rippleColor = jetStreamColorStateList(R.color.jetstream_scrim_medium)
     strokeColor = JetStreamPalette.controlOutline()
-    strokeWidth = jetStreamDpInt(1)
+    strokeWidth = jetStreamDpInt(2)
     shapeAppearanceModel = shapeAppearanceModel.toBuilder().setAllCornerSizes(jetStreamDp(10)).build()
     applyJetStreamTypeface()
 }

@@ -105,7 +105,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, CustomKeyDownVod.Listener, TrackDialog.Listener, ParseDialog.Listener, Clock.Callback {
+public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, CustomKeyDownVod.Listener, TrackDialog.Listener, ParseDialog.Listener, Clock.Callback, com.fongmi.android.tv.ui.dialog.BasePlaybackSideSheetDialog.Listener {
 
     private static final String HERO_TRANSITION = "jetstream_hero";
 
@@ -129,6 +129,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private History mHistory;
     private boolean fullscreen;
     private boolean useParse;
+    private String playbackPanelCommand;
+    private final Runnable restorePlaybackPanel = this::restorePlaybackPanelFocus;
     private Runnable mR1;
     private Runnable mR2;
     private Runnable mR3;
@@ -345,7 +347,9 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mObserveDetail = this::onDetailObserved;
         mObservePlayer = this::onPlayerObserved;
         mObserveSearch = this::onSearchObserved;
-        mR1 = this::hideControl;
+        mR1 = () -> {
+            if (!mBinding.control.jetstream.isSettingsDrawerOpen()) hideControl();
+        };
         mR2 = this::updateFocus;
         mR3 = this::setTraffic;
         mR4 = this::showEmpty;
@@ -1409,6 +1413,9 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void onJetStreamCommand(String key) {
         switch (key) {
+            case "parse", "subtitle", "text", "audio", "video", "danmaku", "player", "edition", "chapter" -> playbackPanelCommand = key;
+        }
+        switch (key) {
             case "prev" -> checkPrev();
             case "next" -> checkNext();
             case "change" -> onChange();
@@ -1430,6 +1437,33 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
             case "chapter" -> onChapter();
         }
         syncJetStreamControl();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && playbackPanelCommand != null) {
+            App.removeCallbacks(restorePlaybackPanel);
+            App.post(restorePlaybackPanel);
+        }
+    }
+
+    @Override
+    public void onPlaybackPanelClosed() {
+        App.removeCallbacks(restorePlaybackPanel);
+        App.post(restorePlaybackPanel);
+    }
+
+    private void restorePlaybackPanelFocus() {
+        if (playbackPanelCommand == null || isFinishing() || isDestroyed() || !hasWindowFocus()) return;
+        for (androidx.fragment.app.Fragment fragment : getSupportFragmentManager().getFragments()) {
+            if (fragment instanceof androidx.fragment.app.DialogFragment dialog
+                    && dialog.getDialog() != null && dialog.getDialog().isShowing()) return;
+        }
+        String key = playbackPanelCommand;
+        playbackPanelCommand = null;
+        showControl(mBinding.control.jetstream);
+        mBinding.control.jetstream.showGroup(mBinding.control.jetstream.groupForCommand(key), key);
     }
 
     private void onJetStreamCommandLongClick(String key) {
@@ -1512,7 +1546,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     private void setR1Callback() {
-        if (isScrubbing()) return;
+        App.removeCallbacks(mR1);
+        if (isScrubbing() || mBinding.control.jetstream.isSettingsDrawerOpen()) return;
         App.post(mR1, Constant.INTERVAL_HIDE);
     }
 
@@ -1830,7 +1865,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     @Override
     public void onSubtitleClick() {
         SubtitleDialog.create().view(mBinding.player.getSubtitleView()).player(player()).show(this);
-        App.post(this::hideControl, 100);
+        hideControl(false);
     }
 
     @Override
@@ -1940,6 +1975,10 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            App.removeCallbacks(restorePlaybackPanel);
+            playbackPanelCommand = null;
+        }
         if (isFullscreen() && KeyUtil.isMenuKey(event)) onToggle();
         if (isJetStreamControlVisible()) setR1Callback();
         // 只有焦点确实在控制面板内才记忆，否则 onToggle 同帧内会把还未交接的 video 记成 mFocus2，
@@ -2066,6 +2105,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         saveHistory(true);
         DanmakuApi.cancel();
         RefreshEvent.keep();
+        App.removeCallbacks(restorePlaybackPanel);
         App.removeCallbacks(mR1, mR2, mR3, mR4);
         super.onDestroy();
     }

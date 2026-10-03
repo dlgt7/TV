@@ -17,7 +17,7 @@ import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.ui.adapter.ChapterAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 
-public final class ChapterDialog extends BaseBottomSheetDialog implements ChapterAdapter.OnClickListener {
+public final class ChapterDialog extends BasePlaybackSelectionDialog implements ChapterAdapter.OnClickListener {
 
     private final ChapterAdapter adapter;
     private DialogChapterBinding binding;

@@ -59,7 +59,7 @@ public final class DanmakuSettingDialog {
         }
     }
 
-    public static final class SideSheet extends BaseSideSheetDialog {
+    public static final class SideSheet extends BasePlaybackSideSheetDialog {
 
         private DialogDanmakuSettingBinding binding;
         private final PlayerManager player;

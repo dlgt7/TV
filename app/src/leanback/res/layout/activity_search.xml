@@ -141,9 +141,6 @@
 
             </com.fongmi.android.tv.ui.custom.JetStreamPageContentLayout>
         </com.fongmi.android.tv.ui.custom.JetStreamPageContentScrollView>
-            <include android:id="@+id/results" layout="@layout/view_search_results"
-                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                android:visibility="gone" />
         </LinearLayout>
     </com.fongmi.android.tv.ui.custom.JetStreamPageContentLayout>
 </com.fongmi.android.tv.ui.custom.JetStreamPageRootLayout>

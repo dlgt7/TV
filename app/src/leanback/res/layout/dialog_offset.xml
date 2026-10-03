@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,7 +7,7 @@
     android:orientation="vertical"
     app:jetStreamSheetEdge="right">
 
-    <com.fongmi.android.tv.ui.custom.JetStreamSheetToolbarLayout
+    <com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -24,7 +24,7 @@
             android:layout_weight="1"
             app:jetStreamTitle="@string/offset_setting" />
 
-        <com.fongmi.android.tv.ui.custom.JetStreamDialogButton
+        <com.fongmi.android.tv.ui.custom.MaterialPlaybackTextButton
             android:id="@+id/reset"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -32,7 +32,7 @@
             android:focusableInTouchMode="true"
             android:text="@string/danmaku_reset" />
 
-    </com.fongmi.android.tv.ui.custom.JetStreamSheetToolbarLayout>
+    </com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -140,4 +140,4 @@
         </com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout>
     </androidx.core.widget.NestedScrollView>
 
-</com.fongmi.android.tv.ui.custom.JetStreamSheetSurfaceLayout>
+</com.fongmi.android.tv.ui.custom.JetStreamPlaybackSheetLayout>

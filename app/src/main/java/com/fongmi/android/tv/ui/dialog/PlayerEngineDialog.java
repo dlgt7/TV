@@ -17,7 +17,7 @@ import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.ui.activity.PlaybackActivity;
 
-public final class PlayerEngineDialog extends BaseBottomSheetDialog {
+public final class PlayerEngineDialog extends BasePlaybackSelectionDialog {
 
     private DialogPlayerEngineBinding binding;
     private PlayerManager player;

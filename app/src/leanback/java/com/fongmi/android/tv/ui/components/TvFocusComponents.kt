@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button
@@ -67,16 +70,20 @@ fun TvActionButton(
             disabledContentColor = TvFocusStyle.Content.copy(alpha = 0.38f)
         ),
         border = ButtonDefaults.border(
-            focusedBorder = Border(BorderStroke(1.dp, TvFocusStyle.FocusOutline), shape = shape),
+            focusedBorder = Border(BorderStroke(2.dp, TvFocusStyle.FocusOutline), shape = shape),
             focusedDisabledBorder = Border.None
         ),
         contentPadding = contentPadding,
         interactionSource = interactionSource
     ) {
-        // Existing pages use Compose Material Text/Icon. Bridge only content color;
-        // keep their established MiSans typography and application theme intact.
+        // TV Material and Material3 have distinct text-style locals. Children use
+        // Material3 Text, so bridge label metrics as well as the content color.
         CompositionLocalProvider(LocalContentColor provides androidx.tv.material3.LocalContentColor.current) {
-            content()
+            ProvideTextStyle(MaterialTheme.typography.labelLarge.copy(
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
+            )) {
+                content()
+            }
         }
     }
 }
@@ -115,7 +122,7 @@ fun TvFocusableSurface(
             disabledContentColor = TvFocusStyle.Content.copy(alpha = 0.38f)
         ),
         border = ClickableSurfaceDefaults.border(
-            focusedBorder = Border(BorderStroke(1.dp, TvFocusStyle.FocusOutline), shape = shape),
+            focusedBorder = Border(BorderStroke(2.dp, TvFocusStyle.FocusOutline), shape = shape),
             focusedDisabledBorder = Border.None
         ),
         interactionSource = interactionSource
