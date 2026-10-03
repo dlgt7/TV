@@ -41,6 +41,8 @@ Codespace 执行以下任务成功（R2H，2 分 18 秒）：
 | 直播 | R2H [遥控日志](r2h-live-check.log)：打开频道、下一频道、左到分类、切换分类、右到频道、Back 关闭侧栏，同一 LiveActivity。两列焦点在视频背景上可辨识。 |
 | 发现失败/空态 | R2H 缺 key 环境稳定显示重试/返回提示。[长按确认及 Back 日志](r2h-final-empty.log)验证页面未退出/崩溃，Back 正常返回；不据此推断请求次数或成功加载。 |
 
+[R2H 最终独立复核](R2H-INDEPENDENT-REVIEW.md)在已检查范围未发现明确 blocker，并保留发现页成功态未测结论。
+
 ## 截图
 
 | 页面 | 修后画面 |
