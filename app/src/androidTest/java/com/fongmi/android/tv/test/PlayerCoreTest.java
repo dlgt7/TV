@@ -27,6 +27,7 @@ import com.fongmi.android.tv.setting.AudioEffectSetting;
 import com.github.catvod.utils.Prefers;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,7 +45,8 @@ public class PlayerCoreTest {
     private String base;
 
     @Before public void setup() {
-        base = InstrumentationRegistry.getArguments().getString("core_base", "http://10.0.2.2:9980/");
+        CoreFixtureServer.ensureStarted();
+        base = CoreFixtureServer.baseUrl();
         main(() -> {
             AdvancedSubtitleSetting.ass(true);
             AudioEffectSetting.preset(0);
@@ -66,6 +68,8 @@ public class PlayerCoreTest {
         });
         assertTrue("Native libass failed to load", AssTextRenderer.available());
     }
+
+    @AfterClass public static void stopFixtureServer() { CoreFixtureServer.stop(); }
 
     @After public void cleanup() {
         main(() -> {

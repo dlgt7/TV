@@ -15,6 +15,8 @@ import com.fongmi.android.tv.player.media.PlaySpec;
 import com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController;
 import com.fongmi.android.tv.setting.PreloadSetting;
 import com.fongmi.android.tv.test.CorePlaybackActivity;
+import com.fongmi.android.tv.test.CoreFixtureServer;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import java.util.Map;
@@ -31,8 +33,9 @@ public class NextMediaPreloadTest {
     private CorePlaybackActivity activity;
 
     @Test public void reusesPreparedSourceWithIsolatedHeadersAndCancelsOnDisable() {
+        CoreFixtureServer.ensureStarted();
         activity = (CorePlaybackActivity) instrumentation.startActivitySync(new Intent(instrumentation.getTargetContext(), CorePlaybackActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-        String base = InstrumentationRegistry.getArguments().getString("core_base", "http://10.0.2.2:9980/");
+        String base = CoreFixtureServer.baseUrl();
         MediaItem first = item(base, "base.mp4"), second = item(base, "styled.mkv");
         try {
             main(() -> {
@@ -74,6 +77,8 @@ public class NextMediaPreloadTest {
             });
         }
     }
+
+    @AfterClass public static void stopFixtureServer() { CoreFixtureServer.stop(); }
 
     private MediaItem item(String base, String file) {
         return MediaItemFactory.from(PlaySpec.from("next-test", base + file, Map.of("X-Core-Media", file), MediaMetadata.EMPTY));

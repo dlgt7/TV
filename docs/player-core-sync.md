@@ -28,6 +28,7 @@ Verified on 2026-10-04:
 - Device instrumentation: **all 12 scenarios passed**. Cases cover SUP/PGS, 1920×1080 VobSub, DVB paused forward/backward seeks and clear pages, complex ASS, WebVTT/TTML, plus two SRT tracks with DSP and pause/rebuild; external ASS animation and seek; embedded ASS plus independent secondary selection/disable and paused rebind; prepared-source handoff with header isolation and cancellation.
 - Native logs confirm Matroska attachment selection (`DejaVu Sans → DejaVuSans`) and external-subtitle fallback (`DejaVu Sans → Roboto-Regular`). Both APKs contain exactly one libass, JNI bridge and C++ runtime per ABI.
 - FFmpeg accepted the EQ/loudness/limiter chain and the center-gain filter retaining the `5.1(side)` layout.
+- ARM64 Android validation subsequently passed **all 15 instrumentation scenarios**, including the 12 playback cases plus production Python native extensions, MPV playback/audio/node/thumbnail APIs and independent native dual subtitles. This run used the complete ARM APK, without the emulator's Python bypass. See the ARM validation section below.
 
 The original generated fixtures contain SRT, embedded/external ASS, a Matroska font attachment, multi-region WebVTT and TTML. Complex ASS combines karaoke, motion, rotation/transforms, clipping, vector drawing, Unicode bidirectional shaping and overlapping events. Tests compare the exact paused frame before and after a backward seek and check that empty intervals are actually transparent.
 
@@ -72,4 +73,31 @@ The fixture server rejects media requests whose per-item header does not match t
 
 ## Test environment and limits
 
-The dedicated Codespace uses an Android 7.0 (API 24) x86_64 emulator, confirmed from the running device's system properties. Its disposable test APK contains the published x86_64 libass and UI dependencies, with the unused Python loader bypassed; ARM deliverables remain unchanged. Exo/ASS/audio/preload results are actual emulator playback results. They do not establish ARM-device MPV playback, HDMI passthrough, Python execution or end-to-end AI recognition quality. Those require suitable ARM hardware/models. The supplied MPV binaries contain equalizer, pan, dynaudnorm, alimiter and secondary ASS support; the filter syntax is also exercised with FFmpeg. Next-media buffering is an Exo feature; MPV retains its existing current-stream demux cache.
+The dedicated Codespace uses an Android 7.0 (API 24) x86_64 emulator, confirmed from the running device's system properties. Its disposable test APK contains the published x86_64 libass and UI dependencies, with the unused Python loader bypassed; ARM deliverables remain unchanged. This emulator run covers Exo/ASS/audio/preload behavior. Next-media buffering is an Exo feature; MPV retains its existing current-stream demux cache.
+
+## ARM64 installation and native validation
+
+The requested Tailscale device reports model `SM-F900F`, Android 13 and `arm64-v8a`, but its hardware property is `redroid`. Results therefore establish behavior on an ARM64 Android node, not Samsung physical hardware, hardware decoding or HDMI passthrough. End-to-end AI recognition and real-source preload benefits remain outside this controlled fixture run.
+
+The existing `com.fongmi.android.tv.preview` installation was upgraded with its original signing key. The older `com.fongmi.android.tv` package and its data were preserved. The final complete preview APK has SHA-256 `46bb082b3596339ae972c0569adf07dafe0a233186b573aab5c4daab5b4a727a`; it contains the actual ARM Python, MPV and libass libraries. Application preferences were backed up before testing and restored with file-content hash verification afterward.
+
+The native run exposed and fixed two defects:
+
+- The extended MPV JNI bridge from the original AAR imported `av_jni_set_java_vm@LIBAVCODEC_62`, whereas the bundled FFmpeg 9 runtime exports `LIBAVCODEC_63`. The bridge was rebuilt from its pinned original source against the bundled runtime for both ARM ABIs, preserving all 23 JNI entry points. The included ELF regression check rejects the old bridge and resolves all 47 media imports in each rebuilt bridge. The packaged C++ imports were also checked against the bundled libc++ and Android API 24 libc. Source, license and reproducible build details are in [third_party/mpv](../third_party/mpv/README.md).
+- Applying initial ASS overrides at `FILE_LOADED` rebuilt already populated native subtitle tracks. A long dialogue could disappear when a shorter overlapping event had the same start time. Initial style application now happens synchronously before `loadfile`; explicit runtime style controls retain their existing entry point. The regression requires the long dialogue to be present before seeking and verifies both subtitle texts, independent visible changes when disabling each track, and restoration after seeking backward.
+
+The final run passed **15/15 tests in 52.171 seconds**. Native-specific checks execute Python SSL, SQLite, ujson, lxml and an AES known-answer vector; decode and render H.264 through MPV; exercise forward/backward seeking and pause; verify native EQ, normalization and limiting with active AudioTrack output; read node properties and node commands; and generate a real 160×90 thumbnail at five seconds. Output is retained in [arm64-instrumentation.txt](player-core-validation/arm64-instrumentation.txt) and [arm64-native-summary.txt](player-core-validation/arm64-native-summary.txt). Audio checks establish working filters and output, not subjective listening quality.
+
+Network-transferred fixtures initially caused timeouts through the ADB tunnel and on a distant SUP seek. The final run uses the same fixtures from application storage through an optional loopback HTTP server. This preserves HTTP Range and per-item header assertions while removing WAN latency. The server is enabled only by the test argument, is confined to `files/core-fixtures`, and stops after each test class.
+
+```bash
+# Install the preview-signed app and matching instrumentation APK first.
+adb -s "$DEVICE_SERIAL" push core-fixtures.tar.gz /data/local/tmp/core-fixtures.tar.gz
+adb -s "$DEVICE_SERIAL" shell 'run-as com.fongmi.android.tv.preview mkdir -p files/core-fixtures'
+adb -s "$DEVICE_SERIAL" shell 'cat /data/local/tmp/core-fixtures.tar.gz | run-as com.fongmi.android.tv.preview tar -xz -C files/core-fixtures'
+adb -s "$DEVICE_SERIAL" shell am instrument -w -r -e core_fixture_root core-fixtures \
+  -e class com.fongmi.android.tv.test.PlayerCoreTest,com.fongmi.android.tv.player.exo.NextMediaPreloadTest,com.fongmi.android.tv.test.ArmNativeSmokeTest \
+  com.fongmi.android.tv.preview.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The archive's root contains the fixture files (including `sources/bluray.sup`), without an extra enclosing directory. Back up existing application preferences before the suite: the older playback cases change test settings. The ARM native cases also restore their own temporary settings in cleanup.

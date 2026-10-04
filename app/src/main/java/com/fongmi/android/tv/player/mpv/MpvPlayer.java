@@ -144,15 +144,17 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     }
 
     void setSubtitleStyle() {
-        runOnApplicationThread(() -> {
-            float size = PlayerSetting.getSubtitleTextSize();
-            command("set", "sub-scale", Float.toString(size == 0 ? 1 : Math.clamp(size / .0533f, .5f, 3f)));
-            command("set", "sub-pos", Float.toString(Math.clamp(100 - PlayerSetting.getSubtitlePosition() * 100, 0, 100)));
-            command("set", "secondary-sub-pos", "80");
-            command("set", "sub-ass-override", com.fongmi.android.tv.setting.AdvancedSubtitleSetting.ass() ? "scale" : "strip");
-            command("set", "secondary-sub-ass-override", com.fongmi.android.tv.setting.AdvancedSubtitleSetting.ass() ? "scale" : "strip");
-            command("set", "sub-fonts-dir", com.fongmi.android.tv.player.subtitle.SubtitleFonts.directory().getAbsolutePath());
-        });
+        runOnApplicationThread(this::applySubtitleStyle);
+    }
+
+    private void applySubtitleStyle() {
+        float size = PlayerSetting.getSubtitleTextSize();
+        command("set", "sub-scale", Float.toString(size == 0 ? 1 : Math.clamp(size / .0533f, .5f, 3f)));
+        command("set", "sub-pos", Float.toString(Math.clamp(100 - PlayerSetting.getSubtitlePosition() * 100, 0, 100)));
+        command("set", "secondary-sub-pos", "80");
+        command("set", "sub-ass-override", com.fongmi.android.tv.setting.AdvancedSubtitleSetting.ass() ? "scale" : "strip");
+        command("set", "secondary-sub-ass-override", com.fongmi.android.tv.setting.AdvancedSubtitleSetting.ass() ? "scale" : "strip");
+        command("set", "sub-fonts-dir", com.fongmi.android.tv.player.subtitle.SubtitleFonts.directory().getAbsolutePath());
     }
 
     private String secondaryTrack;
@@ -750,6 +752,10 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         MpvLogCollector.log("MpvPlayer", "开始加载URL: " + url);
         MpvLogCollector.log("MpvPlayer", "起始位置: " + startPositionMs + "ms");
 
+        // ASS override changes rebuild native subtitle tracks. Apply them before
+        // demuxing: doing this at FILE_LOADED can discard an already decoded long
+        // dialogue when a later, shorter event has the same starting timestamp.
+        applySubtitleStyle();
         if (startPositionMs > 0 && shouldDeferInitialSeek(url)) {
             pendingSeekAfterLoadMs = startPositionMs;
             command("loadfile", url, "replace");
@@ -782,7 +788,6 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 readRuntimeState();
                 if (applyDolbyPolicy()) return;
                 addInitialSubtitles();
-                setSubtitleStyle();
                 applyAudioEffects();
                 invalidateState();
             }

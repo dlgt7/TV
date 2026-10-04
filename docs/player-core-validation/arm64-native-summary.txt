@@ -1,0 +1,12 @@
+Android 13 / ARM64 / ro.hardware=redroid / reported model SM-F900F
+Preview package: com.fongmi.android.tv.preview
+Installed APK SHA-256: 46bb082b3596339ae972c0569adf07dafe0a233186b573aab5c4daab5b4a727a
+All 15 instrumentation tests passed in 52.171 seconds.
+
+10-05 03:05:47.669 1531602 24314 I ArmNativeSmoke: MPV decoder=no, video=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10
+10-05 03:05:48.187 1531602 24314 I ArmNativeSmoke: Subtitle probe expected=1/2; sid=1; secondary-sid=2; sub-text=ASS primary, styled; secondary-sub-text=English secondary track; time=25.020999999999997
+10-05 03:05:50.199 1531602 24314 I ArmNativeSmoke: MPV decoder=no, video=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10
+10-05 03:05:50.200 1531602 24314 I ArmNativeSmoke: Extended node JNI passed: version=mpv v0.41.0-dev-gcca559b41-dirty, trackCount=2
+10-05 03:05:53.027 1531602 24314 I ArmNativeSmoke: Fast thumbnail JNI passed: 160x90, requestedPositionSeconds=5, visiblePixels=14400
+10-05 03:05:55.041 1531602 24314 I ArmNativeSmoke: MPV audio output=audiotrack, filters=@tv-core-audio:lavfi=graph=%219%equalizer=f=80:t=q:w=1:g=-3.0,equalizer=f=250:t=q:w=1:g=0.0,equalizer=f=1000:t=q:w=1:g=0.0,equalizer=f=4000:t=q:w=1:g=0.0,equalizer=f=10000:t=q:w=1:g=-2.0,dynaudnorm=f=150:g=15:p=0.95:m=4,alimiter=limit=0.97:level=false
+10-05 03:05:57.794 1531602 24314 I ArmNativeSmoke: Python native extensions passed: aarch64 / Python 3.10.19 / OpenSSL 3.0.18 30 Sep 2025
