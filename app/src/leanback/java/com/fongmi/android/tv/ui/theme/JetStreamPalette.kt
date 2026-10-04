@@ -237,24 +237,6 @@ object JetStreamPalette {
         )
     }
 
-    /** Full Material 3 accents for the settings/playback pilot, without recoloring artwork pages. */
-    @JvmStatic
-    fun materialColorScheme(): ColorScheme {
-        val palette = current()
-        return colorScheme().copy(
-            primary = composeColor(palette.primary), onPrimary = composeColor(palette.onPrimary),
-            primaryContainer = composeColor(palette.primaryContainer), onPrimaryContainer = composeColor(palette.onPrimaryContainer),
-            secondary = composeColor(palette.secondary), onSecondary = composeColor(palette.onSecondary),
-            secondaryContainer = composeColor(palette.secondaryContainer), onSecondaryContainer = composeColor(palette.onSecondaryContainer),
-            tertiary = composeColor(palette.tertiary), onTertiary = composeColor(palette.onTertiary),
-            tertiaryContainer = composeColor(palette.tertiaryContainer), onTertiaryContainer = composeColor(palette.onTertiaryContainer),
-            surfaceContainerLow = composeColor(SURFACE),
-            surfaceContainer = composeColor(SURFACE_CONTAINER),
-            surfaceContainerHigh = composeColor(SURFACE_CONTAINER_HIGH),
-            surfaceContainerHighest = composeColor(SURFACE_CONTAINER_HIGHEST)
-        )
-    }
-
     @JvmStatic
     @ColorInt
     fun primaryInt(): Int = presentationPalette().primary

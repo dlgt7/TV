@@ -166,6 +166,11 @@ class JetStreamPageViewPager @JvmOverloads constructor(
 
     init {
         applyJetStreamScrollableSurface()
+        // A pager must clip its pages. Adjacent pages sit a whole screen away and
+        // fill the page inset, so with clipping disabled the neighbour's far edge
+        // shows up in that inset after a tab switch.
+        clipChildren = true
+        clipToPadding = true
     }
 }
 

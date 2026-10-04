@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.fongmi.android.tv.ui.custom.JetStreamPageRootLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:paddingStart="48dp"
+    android:paddingEnd="48dp">
 
+    <!-- Keeps the page content where the pager inset used to place it, while the pager itself is
+         full width: an off-screen neighbouring page then lands completely outside the screen. -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/container"
         android:layout_width="match_parent"

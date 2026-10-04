@@ -6,7 +6,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -59,8 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fongmi.android.tv.R
 import com.fongmi.android.tv.setting.Setting
-import com.fongmi.android.tv.ui.components.MaterialSettingsButton
-import com.fongmi.android.tv.ui.components.MaterialSettingsButtonStyle
+import com.fongmi.android.tv.ui.components.TvActionButton
+import com.fongmi.android.tv.ui.components.TvFocusableSurface
 import com.fongmi.android.tv.ui.components.JetStreamPageScrim
 import com.fongmi.android.tv.ui.theme.JetStreamPalette
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
@@ -116,10 +113,7 @@ class JetStreamSettingView @JvmOverloads constructor(
     @Composable
     override fun Content() {
         JetStreamTheme {
-            // Accent is local to the Material settings example, leaving other pages intact.
-            val refresh = themeRefreshToken
-            val scheme = remember(refresh) { JetStreamPalette.materialColorScheme() }
-            MaterialTheme(colorScheme = scheme) { SettingsSurface() }
+            SettingsSurface()
         }
     }
 
@@ -233,8 +227,7 @@ class JetStreamSettingView @JvmOverloads constructor(
     private fun NavigationPanel(sections: List<SectionSpec>, selectedKey: String, modifier: Modifier) {
         Column(
             modifier = modifier
-                .verticalScroll(rememberScrollState())
-                .padding(top = 4.dp, end = 8.dp, bottom = 4.dp)
+                .padding(top = 4.dp, end = 8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -262,7 +255,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                 )
             }
             Spacer(Modifier.height(JetStreamSpacing.ExtraLarge))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(JetStreamSpacing.IconPadding)) {
                 sections.forEach { section ->
                     SectionButton(
                         section = section,
@@ -319,27 +312,21 @@ class JetStreamSettingView @JvmOverloads constructor(
         LaunchedEffect(focused) {
             if (focused) focusedSectionKey = section.key
         }
-        MaterialSettingsButton(
+        TvFocusableSurface(
             onClick = onClick,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(44.dp),
             selected = selected,
-            style = MaterialSettingsButtonStyle.Text,
+            containerColor = Color.Transparent,
             interactionSource = interactionSource
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = section.label,
-                    modifier = Modifier.weight(1f),
-                    fontSize = 16.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.width(8.dp))
-                Box(Modifier.size(18.dp)) {
-                    if (selected) Icon(painterResource(R.drawable.msr_check), null, Modifier.size(18.dp))
-                }
-            }
+            Text(
+                text = section.label,
+                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp),
+                fontSize = 16.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 
@@ -352,57 +339,57 @@ class JetStreamSettingView @JvmOverloads constructor(
         LaunchedEffect(focused) {
             if (focused) focusedRowKey = row.key
         }
-        if (row.actions.isNotEmpty()) {
-            // The card is not focusable: its main action and auxiliary buttons remain siblings.
+        if (row.key == KEY_THEME_COLOR) {
+            // The label has no action. All five theme buttons are peer focus targets.
             Column(
-                modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(24.dp))
-                    .then(requesterModifier).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    .then(requesterModifier).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (row.key == KEY_THEME_COLOR) {
-                    Text(row.label, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp)
-                } else {
-                    MaterialSettingsButton(
-                        onClick = { triggerSettingAction(row.key, false) },
-                        onLongClick = { triggerSettingAction(row.key, true) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
-                        style = MaterialSettingsButtonStyle.Tonal,
-                        interactionSource = interactionSource
-                    ) {
-                        Column(Modifier.fillMaxWidth()) {
-                            Text(row.label, fontSize = 17.sp, fontWeight = FontWeight.Medium,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            if (value.isNotEmpty()) {
-                                Spacer(Modifier.height(4.dp))
-                                Text(value, color = LocalContentColor.current.copy(alpha = 0.8f),
-                                    fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
+                Text(row.label, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) { row.actions.forEach { ActionChip(row.key, it) } }
+            }
+        } else if (row.actions.isNotEmpty()) {
+            // Never put a focusable parent above the secondary buttons: D-pad search
+            // must see the main action and every auxiliary action as siblings.
+            Row(
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                    .then(requesterModifier).padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TvFocusableSurface(
+                    onClick = { triggerSettingAction(row.key, false) },
+                    onLongClick = { triggerSettingAction(row.key, true) },
+                    modifier = Modifier.weight(1f).height(60.dp),
+                    containerColor = Color.Transparent,
+                    interactionSource = interactionSource
+                ) {
+                    Column(Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp)) {
+                        Text(row.label, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (value.isNotEmpty()) {
+                            Spacer(Modifier.height(3.dp))
+                            Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) { row.actions.forEach { ActionChip(row.key, it) } }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 6.dp)) {
+                    row.actions.forEach { ActionChip(row.key, it) }
+                }
             }
         } else {
-            MaterialSettingsButton(
+            TvFocusableSurface(
                 onClick = { triggerSettingAction(row.key, false) },
                 onLongClick = { triggerSettingAction(row.key, true) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).then(requesterModifier),
-                style = when (row.key) {
-                    KEY_BACKUP, KEY_AI_SKIP_TEST -> MaterialSettingsButtonStyle.Filled
-                    KEY_RESTORE, KEY_SOURCE_CLEAR -> MaterialSettingsButtonStyle.Outlined
-                    else -> MaterialSettingsButtonStyle.Tonal
-                },
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().height(60.dp).then(requesterModifier),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 interactionSource = interactionSource
             ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Text(row.label, modifier = Modifier.weight(1f), fontSize = 17.sp,
-                        fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Text(row.label, modifier = Modifier.weight(1f), fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (row.toggle) {
                         Switch(
                             checked = value == context.getString(R.string.setting_on),
@@ -410,16 +397,14 @@ class JetStreamSettingView @JvmOverloads constructor(
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
                                 uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                uncheckedTrackColor = Color.Transparent,
                                 uncheckedBorderColor = MaterialTheme.colorScheme.outline
                             )
                         )
                     } else if (value.isNotEmpty()) {
-                        Text(value, modifier = Modifier.widthIn(max = 260.dp),
-                            color = LocalContentColor.current.copy(alpha = 0.8f), fontSize = 15.sp,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(value, modifier = Modifier.widthIn(max = 260.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -433,13 +418,11 @@ class JetStreamSettingView @JvmOverloads constructor(
         LaunchedEffect(focused) {
             if (focused) focusedRowKey = rowKey
         }
-        MaterialSettingsButton(
+        TvActionButton(
             onClick = { triggerSettingAction(action.key, false) },
             onLongClick = { triggerSettingAction(action.key, true) },
             selected = action.selected,
-            style = if (action.key == KEY_WALL_REFRESH) MaterialSettingsButtonStyle.Filled
-                else MaterialSettingsButtonStyle.Outlined,
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
             interactionSource = interactionSource
         ) {
             if (action.swatch != null) {
@@ -448,7 +431,7 @@ class JetStreamSettingView @JvmOverloads constructor(
             } else if (action.icon != null) {
                 Icon(painterResource(action.icon), contentDescription = null, modifier = Modifier.size(20.dp))
             }
-            if (action.swatch != null || action.icon != null) Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(8.dp))
             Text(action.label, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (action.swatch != null || action.selected) {
                 // Reserve selection width so changing a color does not move its neighbors.

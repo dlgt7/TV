@@ -83,7 +83,6 @@ import com.fongmi.android.tv.ui.components.JetStreamControlScrim
 import com.fongmi.android.tv.ui.components.JetStreamInfoScrim
 import com.fongmi.android.tv.ui.components.MaterialSettingsButton
 import com.fongmi.android.tv.ui.components.MaterialSettingsButtonStyle
-import com.fongmi.android.tv.ui.theme.JetStreamPalette
 import com.fongmi.android.tv.ui.components.TvActionButton
 import com.fongmi.android.tv.ui.components.TvFocusStyle
 import com.fongmi.android.tv.ui.components.TvFocusableSurface
@@ -626,116 +625,114 @@ class JetStreamVodControlView @JvmOverloads constructor(
         val open = group != null && visibleCommands.isNotEmpty()
         var focusedIndex by remember(group) { mutableStateOf(0) }
 
-        MaterialTheme(colorScheme = JetStreamPalette.materialColorScheme()) {
-            AnimatedVisibility(
-                visible = open,
-                enter = fadeIn(tween(JetStreamAnimations.DurationPanel)) + slideInHorizontally(
-                    animationSpec = tween(JetStreamAnimations.DurationPanel),
-                    initialOffsetX = { it }
-                ),
-                exit = fadeOut(tween(JetStreamAnimations.DurationExit)) + slideOutHorizontally(
-                    animationSpec = tween(JetStreamAnimations.DurationExit),
-                    targetOffsetX = { it }
-                ),
-                modifier = Modifier.align(Alignment.CenterEnd)
+        AnimatedVisibility(
+            visible = open,
+            enter = fadeIn(tween(JetStreamAnimations.DurationPanel)) + slideInHorizontally(
+                animationSpec = tween(JetStreamAnimations.DurationPanel),
+                initialOffsetX = { it }
+            ),
+            exit = fadeOut(tween(JetStreamAnimations.DurationExit)) + slideOutHorizontally(
+                animationSpec = tween(JetStreamAnimations.DurationExit),
+                targetOffsetX = { it }
+            ),
+            modifier = Modifier.align(Alignment.CenterEnd)
+        ) {
+            val colorScheme = MaterialTheme.colorScheme
+            val keys = visibleCommands.map { it.first }
+            val requesters = remember(keys) { List(keys.size) { FocusRequester() } }
+            val listState = rememberLazyListState()
+            LaunchedEffect(group, keys) {
+                if (open && keys.isNotEmpty()) {
+                    val requested = keys.indexOf(drawerFocusKey)
+                    val selected = visibleCommands.indexOfFirst { it.second.selected }
+                    focusedIndex = when {
+                        requested >= 0 -> requested
+                        selected >= 0 -> selected
+                        else -> 0
+                    }
+                    drawerFocusKey = null
+                    listState.scrollToItem(focusedIndex)
+                    requesters[focusedIndex].requestFocus()
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(368.dp)
+                    .padding(vertical = 48.dp, horizontal = 24.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(colorScheme.surface.copy(alpha = 0.96f))
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionLeft, Key.Back -> { closeSettingsDrawer(); true }
+                            Key.DirectionUp -> focusedIndex == 0
+                            Key.DirectionDown -> focusedIndex == visibleCommands.lastIndex
+                            Key.DirectionRight -> true
+                            else -> false
+                        }
+                    }
+                    .padding(vertical = 18.dp)
             ) {
-                val colorScheme = MaterialTheme.colorScheme
-                val keys = visibleCommands.map { it.first }
-                val requesters = remember(keys) { List(keys.size) { FocusRequester() } }
-                val listState = rememberLazyListState()
-                LaunchedEffect(group, keys) {
-                    if (open && keys.isNotEmpty()) {
-                        val requested = keys.indexOf(drawerFocusKey)
-                        val selected = visibleCommands.indexOfFirst { it.second.selected }
-                        focusedIndex = when {
-                            requested >= 0 -> requested
-                            selected >= 0 -> selected
-                            else -> 0
-                        }
-                        drawerFocusKey = null
-                        listState.scrollToItem(focusedIndex)
-                        requesters[focusedIndex].requestFocus()
-                    }
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(368.dp)
-                        .padding(vertical = 48.dp, horizontal = 24.dp)
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(colorScheme.surfaceContainer)
-                        .onPreviewKeyEvent { event ->
-                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                            when (event.key) {
-                                Key.DirectionLeft, Key.Back -> { closeSettingsDrawer(); true }
-                                Key.DirectionUp -> focusedIndex == 0
-                                Key.DirectionDown -> focusedIndex == visibleCommands.lastIndex
-                                Key.DirectionRight -> true
-                                else -> false
-                            }
-                        }
-                        .padding(vertical = 18.dp)
+                Text(
+                    text = groupState?.let { groupLabel(it) }.orEmpty(),
+                    color = colorScheme.onSurface,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                )
+                Spacer(Modifier.height(6.dp))
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = groupState?.let { groupLabel(it) }.orEmpty(),
-                        color = colorScheme.onSurface,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    LazyColumn(
-                        state = listState,
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        itemsIndexed(visibleCommands, key = { _, item -> item.first }) { index, item ->
-                            MaterialSettingsButton(
-                                onClick = { triggerCommand(item.first, false) },
-                                onLongClick = { triggerCommand(item.first, true) },
-                                selected = item.second.selected,
-                                style = MaterialSettingsButtonStyle.Tonal,
-                                shape = RoundedCornerShape(16.dp),
-                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).focusRequester(requesters[index])
-                                    .onFocusChanged { if (it.isFocused) focusedIndex = index }
+                    itemsIndexed(visibleCommands, key = { _, item -> item.first }) { index, item ->
+                        MaterialSettingsButton(
+                            onClick = { triggerCommand(item.first, false) },
+                            onLongClick = { triggerCommand(item.first, true) },
+                            selected = item.second.selected,
+                            style = MaterialSettingsButtonStyle.Tonal,
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).focusRequester(requesters[index])
+                                .onFocusChanged { if (it.isFocused) focusedIndex = index }
+                        ) {
+                            val title = commandTitle(item.first, item.second)
+                            val value = item.second.label.trim()
+                            val placeholder = when (item.first) {
+                                "opening" -> stringResource(R.string.play_op)
+                                "ending" -> stringResource(R.string.play_ed)
+                                else -> ""
+                            }
+                            val showValue = title.isNotEmpty() && value != title && value != placeholder
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
-                                val title = commandTitle(item.first, item.second)
-                                val value = item.second.label.trim()
-                                val placeholder = when (item.first) {
-                                    "opening" -> stringResource(R.string.play_op)
-                                    "ending" -> stringResource(R.string.play_ed)
-                                    else -> ""
-                                }
-                                val showValue = title.isNotEmpty() && value != title && value != placeholder
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Text(
-                                        text = title.ifEmpty { value },
-                                        fontSize = 15.sp,
-                                        lineHeight = 20.sp,
-                                        fontWeight = if (item.second.selected) FontWeight.SemiBold else FontWeight.Medium,
-                                        maxLines = if (showValue) 1 else 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    if (showValue) Text(
-                                        text = value,
-                                        color = androidx.compose.material3.LocalContentColor.current.copy(alpha = 0.8f),
-                                        fontSize = 13.sp,
-                                        lineHeight = 18.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                                Text(
+                                    text = title.ifEmpty { value },
+                                    fontSize = 15.sp,
+                                    lineHeight = 20.sp,
+                                    fontWeight = if (item.second.selected) FontWeight.SemiBold else FontWeight.Medium,
+                                    maxLines = if (showValue) 1 else 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (showValue) Text(
+                                    text = value,
+                                    color = androidx.compose.material3.LocalContentColor.current.copy(alpha = 0.8f),
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
                     }
                 }
-        }
+            }
         }
     }
 

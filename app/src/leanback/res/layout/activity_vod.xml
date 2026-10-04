@@ -43,12 +43,13 @@
 
         </com.fongmi.android.tv.ui.custom.JetStreamPageContentLayout>
 
+        <!-- Full width on purpose: an inset pager exposes the neighbouring page's edge in the
+             screen margin once the pager scrolls, because adjacent pages sit a whole page width
+             away. The page content carries the former inset instead (fragment_folder.xml). -->
         <com.fongmi.android.tv.ui.custom.JetStreamPageContentLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginStart="48dp"
             android:layout_marginTop="10dp"
-            android:layout_marginEnd="48dp"
             android:layout_marginBottom="24dp"
             android:layout_weight="1"
             android:orientation="vertical">

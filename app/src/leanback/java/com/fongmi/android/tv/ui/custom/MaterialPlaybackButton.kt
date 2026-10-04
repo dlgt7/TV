@@ -1,11 +1,10 @@
 package com.fongmi.android.tv.ui.custom
 
 import android.content.Context
-import android.content.res.ColorStateList
-import android.graphics.Color
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.Gravity
+import com.fongmi.android.tv.R
 import com.fongmi.android.tv.ui.theme.JetStreamPalette
 import com.google.android.material.button.MaterialButton
 
@@ -45,35 +44,13 @@ open class MaterialPlaybackButton @JvmOverloads constructor(
     }
 
     private fun applyColors() {
-        val p = JetStreamPalette.current()
-        val states = arrayOf(
-            intArrayOf(-android.R.attr.state_enabled),
-            intArrayOf(android.R.attr.state_focused),
-            intArrayOf(android.R.attr.state_pressed),
-            intArrayOf(android.R.attr.state_checked),
-            intArrayOf(android.R.attr.state_selected),
-            intArrayOf(android.R.attr.state_activated),
-            intArrayOf()
-        )
-        val base = when (role) {
-            Role.TEXT -> Color.TRANSPARENT
-            Role.CHOICE -> 0xFF27292E.toInt()
-            Role.TONAL -> p.secondaryContainer
-        }
-        val foreground = when (role) {
-            Role.TEXT -> p.primary
-            Role.CHOICE -> 0xFFF2F2F2.toInt()
-            Role.TONAL -> p.onSecondaryContainer
-        }
-        backgroundTintList = ColorStateList(states, intArrayOf(0x1FF2F2F2, p.primary,
-            p.primaryContainer, p.primaryContainer, p.primaryContainer, p.primaryContainer, base))
-        val textColors = ColorStateList(states, intArrayOf(0x61F2F2F2, p.onPrimary,
-            p.onPrimaryContainer, p.onPrimaryContainer, p.onPrimaryContainer, p.onPrimaryContainer, foreground))
+        // Neutral control colours, shared with the other playback dialogs.
+        backgroundTintList = JetStreamPalette.controlContainer()
+        val textColors = JetStreamPalette.controlText()
         setTextColor(textColors)
         iconTint = textColors
-        strokeColor = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(0xFFF2F2F2.toInt(), Color.TRANSPARENT))
-        rippleColor = ColorStateList.valueOf((p.primary and 0x00FFFFFF) or 0x29000000)
+        strokeColor = JetStreamPalette.controlOutline()
+        rippleColor = jetStreamColorStateList(R.color.jetstream_scrim_medium)
     }
 }
 

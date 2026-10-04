@@ -77,36 +77,12 @@ class JetStreamPlaybackSheetLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : LinearLayoutCompat(context, attrs, defStyleAttr) {
     init {
-        background = GradientDrawable().apply {
-            cornerRadius = jetStreamDp(28)
-            setColor(JetStreamPalette.materialColorScheme().surfaceContainer.toArgb())
-        }
+        background = jetStreamDialogBackground(FloatArray(8) { jetStreamDp(28) })
         clipToOutline = true
         clipChildren = false
         clipToPadding = false
         elevation = 0f
     }
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        val palette = JetStreamPalette.current()
-        fun tintControls(view: View) {
-            when (view) {
-                is Slider -> {
-                    view.thumbTintList = android.content.res.ColorStateList.valueOf(palette.primary)
-                    view.trackActiveTintList = android.content.res.ColorStateList.valueOf(palette.primary)
-                    view.trackInactiveTintList = android.content.res.ColorStateList.valueOf(palette.secondaryContainer)
-                }
-                is MaterialSwitch -> {
-                    val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-                    view.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(palette.onPrimary, 0xFFB9BBC2.toInt()))
-                    view.trackTintList = android.content.res.ColorStateList(states, intArrayOf(palette.primary, 0xFF373940.toInt()))
-                }
-            }
-            if (view is ViewGroup) for (index in 0 until view.childCount) tintControls(view.getChildAt(index))
-        }
-        tintControls(this)
-    }
-
 }
 
 class JetStreamSheetSurfaceLayout @JvmOverloads constructor(

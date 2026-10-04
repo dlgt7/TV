@@ -211,7 +211,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         mRecordAdapter.add(keyword);
         Util.hideKeyboard(mBinding.keyword);
         // Keep the input and suggestion list intact so Back restores the chosen item.
-        CollectActivity.startFromSuggestions(this, keyword);
+        CollectActivity.start(this, keyword);
     }
 
     @Override
