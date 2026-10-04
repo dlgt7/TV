@@ -144,6 +144,71 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     }
 
     void setSubtitleStyle() {
+        runOnApplicationThread(() -> {
+            float size = PlayerSetting.getSubtitleTextSize();
+            command("set", "sub-scale", Float.toString(size == 0 ? 1 : Math.clamp(size / .0533f, .5f, 3f)));
+            command("set", "sub-pos", Float.toString(Math.clamp(100 - PlayerSetting.getSubtitlePosition() * 100, 0, 100)));
+            command("set", "secondary-sub-pos", "80");
+            command("set", "sub-ass-override", com.fongmi.android.tv.setting.AdvancedSubtitleSetting.ass() ? "scale" : "strip");
+            command("set", "secondary-sub-ass-override", com.fongmi.android.tv.setting.AdvancedSubtitleSetting.ass() ? "scale" : "strip");
+            command("set", "sub-fonts-dir", com.fongmi.android.tv.player.subtitle.SubtitleFonts.directory().getAbsolutePath());
+        });
+    }
+
+    private String secondaryTrack;
+    void setSecondaryTrack(String format) {
+        secondaryTrack = format;
+        runOnApplicationThread(this::applySecondaryTrack);
+    }
+    String getSecondaryTrack() { return secondaryTrack; }
+    private void applySecondaryTrack() {
+        String id = "no";
+        if (secondaryTrack != null) for (Tracks.Group group : tracks.getGroups()) {
+            if (group.getType() != C.TRACK_TYPE_TEXT) continue;
+            for (int i = 0; i < group.length; i++) if (secondaryTrack.equals(com.fongmi.android.tv.player.util.PlayerHelper.describeFormat(group.getTrackFormat(i)))) {
+                Integer nativeId = trackIdsByGroupId.get(group.getMediaTrackGroup().id);
+                if (nativeId != null && nativeId != propInt("sid", -1)) id = nativeId.toString();
+            }
+        }
+        if (!id.equals(propString("secondary-sid", "no"))) command("set", "secondary-sid", id);
+    }
+
+    private boolean audioEffectsAdded;
+    private String spdifBeforeEffects;
+    private String effectsAudioLayout = "";
+
+    void applyAudioEffects() {
+        runOnApplicationThread(() -> {
+            if (audioEffectsAdded) command("af", "remove", "@tv-core-audio");
+            audioEffectsAdded = false;
+            if (!com.fongmi.android.tv.setting.AudioEffectSetting.enabled()) {
+                if (spdifBeforeEffects != null) command("set", "audio-spdif", spdifBeforeEffects);
+                spdifBeforeEffects = null;
+                return;
+            }
+            if (spdifBeforeEffects == null) spdifBeforeEffects = propString("audio-spdif", "");
+            command("set", "audio-spdif", "");
+            float[] bands = com.fongmi.android.tv.setting.AudioEffectSetting.bands();
+            StringBuilder filters = new StringBuilder();
+            int channels = propInt("audio-params/channel-count", 2);
+            float center = com.fongmi.android.tv.setting.AudioEffectSetting.centerDb();
+            String layout = propString("audio-params/channels", "");
+            effectsAudioLayout = layout;
+            boolean hasCenter = java.util.Set.of("3.0", "4.0", "5.0", "5.0(side)", "5.1", "5.1(side)", "6.1", "7.1", "7.1(wide)").contains(layout);
+            if (hasCenter && channels >= 3 && channels <= 8 && center != 0) {
+                filters.append("pan=").append(layout);
+                for (int i = 0; i < channels; i++) filters.append("|c").append(i).append('=')
+                        .append(i == 2 ? Double.toString(Math.pow(10, center / 20)) + "*" : "").append('c').append(i);
+                filters.append(',');
+            }
+            for (int i = 0; i < bands.length; i++) {
+                filters.append("equalizer=f=").append(com.fongmi.android.tv.player.audio.AudioDsp.FREQUENCIES[i])
+                        .append(":t=q:w=1:g=").append(bands[i]).append(',');
+            }
+            if (com.fongmi.android.tv.setting.AudioEffectSetting.normalize()) filters.append("dynaudnorm=f=150:g=15:p=0.95:m=4,");
+            filters.append("alimiter=limit=0.97:level=false");
+            audioEffectsAdded = command("af", "add", "@tv-core-audio:lavfi=[" + filters + "]");
+        });
     }
 
     /** Applies soft/hard decode in the current native context and reopens the media. */
@@ -717,7 +782,13 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 readRuntimeState();
                 if (applyDolbyPolicy()) return;
                 addInitialSubtitles();
+                setSubtitleStyle();
+                applyAudioEffects();
                 invalidateState();
+            }
+            case MpvEvent.MPV_EVENT_AUDIO_RECONFIG -> {
+                if (com.fongmi.android.tv.setting.AudioEffectSetting.enabled()
+                        && !effectsAudioLayout.equals(propString("audio-params/channels", ""))) applyAudioEffects();
             }
             case MpvEvent.MPV_EVENT_VIDEO_RECONFIG -> {
                 MpvLogCollector.log("MpvPlayer", "视频重新配置");
@@ -891,13 +962,14 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 if (type == C.TRACK_TYPE_UNKNOWN || id == C.INDEX_UNSET) continue;
                 String groupId = trackGroupId(type, id);
                 TrackGroup group = new TrackGroup(groupId, buildTrackFormat(prefix, type, id));
-                boolean selected = propBoolean(prefix + "selected");
+                boolean selected = type == C.TRACK_TYPE_TEXT ? id == propInt("sid", -1) : propBoolean(prefix + "selected");
                 groups.add(new Tracks.Group(group, false, new int[]{C.FORMAT_HANDLED}, new boolean[]{selected}));
                 idsByGroupId.put(groupId, id);
             }
             tracks = groups.isEmpty() ? Tracks.EMPTY : new Tracks(groups);
             trackIdsByGroupId.clear();
             trackIdsByGroupId.putAll(idsByGroupId);
+            applySecondaryTrack();
         } catch (Throwable e) {
             MpvLogCollector.logError("MpvPlayer", "读取 track-list 失败: " + e.getMessage());
             tracks = Tracks.EMPTY;

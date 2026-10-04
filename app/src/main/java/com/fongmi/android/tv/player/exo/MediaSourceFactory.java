@@ -42,8 +42,14 @@ public class MediaSourceFactory implements MediaSource.Factory {
     private HttpDataSource.Factory httpDataSourceFactory;
     private DataSource.Factory dataSourceFactory;
     private ExtractorsFactory extractorsFactory;
+    private final com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController subtitles;
 
     public MediaSourceFactory() {
+        this(null);
+    }
+
+    public MediaSourceFactory(com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController subtitles) {
+        this.subtitles = subtitles;
         defaultMediaSourceFactory = new DefaultMediaSourceFactory(getDataSourceFactory(), getExtractorsFactory());
     }
 
@@ -92,12 +98,36 @@ public class MediaSourceFactory implements MediaSource.Factory {
     @NonNull
     @Override
     public MediaSource createMediaSource(@NonNull MediaItem mediaItem) {
-        getHttpDataSourceFactory().setDefaultRequestProperties(ExoUtil.extractHeaders(mediaItem));
-        return defaultMediaSourceFactory.createMediaSource(mediaItem);
+        // Every item owns an immutable header snapshot. Preparing the next item must not
+        // change the cookies/authorization used by current playback or its retries.
+        DataSource.Factory upstream = createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem), OkHttp.player());
+        DefaultMediaSourceFactory factory = new DefaultMediaSourceFactory(getCacheDataSource(upstream), subtitles == null ? getExtractorsFactory() : subtitles.extractors(getExtractorsFactory(), mediaItem));
+        if (subtitles != null) factory.setSubtitleParserFactory(subtitles.parserFactory());
+        if (subtitles == null || !subtitles.usesNativeAss()) return factory.createMediaSource(mediaItem);
+        java.util.List<MediaItem.SubtitleConfiguration> normal = new java.util.ArrayList<>();
+        java.util.List<MediaSource> sources = new java.util.ArrayList<>();
+        for (MediaItem.SubtitleConfiguration sub : mediaItem.localConfiguration.subtitleConfigurations) {
+            if (!androidx.media3.common.MimeTypes.TEXT_SSA.equals(sub.mimeType)) { normal.add(sub); continue; }
+            androidx.media3.common.Format format = new androidx.media3.common.Format.Builder()
+                    .setId(sub.id).setSampleMimeType(sub.mimeType).setLanguage(sub.language)
+                    .setLabel(sub.label).setSelectionFlags(sub.selectionFlags).setRoleFlags(sub.roleFlags).build();
+            sources.add(new androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(upstream,
+                    () -> new androidx.media3.extractor.Extractor[]{new com.fongmi.android.tv.player.subtitle.ExternalAssExtractor(format)})
+                    .createMediaSource(MediaItem.fromUri(sub.uri)));
+        }
+        if (sources.isEmpty()) return factory.createMediaSource(mediaItem);
+        sources.add(0, factory.createMediaSource(mediaItem.buildUpon().setSubtitleConfigurations(normal).build()));
+        return new androidx.media3.exoplayer.source.MergingMediaSource(sources.toArray(new MediaSource[0]));
     }
 
     private ExtractorsFactory getExtractorsFactory() {
-        if (extractorsFactory == null) extractorsFactory = new DefaultExtractorsFactory().setTsExtractorTimestampSearchBytes(TsExtractor.DEFAULT_TIMESTAMP_SEARCH_BYTES * 10);
+        if (extractorsFactory == null) {
+            DefaultExtractorsFactory factory = new DefaultExtractorsFactory().setTsExtractorTimestampSearchBytes(TsExtractor.DEFAULT_TIMESTAMP_SEARCH_BYTES * 10);
+            if (subtitles != null) {
+                factory.setSubtitleParserFactory(subtitles.parserFactory());
+                extractorsFactory = factory;
+            } else extractorsFactory = factory;
+        }
         return extractorsFactory;
     }
 

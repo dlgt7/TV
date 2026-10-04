@@ -431,11 +431,13 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private void attachSurface(String reason) {
         MpvLogCollector.log("PlaybackActivity", "attachSurface: reason=" + reason + ", hasService=" + (mService != null) + ", viewHasPlayer=" + (getPlayerView().getPlayer() != null));
         if (mService != null && getPlayerView().getPlayer() == null) getPlayerView().setPlayer(player().getPlayer());
+        if (mService != null) player().bindPlayerView(getPlayerView());
         applyDanmaku();
     }
 
     private void detachSurface(String reason) {
         MpvLogCollector.log("PlaybackActivity", "detachSurface: reason=" + reason + ", viewHasPlayer=" + (getPlayerView().getPlayer() != null));
+        if (mService != null) player().bindPlayerView(null);
         getPlayerView().setPlayer(null);
     }
 

@@ -1,0 +1,52 @@
+plugins {
+    alias libs.plugins.android.library
+}
+
+android {
+    namespace = 'com.fongmi.subtitle.ass'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+    defaultConfig {
+        minSdk libs.versions.minSdk.get().toInteger()
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+configurations { assArchive }
+dependencies {
+    assArchive('io.github.peerless2012:ass-kt:0.5.1@aar') { transitive = false }
+    api "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}"
+}
+
+def generated = layout.buildDirectory.dir('generated/libass')
+def prepareAss = tasks.register('prepareAss') {
+    inputs.files(configurations.assArchive)
+    outputs.dir(generated)
+    doLast {
+        def archive = configurations.assArchive.singleFile
+        def digest = java.security.MessageDigest.getInstance('SHA-256').digest(archive.bytes).encodeHex().toString()
+        if (digest != '1051212faf98ef956e06992b002d43cfdc81b6c60dcd32662e8d3ff52d584d65') {
+            throw new GradleException('Unexpected libass archive checksum')
+        }
+        delete(generated)
+        copy {
+            from zipTree(archive)
+            into generated
+            // MPV already supplies the newer C++ runtime. Keep exactly that copy in the APK.
+            exclude 'jni/**/libc++_shared.so', 'AndroidManifest.xml'
+        }
+        generated.get().file('AndroidManifest.xml').asFile.text = '<manifest xmlns:android="http://schemas.android.com/apk/res/android" />\n'
+    }
+}
+
+android.sourceSets.main {
+    manifest.srcFile generated.map { it.file('AndroidManifest.xml') }
+    jniLibs.srcDir generated.map { it.dir('jni') }
+}
+tasks.named('preBuild').configure { dependsOn prepareAss }
+def classes = files(generated.map { it.file('classes.jar') })
+classes.builtBy(prepareAss)
+dependencies { api classes }

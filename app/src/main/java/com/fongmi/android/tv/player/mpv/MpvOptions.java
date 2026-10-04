@@ -57,6 +57,7 @@ final class MpvOptions {
 
         set("config", "yes");
         set("config-dir", configDir.getAbsolutePath());
+        set("sub-fonts-dir", com.fongmi.android.tv.player.subtitle.SubtitleFonts.directory().getAbsolutePath());
         set("msg-level", "all=warn");
         set("gpu-shader-cache-dir", cacheDir.getAbsolutePath());
         set("icc-cache-dir", cacheDir.getAbsolutePath());

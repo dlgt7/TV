@@ -23,6 +23,7 @@ dependencyResolutionManagement {
 include ':app'
 include ':mpv'
 include ':media3-av3a'
+include ':subtitle-ass'
 include ':catvod'
 include ':chaquo'
 include ':quickjs'

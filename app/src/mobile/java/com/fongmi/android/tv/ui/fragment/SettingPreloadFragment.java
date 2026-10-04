@@ -36,12 +36,14 @@ public class SettingPreloadFragment extends BaseFragment {
 
     @Override
     protected void initEvent() {
+        mBinding.preloadNext.setOnCheckedChangeListener((button, checked) -> PreloadSetting.putNextEpisode(checked));
         mBinding.preload.setOnClickListener(this::setPreload);
         mBinding.preloadSize.setOnClickListener(view -> PreloadDialog.show(this, PreloadDialog.SIZE));
         mBinding.preloadTime.setOnClickListener(view -> PreloadDialog.show(this, PreloadDialog.TIME));
     }
 
     private void refresh() {
+        mBinding.preloadNext.setChecked(PreloadSetting.isNextEpisode());
         mBinding.preloadText.setText(Setting.getSwitch(PreloadSetting.isPreload()));
         setPreloadSizeText();
         setPreloadTimeText();

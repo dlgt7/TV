@@ -44,6 +44,7 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
     private PlayerManager player;
     private boolean selectionHandled;
     private int type;
+    private boolean secondary;
 
     public static TrackDialog create() {
         return new TrackDialog();
@@ -64,13 +65,15 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
         return this;
     }
 
+    public TrackDialog secondary(boolean secondary) { this.secondary = secondary; return this; }
+
     public void show(FragmentActivity activity) {
         for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof TrackDialog) return;
         show(activity.getSupportFragmentManager(), null);
     }
 
     private boolean hasChoose() {
-        return type == C.TRACK_TYPE_TEXT && player.isVod();
+        return !secondary && type == C.TRACK_TYPE_TEXT && player.isVod();
     }
 
     private boolean hasText() {
@@ -93,16 +96,24 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
         binding.recycler.setAdapter(adapter.addAll(getTrack()));
         binding.recycler.addItemDecoration(new SpaceItemDecoration(1, 16));
         binding.title.setText(ResUtil.getStringArray(R.array.select_track)[type - 1]);
+        if (secondary) binding.title.setText(R.string.subtitle_secondary);
         focusRecycler(adapter.getSelected());
         binding.recycler.setVisibility(adapter.getItemCount() == 0 ? View.GONE : View.VISIBLE);
         binding.offset.setVisibility(hasText() || hasAudio() ? View.VISIBLE : View.GONE);
         binding.choose.setVisibility(hasChoose() ? View.VISIBLE : View.GONE);
         binding.subtitle.setVisibility(hasText() ? View.VISIBLE : View.GONE);
+        binding.effects.setVisibility(!secondary && (type == C.TRACK_TYPE_AUDIO || type == C.TRACK_TYPE_TEXT) ? View.VISIBLE : View.GONE);
+        binding.effects.setText(type == C.TRACK_TYPE_AUDIO ? R.string.audio_effect_title : R.string.subtitle_advanced);
         focusInitialView();
     }
 
     @Override
     protected void initEvent() {
+        binding.effects.setOnClickListener(view -> {
+            if (type == C.TRACK_TYPE_AUDIO) AudioEffectDialog.show(requireActivity(), player);
+            else AdvancedSubtitleDialog.show(requireActivity(), player);
+            dismiss();
+        });
         binding.offset.setOnClickListener(this::onOffset);
         binding.choose.setOnClickListener(this::onChoose);
         binding.subtitle.setOnClickListener(this::onSubtitle);
@@ -133,6 +144,7 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
         View target = binding.choose;
         if (target.getVisibility() != View.VISIBLE) target = binding.offset;
         if (target.getVisibility() != View.VISIBLE) target = binding.subtitle;
+        if (target.getVisibility() != View.VISIBLE) target = binding.effects;
         if (target.getVisibility() != View.VISIBLE) return;
         View focusTarget = target;
         focusTarget.post(() -> {
@@ -147,7 +159,8 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
     }
 
     private boolean hasVisibleAction() {
-        return binding.choose.getVisibility() == View.VISIBLE
+        return binding.effects.getVisibility() == View.VISIBLE
+                || binding.choose.getVisibility() == View.VISIBLE
                 || binding.offset.getVisibility() == View.VISIBLE
                 || binding.subtitle.getVisibility() == View.VISIBLE;
     }
@@ -168,6 +181,7 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
                 String name = provider.getTrackName(format);
                 Track item = new Track(type, name, PlayerHelper.describeFormat(format));
                 item.setSelected(trackGroup.isTrackSelected(j));
+                if (secondary) item.setSelected(item.getFormat().equals(player.getSecondaryTrack()));
                 items.add(item);
             }
         }
@@ -175,6 +189,11 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
 
     @Override
     public void onItemClick(Track item) {
+        if (secondary) {
+            player.setSecondaryTrack(item.toggle());
+            dismiss();
+            return;
+        }
         // Selecting an already active audio or video track must be idempotent. Toggling it off
         // creates an empty TrackSelectionOverride, tears down the decoder/renderer and can race
         // with a second remote click while the bottom sheet is closing. Text tracks intentionally
