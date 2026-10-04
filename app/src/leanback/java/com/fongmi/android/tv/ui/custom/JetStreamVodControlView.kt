@@ -71,6 +71,8 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,19 +80,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.C
 import androidx.media3.common.Player
+import androidx.tv.material3.IconButton
+import androidx.tv.material3.IconButtonDefaults
+import androidx.tv.material3.darkColorScheme
 import com.fongmi.android.tv.R
 import com.fongmi.android.tv.ui.components.JetStreamControlScrim
 import com.fongmi.android.tv.ui.components.JetStreamInfoScrim
 import com.fongmi.android.tv.ui.components.MaterialSettingsButton
 import com.fongmi.android.tv.ui.components.MaterialSettingsButtonStyle
 import com.fongmi.android.tv.ui.components.TvActionButton
-import com.fongmi.android.tv.ui.components.TvFocusStyle
 import com.fongmi.android.tv.ui.components.TvFocusableSurface
 import com.fongmi.android.tv.ui.theme.JetStreamAnimations
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
 import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import androidx.tv.material3.Icon as TvIcon
+import androidx.tv.material3.MaterialTheme as TvMaterialTheme
 
 class JetStreamVodControlView @JvmOverloads constructor(
     context: Context,
@@ -782,25 +788,48 @@ class JetStreamVodControlView @JvmOverloads constructor(
     ) {
         val interactionSource = remember { MutableInteractionSource() }
         val focused by interactionSource.collectIsFocusedAsState()
-        TvActionButton(
-            onClick = { listener?.onShowControls(); onClick() },
-            enabled = enabled,
-            selected = selected,
-            interactionSource = interactionSource,
-            shape = if (showLabel) TvFocusStyle.Shape else CircleShape,
-            modifier = Modifier
-                .then(if (showLabel) Modifier.height(40.dp) else Modifier.size(44.dp))
-                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
-            contentPadding = PaddingValues(horizontal = if (showLabel) 12.dp else 0.dp, vertical = 6.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = if (showLabel) null else contentDescription,
-                modifier = Modifier.size(if (showLabel) 18.dp else 24.dp)
-            )
-            if (showLabel) {
+        val focusModifier = focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier
+        if (showLabel) {
+            TvActionButton(
+                onClick = { listener?.onShowControls(); onClick() },
+                enabled = enabled,
+                selected = selected,
+                interactionSource = interactionSource,
+                modifier = focusModifier.height(40.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(contentDescription, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        } else {
+            val colors = MaterialTheme.colorScheme
+            TvMaterialTheme(
+                colorScheme = darkColorScheme(
+                    onSurface = colors.onSurface,
+                    surfaceVariant = if (selected) colors.secondaryContainer else colors.surfaceVariant,
+                    inverseOnSurface = colors.inverseOnSurface
+                )
+            ) {
+                // IconButton centers its icon in the complete circular surface. A text
+                // Button's minimum row size and padding offset it inside a fixed square.
+                IconButton(
+                    onClick = { listener?.onShowControls(); onClick() },
+                    modifier = focusModifier.size(44.dp).semantics { this.selected = selected },
+                    enabled = enabled,
+                    scale = IconButtonDefaults.scale(focusedScale = 1f),
+                    interactionSource = interactionSource
+                ) {
+                    TvIcon(
+                        painter = painterResource(id = icon),
+                        contentDescription = contentDescription,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
         LaunchedEffect(focused, isPlaying) {
