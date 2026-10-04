@@ -1,0 +1,196 @@
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+com.fongmi.android.tv.test.PlayerCoreTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=fullBluraySupDisplaysAndClearsAcrossDistantSeeks
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=fullBluraySupDisplaysAndClearsAcrossDistantSeeks
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=broadcastDvbBitmapRendersAndSurvivesSeek
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+Error in broadcastDvbBitmapRendersAndSurvivesSeek(com.fongmi.android.tv.test.PlayerCoreTest):
+java.lang.AssertionError: Timeout: DVB bitmap after seek
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PlayerCoreTest.await(PlayerCoreTest.java:296)
+	at com.fongmi.android.tv.test.PlayerCoreTest.broadcastDvbBitmapRendersAndSurvivesSeek(PlayerCoreTest.java:196)
+
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=broadcastDvbBitmapRendersAndSurvivesSeek
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Timeout: DVB bitmap after seek
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PlayerCoreTest.await(PlayerCoreTest.java:296)
+	at com.fongmi.android.tv.test.PlayerCoreTest.broadcastDvbBitmapRendersAndSurvivesSeek(PlayerCoreTest.java:196)
+
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=twoSrtTracksPlayWithDspAndRemainPausedAfterRebuild
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=twoSrtTracksPlayWithDspAndRemainPausedAfterRebuild
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=dvdVobsubBitmapSeeksAndClears
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=dvdVobsubBitmapSeeksAndClears
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=embeddedPgsAndAssCanExchangePrimaryAndSecondary
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=embeddedPgsAndAssCanExchangePrimaryAndSecondary
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=sidecarAssRendersAndRetainsItsAnimation
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=sidecarAssRendersAndRetainsItsAnimation
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=complexAssKaraokeClippingVectorsAndOverlapSurviveSeek
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=complexAssKaraokeClippingVectorsAndOverlapSurviveSeek
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=styledTtmlRegionsOverlapAndClear
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=styledTtmlRegionsOverlapAndClear
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=styledWebvttRegionsOverlapAndClear
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=9
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=styledWebvttRegionsOverlapAndClear
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=9
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=sidecarSupBitmapClearsAndReturnsAfterBackwardSeek
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=10
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=sidecarSupBitmapClearsAndReturnsAfterBackwardSeek
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=10
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=embeddedAssAndIndependentSecondarySurviveSeekAndPausedRebind
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=11
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=embeddedAssAndIndependentSecondarySurviveSeekAndPausedRebind
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PlayerCoreTest
+INSTRUMENTATION_STATUS: current=11
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=
+com.fongmi.android.tv.player.exo.NextMediaPreloadTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=reusesPreparedSourceWithIsolatedHeadersAndCancelsOnDisable
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.player.exo.NextMediaPreloadTest
+INSTRUMENTATION_STATUS: current=12
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=12
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=reusesPreparedSourceWithIsolatedHeadersAndCancelsOnDisable
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.player.exo.NextMediaPreloadTest
+INSTRUMENTATION_STATUS: current=12
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 121.444
+There was 1 failure:
+1) broadcastDvbBitmapRendersAndSurvivesSeek(com.fongmi.android.tv.test.PlayerCoreTest)
+java.lang.AssertionError: Timeout: DVB bitmap after seek
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PlayerCoreTest.await(PlayerCoreTest.java:296)
+	at com.fongmi.android.tv.test.PlayerCoreTest.broadcastDvbBitmapRendersAndSurvivesSeek(PlayerCoreTest.java:196)
+
+FAILURES!!!
+Tests run: 12,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

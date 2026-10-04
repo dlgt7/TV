@@ -35,4 +35,15 @@ public class AssPacketTest {
         assertTrue(header.contains("PlayResX: 640"));
         assertTrue(header.endsWith("Format: Start, End, ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"));
     }
+    @Test public void durationUsesLastEndRatherThanLastStartOrLineOrder() {
+        String text = "[Events]\nFormat: End, Start, Text\nDialogue: 0:01:10.00,0:00:00.00,Long overlap\nDialogue: 0:00:20.00,0:00:05.00,Short animation";
+        assertEquals(70_000_000, AssPacket.durationUs(text.getBytes(StandardCharsets.UTF_8)));
+    }
+    @Test public void readsUtf16DurationWithBom() {
+        String text = "\uFEFF[Events]\nFormat: Start, End, Text\nDialogue: 0:00:01.00,0:00:03.50,字幕";
+        assertEquals(3_500_000, AssPacket.durationUs(text.getBytes(StandardCharsets.UTF_16LE)));
+    }
+    @Test public void missingDialogueDoesNotInventDuration() {
+        assertEquals(androidx.media3.common.C.TIME_UNSET, AssPacket.durationUs("[Events]\nDialogue: bad".getBytes(StandardCharsets.UTF_8)));
+    }
 }

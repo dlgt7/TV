@@ -8,7 +8,7 @@ import androidx.media3.extractor.Extractor;
 import androidx.media3.extractor.ExtractorInput;
 import androidx.media3.extractor.ExtractorOutput;
 import androidx.media3.extractor.PositionHolder;
-import androidx.media3.extractor.SeekMap;
+import androidx.media3.extractor.IndexSeekMap;
 import androidx.media3.extractor.TrackOutput;
 
 import java.io.ByteArrayOutputStream;
@@ -21,14 +21,18 @@ public final class ExternalAssExtractor implements Extractor {
     private final ByteArrayOutputStream data = new ByteArrayOutputStream();
     private final byte[] chunk = new byte[8192];
     private TrackOutput output;
+    private ExtractorOutput extractorOutput;
     private boolean emitted;
 
     public ExternalAssExtractor(Format format) { this.format = format; }
     @Override public boolean sniff(ExtractorInput input) { return true; }
     @Override public void init(ExtractorOutput output) {
+        extractorOutput = output;
         this.output = output.track(0, C.TRACK_TYPE_TEXT);
         this.output.format(format);
-        output.seekMap(new SeekMap.Unseekable(C.TIME_UNSET));
+        // Reread the complete script from byte zero while retaining the requested media time.
+        // An Unseekable map clamps this child period to zero and breaks MergingMediaPeriod.
+        output.seekMap(new IndexSeekMap(new long[]{0}, new long[]{0}, C.TIME_UNSET));
         output.endTracks();
     }
     @Override public int read(ExtractorInput input, PositionHolder position) throws IOException {
@@ -40,6 +44,7 @@ public final class ExternalAssExtractor implements Extractor {
             return RESULT_CONTINUE;
         }
         byte[] file = data.toByteArray();
+        extractorOutput.seekMap(new IndexSeekMap(new long[]{0}, new long[]{0}, AssPacket.durationUs(file)));
         output.sampleData(new ParsableByteArray(file), file.length);
         output.sampleMetadata(0, C.BUFFER_FLAG_KEY_FRAME, file.length, 0, null);
         data.reset();

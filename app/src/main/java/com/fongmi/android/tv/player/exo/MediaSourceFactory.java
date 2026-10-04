@@ -103,16 +103,25 @@ public class MediaSourceFactory implements MediaSource.Factory {
         DataSource.Factory upstream = createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem), OkHttp.player());
         DefaultMediaSourceFactory factory = new DefaultMediaSourceFactory(getCacheDataSource(upstream), subtitles == null ? getExtractorsFactory() : subtitles.extractors(getExtractorsFactory(), mediaItem));
         if (subtitles != null) factory.setSubtitleParserFactory(subtitles.parserFactory());
-        if (subtitles == null || !subtitles.usesNativeAss()) return factory.createMediaSource(mediaItem);
+        if (subtitles == null) return factory.createMediaSource(mediaItem);
         java.util.List<MediaItem.SubtitleConfiguration> normal = new java.util.ArrayList<>();
         java.util.List<MediaSource> sources = new java.util.ArrayList<>();
         for (MediaItem.SubtitleConfiguration sub : mediaItem.localConfiguration.subtitleConfigurations) {
-            if (!androidx.media3.common.MimeTypes.TEXT_SSA.equals(sub.mimeType)) { normal.add(sub); continue; }
             androidx.media3.common.Format format = new androidx.media3.common.Format.Builder()
                     .setId(sub.id).setSampleMimeType(sub.mimeType).setLanguage(sub.language)
                     .setLabel(sub.label).setSelectionFlags(sub.selectionFlags).setRoleFlags(sub.roleFlags).build();
+            boolean sup = androidx.media3.common.MimeTypes.APPLICATION_PGS.equals(sub.mimeType);
+            boolean nativeAss = subtitles.usesNativeAss() && androidx.media3.common.MimeTypes.TEXT_SSA.equals(sub.mimeType);
+            androidx.media3.extractor.text.SubtitleParser.Factory parsers = subtitles.parserFactory();
+            if (!nativeAss && !parsers.supportsFormat(format)) { normal.add(sub); continue; }
+            // Keep the extractor's own SeekMap. The default lazy sidecar path passes a null
+            // format, so it cannot publish the final cue END time. Its estimated duration
+            // then ends at the last cue START and seeking into that last cue produces EOS.
             sources.add(new androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(upstream,
-                    () -> new androidx.media3.extractor.Extractor[]{new com.fongmi.android.tv.player.subtitle.ExternalAssExtractor(format)})
+                    () -> new androidx.media3.extractor.Extractor[]{nativeAss
+                            ? new com.fongmi.android.tv.player.subtitle.ExternalAssExtractor(format)
+                            : sup ? new com.fongmi.android.tv.player.subtitle.SupExtractor(format)
+                            : new androidx.media3.extractor.text.SubtitleExtractor(parsers.create(format), format)})
                     .createMediaSource(MediaItem.fromUri(sub.uri)));
         }
         if (sources.isEmpty()) return factory.createMediaSource(mediaItem);

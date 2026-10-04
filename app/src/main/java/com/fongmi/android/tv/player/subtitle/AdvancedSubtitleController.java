@@ -32,8 +32,8 @@ public final class AdvancedSubtitleController {
     private record FrameUpdate(AssFrame frame, int width, int height, int generation) {}
     private final boolean nativeAss = AdvancedSubtitleSetting.ass() && AssTextRenderer.available();
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final java.util.Map<android.net.Uri, SubtitleFonts> fontSets = new java.util.LinkedHashMap<>();
-    private volatile SubtitleFonts activeFonts = new SubtitleFonts();
+    private final java.util.Map<android.net.Uri, SubtitleSource> fontSets = new java.util.LinkedHashMap<>();
+    private volatile SubtitleSource activeFonts = new SubtitleSource();
     private android.net.Uri activeUri;
     private AssFrame primaryFrame, secondaryFrame;
     private int primaryWidth = 1, primaryHeight = 1, secondaryWidth = 1, secondaryHeight = 1;
@@ -43,9 +43,9 @@ public final class AdvancedSubtitleController {
         activeFonts = fontsFor(item);
     }
 
-    private synchronized SubtitleFonts fontsFor(androidx.media3.common.MediaItem item) {
+    private synchronized SubtitleSource fontsFor(androidx.media3.common.MediaItem item) {
         android.net.Uri uri = item.localConfiguration.uri;
-        SubtitleFonts fonts = fontSets.computeIfAbsent(uri, ignored -> new SubtitleFonts());
+        SubtitleSource fonts = fontSets.computeIfAbsent(uri, ignored -> new SubtitleSource());
         // Current media plus one candidate; extracted fonts stay owned by their source.
         while (fontSets.size() > 2) {
             android.net.Uri discard = fontSets.keySet().stream().filter(key -> !key.equals(activeUri) && !key.equals(uri)).findFirst().orElse(null);
@@ -93,11 +93,11 @@ public final class AdvancedSubtitleController {
     }
 
     public ExtractorsFactory extractors(ExtractorsFactory original, androidx.media3.common.MediaItem item) {
-        SubtitleFonts fonts = fontsFor(item);
+        SubtitleSource fonts = fontsFor(item);
         return () -> {
             androidx.media3.extractor.Extractor[] all = original.createExtractors();
             if (nativeAss) for (int i = 0; i < all.length; i++) {
-                if (all[i] instanceof MatroskaExtractor) all[i] = new FontMatroskaExtractor(parserFactory(), fonts);
+                if (all[i] instanceof MatroskaExtractor) all[i] = new AssTrackingExtractor(new FontMatroskaExtractor(parserFactory(), fonts.fonts), fonts.history);
             }
             return all;
         };
@@ -197,7 +197,7 @@ public final class AdvancedSubtitleController {
         released = true;
         bind(null);
         fontSets.clear();
-        activeFonts = new SubtitleFonts();
+        activeFonts = new SubtitleSource();
         primaryFrame = secondaryFrame = null;
         selectors.clear();
         renderers.clear();

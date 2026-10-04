@@ -9,6 +9,30 @@ public final class AssPacket {
     private static final String DEFAULT_FORMAT = "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text";
     private AssPacket() {}
 
+    public static String decode(byte[] data) {
+        if (data.length >= 2 && data[0] == (byte) 0xFF && data[1] == (byte) 0xFE) return new String(data, StandardCharsets.UTF_16LE);
+        if (data.length >= 2 && data[0] == (byte) 0xFE && data[1] == (byte) 0xFF) return new String(data, StandardCharsets.UTF_16BE);
+        return new String(data, StandardCharsets.UTF_8);
+    }
+
+    /** Last dialogue end, including overlapping events and custom event field order. */
+    public static long durationUs(byte[] data) {
+        String[] fields = DEFAULT_FORMAT.substring(7).split(",");
+        long endMs = -1;
+        boolean events = false;
+        for (String line : decode(data).split("\\r?\\n")) {
+            line = line.replace("\uFEFF", "").trim();
+            if (line.startsWith("[")) events = line.equalsIgnoreCase("[Events]");
+            if (!events) continue;
+            if (line.regionMatches(true, 0, "Format:", 0, 7)) fields = line.substring(7).split(",");
+            if (!line.regionMatches(true, 0, "Dialogue:", 0, 9)) continue;
+            String[] values = line.substring(9).trim().split(",", fields.length);
+            if (values.length != fields.length) continue;
+            for (int i = 0; i < fields.length; i++) if (fields[i].trim().equalsIgnoreCase("End")) endMs = Math.max(endMs, parseTime(values[i]));
+        }
+        return endMs < 0 ? androidx.media3.common.C.TIME_UNSET : endMs * 1000;
+    }
+
     public static String header(List<byte[]> initialization) {
         if (initialization.size() < 2) return "";
         String header = new String(initialization.get(1), StandardCharsets.UTF_8);

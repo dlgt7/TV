@@ -34,8 +34,11 @@ public final class AssTextRenderer extends BaseRenderer {
         void frame(AssFrame frame, int width, int height, int generation);
         void clear(int generation);
     }
-    private final java.util.function.Supplier<SubtitleFonts> fontSource;
+    private final java.util.function.Supplier<SubtitleSource> fontSource;
     private SubtitleFonts fonts;
+    private volatile SubtitleSource source;
+    private long streamOffsetUs;
+    private long historyPackets;
     private final Output output;
     private final FormatHolder holder = new FormatHolder();
     private final DecoderInputBuffer buffer = new DecoderInputBuffer(DecoderInputBuffer.BUFFER_REPLACEMENT_MODE_NORMAL);
@@ -59,7 +62,7 @@ public final class AssTextRenderer extends BaseRenderer {
     private final AtomicBoolean refresh = new AtomicBoolean(true);
     private boolean ended;
 
-    public AssTextRenderer(java.util.function.Supplier<SubtitleFonts> fonts, Output output) {
+    public AssTextRenderer(java.util.function.Supplier<SubtitleSource> fonts, Output output) {
         super(C.TRACK_TYPE_TEXT);
         this.fontSource = fonts;
         this.output = output;
@@ -98,13 +101,16 @@ public final class AssTextRenderer extends BaseRenderer {
     @Override protected void onStreamChanged(Format[] formats, long start, long offset, MediaSource.MediaPeriodId period) {
         format = formats[0];
         Format current = format;
-        SubtitleFonts streamFonts = fontSource.get();
+        SubtitleSource streamSource = fontSource.get();
+        source = streamSource;
+        streamOffsetUs = offset;
         generation++;
-        worker().post(() -> { fonts = streamFonts; initialize(current); });
+        worker().post(() -> { fonts = streamSource.fonts; initialize(current); });
     }
 
     private void initialize(Format format) {
         closeNative();
+        historyPackets = 0;
         try {
             ass = new Ass();
             fonts.apply(ass);
@@ -124,7 +130,7 @@ public final class AssTextRenderer extends BaseRenderer {
         generation++;
         lastRenderUs = C.TIME_UNSET;
         output.clear(generation);
-        worker().post(() -> { if (track != null) track.clearEvent(); eventBytes = 0; });
+        worker().post(() -> { if (track != null) track.clearEvent(); eventBytes = 0; historyPackets = 0; });
         refresh();
     }
 
@@ -137,6 +143,7 @@ public final class AssTextRenderer extends BaseRenderer {
             if (read != C.RESULT_BUFFER_READ) break;
             if (buffer.isEndOfStream()) { ended = true; break; }
             if (buffer.data == null) continue;
+            if (source != null && format != null && source.history.contains(format.id)) { refresh(); continue; }
             buffer.flip();
             if (buffer.data.remaining() > 16 * 1024 * 1024) continue;
             byte[] data = new byte[buffer.data.remaining()];
@@ -153,7 +160,7 @@ public final class AssTextRenderer extends BaseRenderer {
                 try {
                     if (track == null || packetGeneration != generation) return;
                     if (eventBytes + data.length > 32 * 1024 * 1024) { track.clearEvent(); eventBytes = 0; }
-                    String text = decode(data);
+                    String text = AssPacket.decode(data);
                     byte[] shifted = AssPacket.shift(text, initialization, sampleTime).getBytes(StandardCharsets.UTF_8);
                     track.readBuffer(shifted, 0, shifted.length);
                     eventBytes += data.length;
@@ -170,6 +177,24 @@ public final class AssTextRenderer extends BaseRenderer {
             try {
                 if (render == null || ticket != generation) return;
                 refresh.set(false);
+                if (source != null && format != null && source.history.contains(format.id)) {
+                    List<AssHistory.Packet> pending = source.history.since(format.id, historyPackets);
+                    long pendingBytes = 0;
+                    for (AssHistory.Packet packet : pending) pendingBytes += packet.text().length() * 3L + 128;
+                    if (eventBytes + pendingBytes > 32 * 1024 * 1024) {
+                        track.clearEvent();
+                        eventBytes = 0;
+                        historyPackets = 0;
+                        pending = source.history.since(format.id, 0);
+                    }
+                    for (AssHistory.Packet packet : pending) {
+                        byte[] shifted = AssPacket.shift(packet.text(), format.initializationData,
+                                packet.timeUs() + streamOffsetUs).getBytes(StandardCharsets.UTF_8);
+                        track.readBuffer(shifted, 0, shifted.length);
+                        eventBytes += shifted.length;
+                        historyPackets = packet.sequence() + 1;
+                    }
+                }
                 if (fontVersion != fonts.version()) {
                     render.release();
                     fonts.apply(ass);
@@ -187,12 +212,6 @@ public final class AssTextRenderer extends BaseRenderer {
             } catch (RuntimeException error) { Log.w("Libass", "Render failed", error); }
             finally { rendering.set(false); }
         });
-    }
-
-    private static String decode(byte[] data) {
-        if (data.length >= 2 && data[0] == (byte) 0xFF && data[1] == (byte) 0xFE) return new String(data, StandardCharsets.UTF_16LE);
-        if (data.length >= 2 && data[0] == (byte) 0xFE && data[1] == (byte) 0xFF) return new String(data, StandardCharsets.UTF_16BE);
-        return new String(data, StandardCharsets.UTF_8);
     }
 
     @Override public void handleMessage(int type, Object value) throws ExoPlaybackException {

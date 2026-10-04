@@ -125,7 +125,7 @@ public final class TrackDialog extends BasePlaybackSelectionDialog implements Tr
     }
 
     private void onChoose(View view) {
-        FileChooser.from(launcher).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, "audio/*", "text/*", "application/octet-stream"});
+        FileChooser.from(launcher).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, MimeTypes.APPLICATION_PGS, "audio/*", "text/*", "application/octet-stream"});
         player.pause();
     }
 
