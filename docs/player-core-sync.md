@@ -22,10 +22,10 @@ libass runs on renderer worker threads, at most 30 fps and 1080p-equivalent area
 
 Verified on 2026-10-04:
 
-- 259 app JUnit tests and 14 proxy tests passed.
+- 267 app JUnit tests and 14 proxy tests passed.
 - TV ARM64 and ARMv7 debug APKs built; mobile ARM64 Java/Kotlin compilation passed.
 - TV lint completed with 0 errors (311 warnings remain).
-- Device instrumentation: **11 passed, 1 failed** across 12 scenarios. Passing cases cover SUP/PGS, 1920×1080 VobSub, complex ASS, WebVTT/TTML, plus two SRT tracks with DSP and pause/rebuild; external ASS animation and seek; embedded ASS plus independent secondary selection/disable and paused rebind; prepared-source handoff with header isolation and cancellation.
+- Device instrumentation: **all 12 scenarios passed**. Cases cover SUP/PGS, 1920×1080 VobSub, DVB paused forward/backward seeks and clear pages, complex ASS, WebVTT/TTML, plus two SRT tracks with DSP and pause/rebuild; external ASS animation and seek; embedded ASS plus independent secondary selection/disable and paused rebind; prepared-source handoff with header isolation and cancellation.
 - Native logs confirm Matroska attachment selection (`DejaVu Sans → DejaVuSans`) and external-subtitle fallback (`DejaVu Sans → Roboto-Regular`). Both APKs contain exactly one libass, JNI bridge and C++ runtime per ABI.
 - FFmpeg accepted the EQ/loudness/limiter chain and the center-gain filter retaining the `5.1(side)` layout.
 
@@ -38,7 +38,7 @@ The original generated fixtures contain SRT, embedded/external ASS, a Matroska f
 | `PGS/supsample.mkv` | Embedded PGS and exported external `.SUP`, clear display set, backwards seek, exchange PGS/ASS primary and secondary |
 | `BluRay/title03_track2.sup` | Complete ~36 MiB Blu-ray SUP with 4,113 display sets; first/later cue, empty interval and backwards seek |
 | `largeres_vobsub.mkv` | 1920×1080 VobSub plane embedded in MKV, palette/bitmap decoding, stop timing and seek |
-| `dvbsub/dvbsubtest.ts` | DVB composition/ancillary pages: initial display passes; a seek into an existing page loses its context (open failure) |
+| `dvbsub/dvbsubtest.ts` | DVB initial display, paused forward seek into an active page, two-region composition, clear interval and exact bitmap restoration after backward seek |
 
 Source base: https://samples.ffmpeg.org/sub/. Downloaded media is not committed. The older IDX/SUB pair `VOB/X.The.Movie.DVDivX-SChiZO` was inspected but lacks its palette without DVD context; the short Channel 4 DVB cut lacks an acquisition page. These incomplete samples were replaced with the complete inputs above. VobSub coverage is for the remuxed MKV track; it does not establish direct loading of external IDX+SUB pairs. `BluRay/Subpictures_20.sup` was also inspected, but its `SP` header identifies an older DVD SUP format, not the `PG` PGS format supported by the `.sup` MIME mapping.
 
@@ -56,15 +56,20 @@ adb shell am instrument -w -r -e core_base http://10.0.2.2:9980/ \
   com.fongmi.android.tv.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
-The retained failure is `PlayerCoreTest.broadcastDvbBitmapRendersAndSurvivesSeek`: after the first complete page renders at about 15.6 seconds, seeking forward by one second while paused clears the page and does not restore it. The isolated test reproduces this too. DVB continuation pages depend on preceding acquisition/region/CLUT/object data; arbitrary TS seeks still need a reliable way to restore that context. This is not reported as passing and is not hidden with an ignored test.
+The DVB regression is fixed in `PlayerCoreTest.broadcastDvbBitmapRendersAndSurvivesSeek`. Instrumented tracing established the precise failure: a seek to 16.734 seconds made the TS binary seeker resume at the next subtitle update (16.940 seconds), skipping the page still active at the requested time. The renderer correctly remained empty while paused; this was not evidence that the subsequent packet failed decoding. The TS subtitle extractor now indexes DVB acquisition pages and seeks back far enough to rebuild the active page, including preceding display-definition and ancillary CLUT/object dependencies. It resets subtitle parsers and incomplete PES data on seek and bypasses the TS binary seek that would otherwise skip the indexed acquisition again. Complete PES delivery also avoids nonzero byte offsets into Media3's DVB parser.
 
-Screenshots from the generated (original) captions:
+The original failing forward-seek assertion remains. The extended test checks that the paused page stays visible, a later page has two regions, real clear intervals are transparent, and the backward-seek bitmap exactly matches its reference. Eight unit tests cover acquisition versus normal pages, ancillary dependencies, multiple tracks, incomplete segments, format changes, unvisited targets and index thinning. The index holds at most 4,096 entries per track, and one DVB PES is capped at 4 MiB. An unvisited target reuses the latest known acquisition; before any known acquisition it starts at the beginning. Long unindexed intervals can therefore require additional preroll. TS streams without DVB retain their normal seek map and binary seeking.
+
+Final validation used the pinned Media3 sources with the temporary diagnostic logging removed. The complete device run finished with `OK (12 tests)` in 71.248 seconds; its output is retained in [instrumentation.txt](player-core-validation/instrumentation.txt).
+
+Screenshots from playback validation:
 
 - [ASS at 5 and 14 seconds](player-core-validation/ass-validation.png): karaoke, rotation, clipping, drawing and bidi text.
 - [WebVTT and TTML regions](player-core-validation/region-validation.png): independently positioned overlapping text.
+- [DVB after paused seeks](player-core-validation/dvb-validation.png): the restored page at 16.5 seconds and the two-region page at 20 seconds (public FFmpeg regression sample).
 
 The fixture server rejects media requests whose per-item header does not match the requested file, including range requests. The debug-only test activity is absent from release builds.
 
 ## Test environment and limits
 
-The dedicated Codespace uses an Android 7.1 x86_64 emulator. Its disposable test APK contains the published x86_64 libass and UI dependencies, with the unused Python loader bypassed; ARM deliverables remain unchanged. Exo/ASS/audio/preload results are actual emulator playback results. They do not establish ARM-device MPV playback, HDMI passthrough, Python execution or end-to-end AI recognition quality. Those require suitable ARM hardware/models. The supplied MPV binaries contain equalizer, pan, dynaudnorm, alimiter and secondary ASS support; the filter syntax is also exercised with FFmpeg. Next-media buffering is an Exo feature; MPV retains its existing current-stream demux cache.
+The dedicated Codespace uses an Android 7.0 (API 24) x86_64 emulator, confirmed from the running device's system properties. Its disposable test APK contains the published x86_64 libass and UI dependencies, with the unused Python loader bypassed; ARM deliverables remain unchanged. Exo/ASS/audio/preload results are actual emulator playback results. They do not establish ARM-device MPV playback, HDMI passthrough, Python execution or end-to-end AI recognition quality. Those require suitable ARM hardware/models. The supplied MPV binaries contain equalizer, pan, dynaudnorm, alimiter and secondary ASS support; the filter syntax is also exercised with FFmpeg. Next-media buffering is an Exo feature; MPV retains its existing current-stream demux cache.

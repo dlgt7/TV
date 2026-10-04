@@ -96,8 +96,9 @@ public final class AdvancedSubtitleController {
         SubtitleSource fonts = fontsFor(item);
         return () -> {
             androidx.media3.extractor.Extractor[] all = original.createExtractors();
-            if (nativeAss) for (int i = 0; i < all.length; i++) {
-                if (all[i] instanceof MatroskaExtractor) all[i] = new AssTrackingExtractor(new FontMatroskaExtractor(parserFactory(), fonts.fonts), fonts.history);
+            for (int i = 0; i < all.length; i++) {
+                if (all[i] instanceof androidx.media3.extractor.ts.TsExtractor) all[i] = new DvbSubtitleExtractor(parserFactory());
+                else if (nativeAss && all[i] instanceof MatroskaExtractor) all[i] = new AssTrackingExtractor(new FontMatroskaExtractor(parserFactory(), fonts.fonts), fonts.history);
             }
             return all;
         };

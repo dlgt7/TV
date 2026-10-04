@@ -194,6 +194,25 @@ public class PlayerCoreTest {
         long position = value(() -> engine.getPlayer().getCurrentPosition());
         seekPaused(position + 1_000);
         await(this::primaryBitmap, "DVB bitmap after seek");
+        SystemClock.sleep(300);
+        main(() -> assertTrue("DVB page remains visible while paused", primaryBitmap()));
+        seekPaused(16_500);
+        await(this::primaryBitmap, "DVB reference page");
+        SystemClock.sleep(300);
+        long reference = pictureHash("CanvasSubtitleOutput", 0);
+        capture("dvb-forward");
+        seekPaused(20_000);
+        await(() -> engine.getPlayer().getCurrentCues().cues.size() == 2 && primaryBitmap(), "DVB two-region page");
+        capture("dvb-two-regions");
+        seekPaused(32_500);
+        await(() -> engine.getPlayer().getCurrentCues().cues.isEmpty() && pixels("CanvasSubtitleOutput", 0) == 0, "DVB clear page");
+        SystemClock.sleep(300);
+        main(() -> assertEquals(0, pixels("CanvasSubtitleOutput", 0)));
+        seekPaused(16_500);
+        await(() -> primaryBitmap() && hashOnMain("CanvasSubtitleOutput", 0) == reference, "DVB backward seek restores exact page");
+        capture("dvb-backward");
+        seekPaused(10_000);
+        await(() -> engine.getPlayer().getCurrentCues().cues.isEmpty() && pixels("CanvasSubtitleOutput", 0) == 0, "DVB before first page");
     }
 
     @Test public void complexAssKaraokeClippingVectorsAndOverlapSurviveSeek() {
