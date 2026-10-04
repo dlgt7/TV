@@ -106,11 +106,16 @@ class JetStreamHomeNavView @JvmOverloads constructor(
                         shape = RoundedCornerShape(21.dp),
                         modifier = Modifier
                             .height(42.dp)
-                            .widthIn(min = 62.dp)
                             .focusRequester(requesters.getValue(item.key))
                             .onFocusChanged { if (it.isFocused) focusedKey = item.key }
                     ) {
-                        Box(Modifier.fillMaxHeight().padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
+                        // The surface lays its content out from the start, so a minimum width on
+                        // the surface left the label off-centre inside the selected pill. Keep the
+                        // minimum on the label box instead: the pill hugs it and the text centres.
+                        Box(
+                            Modifier.fillMaxHeight().widthIn(min = 62.dp).padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
                                 text = item.text,
                                 fontSize = 15.sp,
