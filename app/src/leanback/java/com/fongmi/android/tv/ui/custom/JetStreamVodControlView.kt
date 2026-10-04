@@ -355,7 +355,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                 positionMs = positionMs,
                 durationMs = durationMs
             )
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(8.dp))
             HeaderRow(isPlaying)
         }
     }
@@ -599,11 +599,12 @@ class JetStreamVodControlView @JvmOverloads constructor(
                     ControllerText(formatTime(durationMs))
                 }
             }
-            // Reserve the complete line plus padding; inherited body line height previously
-            // exceeded the 16dp left by a fixed 24dp box and 8dp top padding.
-            Box(Modifier.heightIn(min = 32.dp).padding(start = 56.dp, top = 6.dp, bottom = 6.dp)) {
-                if (seekActive) Text(
+            // Hidden seek guidance must not reserve an empty row between controls.
+            // Let visible text measure its full line height (including translations).
+            if (seekActive) {
+                Text(
                     text = stringResource(R.string.playback_seek_hint),
+                    modifier = Modifier.padding(start = 56.dp, top = 4.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontSize = 12.sp,

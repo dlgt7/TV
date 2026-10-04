@@ -11,7 +11,6 @@ import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,8 +26,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.toArgb
@@ -41,8 +41,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,7 +55,14 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.fongmi.android.tv.R
-import com.fongmi.android.tv.ui.components.TvActionButton
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.Icon
+import androidx.tv.material3.OutlinedButton
+import androidx.tv.material3.OutlinedButtonDefaults
+import androidx.tv.material3.darkColorScheme
+import androidx.tv.material3.MaterialTheme as TvMaterialTheme
+import androidx.tv.material3.Text as TvText
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
 
 class JetStreamVodDetailView @JvmOverloads constructor(
@@ -332,14 +340,27 @@ class JetStreamVodDetailView @JvmOverloads constructor(
                     else -> false
                 }
             }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionButton(specs.first(), actionModifier(0, Modifier.fillMaxWidth())) {
-                performAction(DetailAction.WATCH)
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                specs.drop(1).forEachIndexed { index, spec ->
-                    ActionButton(spec, actionModifier(index + 1, Modifier.weight(1f))) {
-                        performAction(spec.action)
+        // Keep AndroidX TV's button shape, border and focus colors. Only map the
+        // existing app palette into its theme; the controls own their interactions.
+        val colors = MaterialTheme.colorScheme
+        TvMaterialTheme(
+            colorScheme = darkColorScheme(
+                surface = colors.surface,
+                onSurface = colors.onSurface,
+                surfaceVariant = colors.surfaceVariant,
+                onSurfaceVariant = colors.onSurfaceVariant,
+                inverseOnSurface = colors.inverseOnSurface
+            )
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButton(specs.first(), actionModifier(0, Modifier.fillMaxWidth())) {
+                    performAction(DetailAction.WATCH)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    specs.drop(1).forEachIndexed { index, spec ->
+                        ActionButton(spec, actionModifier(index + 1, Modifier.weight(1f))) {
+                            performAction(spec.action)
+                        }
                     }
                 }
             }
@@ -349,27 +370,51 @@ class JetStreamVodDetailView @JvmOverloads constructor(
     @Composable
     private fun ActionButton(spec: ActionSpec, modifier: Modifier, onClick: () -> Unit) {
         val primary = spec.action == DetailAction.WATCH
-        TvActionButton(
-            onClick = onClick,
-            modifier = modifier.height(40.dp),
-            enabled = spec.enabled,
-            selected = spec.selected,
-            contentPadding = PaddingValues(horizontal = if (primary) 16.dp else 8.dp, vertical = 6.dp)
+        val buttonModifier = modifier
+            .height(40.dp)
+            .focusProperties { canFocus = spec.enabled }
+            .semantics { selected = spec.selected }
+        if (primary) {
+            Button(
+                onClick = onClick,
+                modifier = buttonModifier,
+                enabled = spec.enabled,
+                // The full-width View host clips a scaled button at its edges.
+                scale = ButtonDefaults.scale(focusedScale = 1f)
+            ) { ActionLabel(spec) }
+        } else {
+            OutlinedButton(
+                onClick = onClick,
+                modifier = buttonModifier,
+                enabled = spec.enabled,
+                scale = OutlinedButtonDefaults.scale(focusedScale = 1f)
+            ) { ActionLabel(spec) }
+        }
+    }
+
+    @Composable
+    private fun ActionLabel(spec: ActionSpec) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 painter = painterResource(id = spec.icon),
                 contentDescription = null,
-                modifier = Modifier.requiredSize(if (primary) 20.dp else 16.dp)
+                modifier = Modifier.requiredSize(18.dp)
             )
-            Spacer(Modifier.width(if (primary) 8.dp else 5.dp))
-            Text(
+            Spacer(Modifier.width(8.dp))
+            TvText(
                 text = spec.label,
-                fontSize = if (primary) 15.sp else 12.sp,
-                fontWeight = FontWeight.Medium,
-                lineHeight = 18.sp,
+                modifier = Modifier.weight(1f, fill = false),
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontSize = if (spec.action == DetailAction.WATCH) 15.sp else 13.sp,
+                    lineHeight = 20.sp,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                ),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
