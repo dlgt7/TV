@@ -89,6 +89,10 @@ public class MpvPlayerEngine implements PlayerEngine {
         player.setSubtitleStyle();
     }
 
+    @Override public void applyAudioEffects() { player.applyAudioEffects(); }
+    @Override public void setSecondaryTrack(String format) { player.setSecondaryTrack(format); }
+    @Override public String getSecondaryTrack() { return player.getSecondaryTrack(); }
+
     @Override
     public void start(PlaySpec spec, long startPositionMs) {
         this.spec = spec;

@@ -23,9 +23,13 @@ public class ExoPlayerEngine implements PlayerEngine {
     private ExoPlayer player;
     private PlaySpec spec;
     private int decode;
+    private NextMediaPreload next;
+    private com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController subtitles;
 
     public ExoPlayerEngine(int decode, Player.Listener listener) {
-        this.player = ExoUtil.buildPlayer(decode, listener);
+        this.subtitles = new com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController();
+        this.next = new NextMediaPreload(decode, listener, subtitles);
+        this.player = next.player;
         this.provider = new ErrorMsgProvider();
         this.preCache = new PreCache();
         this.listener = listener;
@@ -46,14 +50,20 @@ public class ExoPlayerEngine implements PlayerEngine {
     public void release() {
         AiSubtitleRuntime.get().stopSession();
         preCache.release();
+        next.release();
         player.release();
+        subtitles.release();
     }
 
     @Override
     public Player rebuild() {
         preCache.stop();
+        next.release();
         player.release();
-        return player = ExoUtil.buildPlayer(decode, listener);
+        subtitles.release();
+        subtitles = new com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController();
+        next = new NextMediaPreload(decode, listener, subtitles);
+        return player = next.player;
     }
 
     @Override
@@ -73,6 +83,7 @@ public class ExoPlayerEngine implements PlayerEngine {
     public void stop() {
         AiSubtitleRuntime.get().stopSession();
         preCache.stop();
+        subtitles.clear();
         player.stop();
     }
 
@@ -106,12 +117,28 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     private void startInternal(long position) {
         MediaItem item = MediaItemFactory.from(spec);
-        if (position == C.TIME_UNSET) player.setMediaItem(item);
+        subtitles.activate(item);
+        androidx.media3.exoplayer.source.MediaSource prepared = next.take(item);
+        if (prepared != null) {
+            player.setMediaSource(prepared, position == C.TIME_UNSET ? 0 : position);
+        } else if (position == C.TIME_UNSET) player.setMediaItem(item);
         else player.setMediaItem(item, position);
         preCache.start(player, item);
         player.prepare();
         player.play();
     }
+
+    @Override public boolean preload(PlaySpec spec, long position) {
+        next.preload(MediaItemFactory.from(spec), position);
+        return true;
+    }
+
+    @Override public void clearPreload() { next.clear(); }
+
+    @Override public void bindPlayerView(androidx.media3.ui.PlayerView view) { subtitles.bind(view); }
+    @Override public void setSecondaryTrack(String format) { subtitles.select(format); }
+    @Override public String getSecondaryTrack() { return subtitles.selected(); }
+    @Override public void setSubtitleStyle() { subtitles.refreshStyle(); }
 
     private ErrorAction seekToDefaultPosition() {
         player.seekToDefaultPosition();

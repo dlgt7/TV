@@ -201,6 +201,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     }
 
     private void refreshPreloadRows() {
+        setRowValue(JetStreamSettingView.KEY_PRELOAD_NEXT, Setting.getSwitch(PreloadSetting.isNextEpisode()));
         boolean preload = PreloadSetting.isPreload();
         setRowValue(JetStreamSettingView.KEY_PRELOAD, Setting.getSwitch(preload));
         setPreloadSizeText();
@@ -320,6 +321,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_AV3A -> setAv3a();
             case JetStreamSettingView.KEY_DOLBY -> setDolby();
             case JetStreamSettingView.KEY_DV7 -> setDv7();
+            case JetStreamSettingView.KEY_PRELOAD_NEXT -> { PreloadSetting.putNextEpisode(!PreloadSetting.isNextEpisode()); refreshPreloadRows(); }
             case JetStreamSettingView.KEY_PRELOAD -> setPreload();
             case JetStreamSettingView.KEY_PRELOAD_SIZE -> PreloadDialog.show(this, PreloadDialog.SIZE);
             case JetStreamSettingView.KEY_PRELOAD_TIME -> PreloadDialog.show(this, PreloadDialog.TIME);

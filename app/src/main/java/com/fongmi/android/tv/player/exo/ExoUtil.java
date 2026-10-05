@@ -49,14 +49,18 @@ import java.util.stream.Collectors;
 public class ExoUtil {
 
     public static ExoPlayer buildPlayer(int decode, Player.Listener listener) {
-        ExoPlayer player = new ExoPlayer.Builder(App.get())
+        return buildPlayer(decode, listener, null);
+    }
+
+    static ExoPlayer buildPlayer(int decode, Player.Listener listener, androidx.media3.exoplayer.source.preload.DefaultPreloadManager.Builder preloader) {
+        ExoPlayer.Builder builder = new ExoPlayer.Builder(App.get())
                 .setTrackSelector(buildTrackSelector(decode))
                 .setRenderersFactory(buildPlaybackRenderersFactory(decode))
                 .setMediaSourceFactory(buildMediaSourceFactory())
                 // Sony's Dolby Vision OMX stack regularly needs >500 ms to flush/release. The
                 // Media3 default reports a false fatal timeout during AI AudioSink rebuilds.
-                .setReleaseTimeoutMs(3_000L)
-                .build();
+                .setReleaseTimeoutMs(3_000L);
+        ExoPlayer player = preloader == null ? builder.build() : preloader.buildExoPlayer(builder);
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());
         player.setAudioAttributes(AudioAttributes.DEFAULT, true);
         player.setHandleAudioBecomingNoisy(true);
@@ -81,7 +85,7 @@ public class ExoUtil {
         return decode == PlayerEngine.HARD ? DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
     }
 
-    private static TrackSelector buildTrackSelector(int decode) {
+    static TrackSelector buildTrackSelector(int decode) {
         DecodeTrackSelector trackSelector = new DecodeTrackSelector(App.get());
         int decodeMode = getDecodeMode(decode);
         trackSelector.setRendererDecodePreferences(decodeMode, decodeMode);
@@ -89,12 +93,12 @@ public class ExoUtil {
         if (PlayerSetting.isPreferAAC()) builder.setPreferredAudioMimeType(MimeTypes.AUDIO_AAC);
         else if (PlayerSetting.isAv3a()) builder.setPreferredAudioMimeType(MimeTypes.AUDIO_AV3A);
         builder.setPreferredTextLanguages(LangUtil.getPreferredTextLanguages());
-        builder.setTunnelingEnabled(PlayerSetting.isTunnelingEnabled());
+        builder.setTunnelingEnabled(PlayerSetting.isTunnelingEnabled() && !com.fongmi.android.tv.setting.AudioEffectSetting.enabled());
         trackSelector.setParameters(builder.build());
         return trackSelector;
     }
 
-    private static RenderersFactory buildPlaybackRenderersFactory(int decode) {
+    static RenderersFactory buildPlaybackRenderersFactory(int decode) {
         return buildRenderersFactory(getRenderMode(decode), PlayerSetting.isAudioPrefer(), PlayerSetting.isVideoPrefer());
     }
 
@@ -135,10 +139,15 @@ public class ExoUtil {
 
     private static AudioSink buildAudioSink(Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams) {
         boolean aiSubtitle = AiSubtitleSettings.isEnabled();
+        boolean effects = com.fongmi.android.tv.setting.AudioEffectSetting.enabled();
         DefaultAudioSink.Builder builder = new DefaultAudioSink.Builder(context)
-                .setEnableFloatOutput(aiSubtitle ? false : enableFloatOutput)
+                .setEnableFloatOutput(aiSubtitle || effects ? false : enableFloatOutput)
                 .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams);
-        if (aiSubtitle) builder.setAudioProcessors(new AudioProcessor[]{new PcmTapAudioProcessor(AiSubtitleRuntime.get().createPcmSink())});
+        ArrayList<AudioProcessor> processors = new ArrayList<>();
+        // ASR receives the original PCM, before EQ/normalization changes its spectral content.
+        if (aiSubtitle) processors.add(new PcmTapAudioProcessor(AiSubtitleRuntime.get().createPcmSink()));
+        if (effects) processors.add(new com.fongmi.android.tv.player.audio.AudioEffectProcessor());
+        if (!processors.isEmpty()) builder.setAudioProcessors(processors.toArray(new AudioProcessor[0]));
         if (aiSubtitle) {
             // Match the reference application's audio-lookahead design: playback starts normally,
             // while the renderer is allowed to fill several seconds of decoded PCM ahead of the
@@ -150,7 +159,7 @@ public class ExoUtil {
                             .setAudioTrackBufferSizeProvider(new AiAudioTrackBufferSizeProvider())
                             .build(),
                     AiSubtitleRuntime.get().createAudioClockSink()));
-        } else if (!PlayerSetting.isAudioPassThrough()) {
+        } else if (effects || !PlayerSetting.isAudioPassThrough()) {
             builder.setAudioOutputProvider(new AudioTrackAudioOutputProvider.Builder(null).build());
         }
         return builder.build();

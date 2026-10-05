@@ -28,6 +28,7 @@ public class VodPlaybackController {
     private final VodPlaybackHost host;
     private History lastHistory;
     private final SourceReliabilityStore reliability;
+    private final NextEpisodePreloader preloader;
 
     public VodPlaybackController(VodPlaybackHost host, VodPlaybackState state) {
         this.historyPolicy = new VodHistoryPolicy();
@@ -36,9 +37,11 @@ public class VodPlaybackController {
         this.host = host;
         this.fallbackPolicy = new VodFallbackPolicy(this, state, host);
         this.reliability = new SourceReliabilityStore();
+        this.preloader = new NextEpisodePreloader(host);
     }
 
     public void reset() {
+        clearPreload();
         endingPolicy.reset();
         state.reset();
     }
@@ -99,6 +102,21 @@ public class VodPlaybackController {
         if (sourcePosition != null) state.getHistory().setPosition(sourcePosition);
         startPlayback(result, startPositionMs());
         host.loadDanmaku(result, state.getHistory(), state.getEpisode());
+        clearPreload();
+    }
+
+    private void preloadNext() {
+        if (!state.hasEpisode() || state.isUseParse() || state.getQuality().needParse()) {
+            clearPreload();
+            return;
+        }
+        Episode next = getRelativeEpisode(state.getHistory() != null && state.getHistory().isRevPlay() ? -1 : 1);
+        if (next.isSelected()) clearPreload();
+        else preloader.prepare(state.getFlag(), next, state.getQualityPosition(), state.getHistory());
+    }
+
+    public void clearPreload() {
+        preloader.clear();
     }
 
     private void startPlayback(Result result, long startPositionMs) {
@@ -141,9 +159,11 @@ public class VodPlaybackController {
         state.setQuality(result);
         state.setQualityPosition(result.getUrl().getPosition());
         startPlayback(result, host.getPlayerPosition());
+        clearPreload();
     }
 
     public void selectParse(Parse item) {
+        clearPreload();
         VodConfig.get().setParse(item);
         refresh();
     }
@@ -169,6 +189,7 @@ public class VodPlaybackController {
     }
 
     private void switchSource(Vod item, boolean autoFallback) {
+        clearPreload();
         if (SourceSelectionSetting.getMode() == SourceSelectionMode.SMART && state.hasEpisode()) state.setEpisodeTarget(EpisodeTarget.of(state.getEpisode()));
         state.setAutoFallback(autoFallback);
         state.clearPlayRequest();
@@ -289,6 +310,8 @@ public class VodPlaybackController {
     public void onTimeChanged(long time, long position, long duration) {
         History history = currentHistory();
         historyPolicy.updateTime(history, time, position, duration);
+        if (NextEpisodePreloader.shouldPrepare(position, duration, history == null ? 0 : history.getEnding())) preloadNext();
+        else preloader.expire();
         if (history != null && endingPolicy.update(position, duration, history.getEnding())) nextEpisode(false);
     }
 
@@ -312,6 +335,7 @@ public class VodPlaybackController {
     }
 
     public void setOpening(long opening) {
+        clearPreload();
         if (state.getHistory() != null) {
             state.getHistory().setOpening(opening);
             state.getHistory().setOpeningSource("manual");
@@ -340,6 +364,7 @@ public class VodPlaybackController {
 
     public void setRevPlay(boolean revPlay) {
         if (state.getHistory() != null) state.getHistory().setRevPlay(revPlay);
+        clearPreload();
     }
 
     private void detailEmpty(boolean finish) {
@@ -392,6 +417,11 @@ public class VodPlaybackController {
         historyPolicy.updateEpisode(state.getHistory(), flag, episode);
         VodPlayRequest request = VodPlayRequest.create(host.getVodKey(), flag, episode);
         state.setPendingRequest(request);
+        Result cached = preloader.consume(request);
+        if (cached != null) {
+            applyPlayerResult(cached, request);
+            return;
+        }
         MpvLogCollector.log("VodPlaybackController", "requestPlayer: key=" + request.getKey() + ", flag=" + request.getFlag() + ", id=" + request.getId() + ", title=" + request.getTitle());
         host.requestPlayer(request);
     }

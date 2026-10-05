@@ -15,6 +15,14 @@ public class PreloadSetting {
         return Prefers.getBoolean("preload");
     }
 
+    public static boolean isNextEpisode() {
+        return Prefers.getBoolean("preload_next", true);
+    }
+
+    public static void putNextEpisode(boolean enabled) {
+        Prefers.put("preload_next", enabled);
+    }
+
     public static void putPreload(boolean preload) {
         Prefers.put("preload", preload);
     }

@@ -20,6 +20,7 @@ import com.fongmi.android.tv.utils.FileUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.LongConsumer;
@@ -31,9 +32,11 @@ public class PlayerHelper {
     }
 
     public static String getSubtitleMimeType(String path) {
-        if (TextUtils.isEmpty(path)) return "";
+        if (path == null || path.isEmpty()) return "";
+        path = path.split("[?#]", 2)[0].toLowerCase(Locale.ROOT);
         if (path.endsWith(".vtt")) return MimeTypes.TEXT_VTT;
         if (path.endsWith(".ssa") || path.endsWith(".ass")) return MimeTypes.TEXT_SSA;
+        if (path.endsWith(".sup")) return MimeTypes.APPLICATION_PGS;
         if (path.endsWith(".ttml") || path.endsWith(".xml") || path.endsWith(".dfxp")) return MimeTypes.APPLICATION_TTML;
         return MimeTypes.APPLICATION_SUBRIP;
     }

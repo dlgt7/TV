@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="audio_effect_title">音訊處理</string>
+    <string name="audio_effect_center">中置對白增益（多聲道）</string>
+    <string name="audio_effect_normalize">自動調整響度</string>
+    <string name="audio_effect_pcm_note">開啟後使用 PCM 輸出處理聲音，關閉後恢復原有音訊直通設定。</string>
+    <string-array name="audio_effect_presets">
+        <item>關閉</item><item>清晰對白</item><item>夜間觀看</item><item>音樂</item><item>自訂</item>
+    </string-array>
+    <string name="subtitle_secondary">第二字幕</string>
+    <string name="subtitle_advanced">進階字幕</string>
+    <string name="subtitle_ass">ASS 原始樣式與動畫</string>
+    <string name="subtitle_fonts">匯入字幕字型</string>
+    <string name="subtitle_font_added">字型已匯入</string>
+    <string name="subtitle_font_invalid">無法讀取字型，請選擇 TTF、OTF 或 TTC 檔案（不超過 24 MB）</string>
+    <string name="preload_next_episode">預載下一集</string>
+</resources>

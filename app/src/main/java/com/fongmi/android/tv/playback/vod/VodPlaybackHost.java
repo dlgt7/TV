@@ -12,6 +12,12 @@ import java.util.ArrayList;
 
 public interface VodPlaybackHost {
 
+    default boolean canPreloadNext() { return false; }
+
+    default boolean preloadPlayback(Result result, long position, History history, Episode episode) { return false; }
+
+    default void clearPreload() {}
+
     default List<Vod> getSourceCandidates() {
         return new ArrayList<>();
     }

@@ -39,6 +39,7 @@ import androidx.viewbinding.ViewBinding;
 
 import com.bumptech.glide.request.transition.Transition;
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.ai.subtitle.AiSubtitlePlaybackUi;
@@ -514,6 +515,22 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     public void requestDetail(String key, String id) {
         beginPlaybackRequest();
         mViewModel.detailContent(key, id);
+    }
+
+    @Override
+    public boolean canPreloadNext() {
+        return player() != null && player().canPreload();
+    }
+
+    @Override
+    public boolean preloadPlayback(Result result, long position, History history, Episode episode) {
+        return player() != null && player().preload(result, position,
+                VodPlaybackMedia.metadata(history, episode));
+    }
+
+    @Override
+    public void clearPreload() {
+        if (player() != null) player().clearPreload();
     }
 
     @Override
@@ -1672,6 +1689,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     protected void onDestroy() {
+        if (mVod != null) mVod.clearPreload();
         mClock.release();
         saveHistory(true);
         Timer.get().reset();

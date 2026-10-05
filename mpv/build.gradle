@@ -18,10 +18,11 @@ android {
 
 def baseAar = rootProject.file('app/libs/mpv-android-lib-v0.0.3.aar')
 def ffmpeg9Archive = rootProject.file('third_party/mpv/mpv-android-ffmpeg9-native.zip')
+def ffmpeg9Bridge = rootProject.file('third_party/mpv/mpv-android-ffmpeg9-bridge.zip')
 def generatedDir = layout.buildDirectory.dir('generated/ffmpeg9')
 
 def prepareFfmpeg9 = tasks.register('prepareFfmpeg9') {
-    inputs.files(baseAar, ffmpeg9Archive)
+    inputs.files(baseAar, ffmpeg9Archive, ffmpeg9Bridge)
     outputs.dir(generatedDir)
 
     doLast {
@@ -36,17 +37,12 @@ def prepareFfmpeg9 = tasks.register('prepareFfmpeg9') {
         copy {
             from zipTree(ffmpeg9Archive)
             into new File(output, 'jni')
-            // The app's JNI bridge exposes extra APIs that FongMi's stock bridge does not.
+            // Use the extended bridge rebuilt against this FFmpeg major version.
             exclude '**/libplayer.so'
         }
         copy {
-            from zipTree(baseAar)
+            from zipTree(ffmpeg9Bridge)
             into new File(output, 'jni')
-            include 'jni/arm64-v8a/libplayer.so', 'jni/armeabi-v7a/libplayer.so'
-            eachFile { details ->
-                details.path = details.path.replaceFirst('^jni/', '')
-            }
-            includeEmptyDirs = false
         }
     }
 }

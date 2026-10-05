@@ -55,6 +55,14 @@
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/effects"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:text="@string/audio_effect_title"
+        android:visibility="gone" />
+
     <com.fongmi.android.tv.ui.custom.CustomRecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"

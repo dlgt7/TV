@@ -88,6 +88,35 @@ public class PlayerManager implements ParseCallback {
         return player;
     }
 
+    public boolean canPreload() {
+        return engine != null && engine.getType() == PlayerEngine.Type.EXO && !PlayerSetting.isMpv();
+    }
+
+    public boolean preload(Result result, long position, MediaMetadata metadata) {
+        if (!canPreload() || result.needParse() || result.isUseParse() || result.getDrm() != null) return false;
+        PlaySpec next = PlaySpec.from(result, getKey(), metadata).checkUa();
+        return engine.preload(next, position);
+    }
+
+    public void clearPreload() {
+        if (engine != null) engine.clearPreload();
+    }
+
+    public void bindPlayerView(androidx.media3.ui.PlayerView view) {
+        if (engine != null) engine.bindPlayerView(view);
+    }
+
+    public String getSecondaryTrack() { return engine == null ? null : engine.getSecondaryTrack(); }
+
+    public void setSecondaryTrack(Track track) {
+        if (engine == null) return;
+        String format = track == null || !track.isSelected() ? null : track.getFormat();
+        engine.setSecondaryTrack(format);
+        String key = getKey() + "|secondary";
+        if (format == null) Track.delete(key);
+        else track.key(key).save();
+    }
+
     public Tracks getCurrentTracks() {
         return player.getCurrentTracks();
     }
@@ -406,9 +435,23 @@ public class PlayerManager implements ParseCallback {
     /** Rebuilds the renderer/AudioSink so the AI PCM tap and lookahead buffer change immediately. */
     public void rebuildAudioPipeline() {
         if (engine == null || spec == null || player == null) return;
-        long position = isLive() ? C.TIME_UNSET : getPosition();
+        boolean playing = player.getPlayWhenReady();
+        long position = player.isCurrentMediaItemLive() ? C.TIME_UNSET : getPosition();
         setPlayer(engine.rebuild());
         startCurrent(position);
+        player.setPlayWhenReady(playing);
+    }
+
+    public void refreshAudioEffects() {
+        if (engine == null) return;
+        if (engine.getType() == PlayerEngine.Type.MPV) engine.applyAudioEffects();
+        else rebuildAudioPipeline();
+    }
+
+    public void refreshSubtitles() {
+        if (engine == null) return;
+        if (engine.getType() == PlayerEngine.Type.EXO) rebuildAudioPipeline();
+        setSubtitleStyle();
     }
 
     private void handleDecodeError(PlaybackException e) {
@@ -627,7 +670,12 @@ public class PlayerManager implements ParseCallback {
         @Override
         public void onTracksChanged(@NonNull Tracks tracks) {
             if (tracks.isEmpty()) return;
-            if (!initTrack) setTrack(Track.find(getKey()));
+            if (!initTrack) {
+                initTrack = true;
+                setTrack(Track.find(getKey()));
+                List<Track> secondary = Track.find(getKey() + "|secondary");
+                engine.setSecondaryTrack(secondary.isEmpty() ? null : secondary.get(0).getFormat());
+            }
             callback.onTracksChanged();
             initTrack = true;
         }

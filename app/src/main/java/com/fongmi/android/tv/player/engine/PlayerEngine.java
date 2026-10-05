@@ -23,6 +23,18 @@ public interface PlayerEngine {
 
     void start(PlaySpec spec, long startPositionMs);
 
+    default boolean preload(PlaySpec spec, long position) { return false; }
+
+    default void clearPreload() {}
+
+    default void applyAudioEffects() {}
+
+    default void bindPlayerView(androidx.media3.ui.PlayerView view) {}
+
+    default void setSecondaryTrack(String format) {}
+
+    default String getSecondaryTrack() { return null; }
+
     default void stop() {
         getPlayer().stop();
     }
