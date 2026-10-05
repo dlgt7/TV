@@ -67,6 +67,7 @@ import com.fongmi.android.tv.utils.Task;
 import com.fongmi.quickjs.utils.QuickLog;
 import com.github.catvod.bean.Doh;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.net.ech.EchSettings;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -230,6 +231,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         setRowValue(JetStreamSettingView.KEY_TOAST_FILTER_KEYS, getStatus(Setting.getToastFilterRaw()));
         setRowVisible(JetStreamSettingView.KEY_TOAST_FILTER_KEYS, Setting.isToastFilter());
         setRowValue(JetStreamSettingView.KEY_DOH, doh.length == 0 ? "" : doh[getDohIndex()]);
+        setRowValue(JetStreamSettingView.KEY_ECH, Setting.getSwitch(EchSettings.isEnabled()));
         setThemeText();
         mBinding.settingView.refreshThemeSelection();
         setRowValue(JetStreamSettingView.KEY_SIZE, size[PlayerSetting.getSize()]);
@@ -339,6 +341,8 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_TOAST_FILTER -> setToastFilter();
             case JetStreamSettingView.KEY_TOAST_FILTER_KEYS -> setToastFilterKeys();
             case JetStreamSettingView.KEY_DOH -> setDoh();
+            case JetStreamSettingView.KEY_ECH -> setEch();
+            case JetStreamSettingView.KEY_ECH_INFO -> showEchInfo();
             case JetStreamSettingView.KEY_THEME_COLOR -> {
             }
             case JetStreamSettingView.KEY_SIZE -> setSize();
@@ -361,6 +365,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_WALL -> onWallEdit();
             case JetStreamSettingView.KEY_WALL_REFRESH -> onWallHistory();
             case JetStreamSettingView.KEY_CAPTION -> onCaption();
+            case JetStreamSettingView.KEY_ECH -> showEchInfo();
         }
     }
 
@@ -848,6 +853,19 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
 
     private void setDoh() {
         DohDialog.create().index(getDohIndex()).show(this);
+    }
+
+    private void setEch() {
+        EchSettings.setEnabled(!EchSettings.isEnabled());
+        OkHttp.echConfigurationChanged();
+        setRowValue(JetStreamSettingView.KEY_ECH, Setting.getSwitch(EchSettings.isEnabled()));
+    }
+
+    private void showEchInfo() {
+        JetStreamDialogDecor.tintButtons(new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.setting_ech_info)
+                .setMessage(R.string.setting_ech_description)
+                .setPositiveButton(R.string.dialog_positive, null).show());
     }
 
     @Override

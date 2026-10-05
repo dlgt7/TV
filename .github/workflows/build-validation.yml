@@ -82,6 +82,14 @@ jobs:
           GRADLE
           chmod +x ./gradlew
 
+      - name: Check shared network tests and mobile settings compilation
+        if: matrix.package == 'sourceprobe'
+        run: |
+          ./gradlew -I "$RUNNER_TEMP/tv-validation.init.gradle" \
+            :catvod:testDebugUnitTest \
+            :app:compileMobileArm64_v8aDebugJavaWithJavac \
+            --no-daemon --build-cache --max-workers=2
+
       - name: Build application and instrumentation APKs
         run: |
           ./gradlew -I "$RUNNER_TEMP/tv-validation.init.gradle" \

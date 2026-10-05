@@ -4,12 +4,18 @@ import android.annotation.SuppressLint;
 
 import androidx.collection.ArrayMap;
 
+import com.github.catvod.bean.Doh;
+import com.github.catvod.net.ech.ConscryptEchSocketFactory;
+import com.github.catvod.net.ech.EchDnsResolver;
+import com.github.catvod.net.ech.EchSettings;
 import com.github.catvod.net.interceptor.AuthInterceptor;
 import com.github.catvod.net.interceptor.RequestInterceptor;
 import com.github.catvod.net.interceptor.ResponseInterceptor;
 
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +43,10 @@ public class OkHttp {
     private AuthInterceptor authInterceptor;
     private OkAuthenticator authenticator;
     private OkProxySelector selector;
-    private OkHttpClient client;
-    private OkHttpClient player;
+    private volatile OkHttpClient client;
+    private volatile OkHttpClient player;
+    private final Object echLock = new Object();
+    private EchResolverState echResolver;
     private OkDns dns;
 
     public static OkHttp get() {
@@ -190,7 +198,22 @@ public class OkHttp {
 
     private static OkHttpClient.Builder getBuilder() {
         OkProxySelector selector = selector();
-        OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(requestInterceptor()).addInterceptor(authInterceptor()).addInterceptor(new ProxyRedirectInterceptor(selector)).addNetworkInterceptor(responseInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(getSSLContext().getSocketFactory(), trustAllCertificates()).followRedirects(false);
+        X509TrustManager trustManager = trustAllCertificates();
+        ConscryptEchSocketFactory sockets = new ConscryptEchSocketFactory(
+                getSSLContext(trustManager).getSocketFactory(), trustManager,
+                new ConscryptEchSocketFactory.ConfigProvider() {
+                    @Override
+                    public boolean isEnabled() {
+                        return EchSettings.isEnabled();
+                    }
+
+                    @Override
+                    public byte[] resolve(String hostname) {
+                        EchDnsResolver resolver = echResolver();
+                        return resolver == null ? null : resolver.resolve(hostname);
+                    }
+                });
+        OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(requestInterceptor()).addInterceptor(authInterceptor()).addInterceptor(new ProxyRedirectInterceptor(selector)).addNetworkInterceptor(responseInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(sockets, trustManager).followRedirects(false);
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY);
         builder.proxyAuthenticator(authenticator());
         //builder.addNetworkInterceptor(logging);
@@ -198,13 +221,61 @@ public class OkHttp {
         return builder;
     }
 
-    private static SSLContext getSSLContext() {
+    private static EchDnsResolver echResolver() {
+        // Read DNS outside echLock: lazy DNS initialization invalidates the ECH cache.
+        Doh selection = dns().getDoh();
+        String url = selection.getUrl();
+        List<String> ips = new ArrayList<>(selection.getIps());
+        OkHttp instance = get();
+        synchronized (instance.echLock) {
+            EchResolverState state = instance.echResolver;
+            if (state == null || !state.url.equals(url) || !state.ips.equals(ips)) {
+                EchDnsResolver resolver = null;
+                try {
+                    OkHttpClient bootstrap = new OkHttpClient.Builder()
+                            .proxySelector(selector()).proxyAuthenticator(authenticator()).build();
+                    resolver = new EchDnsResolver(bootstrap, url, selection.getHosts());
+                } catch (IllegalArgumentException ignored) {
+                    // An unsupported DoH configuration falls back to ordinary TLS.
+                }
+                state = new EchResolverState(url, ips, resolver);
+                instance.echResolver = state;
+            }
+            return state.resolver;
+        }
+    }
+
+    /** Apply to new connections without interrupting an active playback or download. */
+    public static void echConfigurationChanged() {
+        OkHttp instance = get();
+        synchronized (instance.echLock) {
+            instance.echResolver = null;
+        }
+        OkHttpClient client = instance.client;
+        OkHttpClient player = instance.player;
+        if (client != null) client.connectionPool().evictAll();
+        if (player != null) player.connectionPool().evictAll();
+    }
+
+    private static final class EchResolverState {
+        final String url;
+        final List<String> ips;
+        final EchDnsResolver resolver;
+
+        EchResolverState(String url, List<String> ips, EchDnsResolver resolver) {
+            this.url = url;
+            this.ips = ips;
+            this.resolver = resolver;
+        }
+    }
+
+    private static SSLContext getSSLContext(X509TrustManager trustManager) {
         try {
             SSLContext context = SSLContext.getInstance("TLS");
-            context.init(null, new TrustManager[]{trustAllCertificates()}, new SecureRandom());
+            context.init(null, new TrustManager[]{trustManager}, new SecureRandom());
             return context;
-        } catch (Throwable e) {
-            return null;
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to initialize TLS", e);
         }
     }
 

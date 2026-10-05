@@ -151,6 +151,9 @@
     <string name="setting_default">Default</string>
     <string name="setting_size">Image size</string>
     <string name="setting_doh">DoH</string>
+    <string name="setting_ech">ECH</string>
+    <string name="setting_ech_info">About ECH</string>
+    <string name="setting_ech_description">Applies to sources and requests that use the app’s network client.\n\nAttempts to encrypt the handshake hostname when the site provides an ECH configuration. Uses regular TLS when no configuration is available or the DNS query fails.\n\nQueries use the selected DoH provider, or Cloudflare when none is selected.\n\nAn ECH handshake failure may fail the request; disable ECH to retry.\n\nChanges take effect for new connections.</string>
     <string name="setting_proxy">Proxy</string>
     <string name="setting_cache">Cache</string>
     <string name="setting_backup">Backup</string>

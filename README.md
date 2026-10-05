@@ -25,7 +25,7 @@
 | 下一集预加载 | Exo 提前准备符合条件的下一集，预载约 10 秒并在切集时复用媒体源。 |
 | 音频效果 | 对白、夜间、音乐和自定义预设；五段 EQ、中置增强、响度归一化及限幅。 |
 | 直播与扩展 | 直播分组、EPG、追看；Java JAR、QuickJS、Python 配置扩展。 |
-| 网络与投放 | 按规则选择代理并处理跳转认证；DoH、请求头、DLNA 与局域网控制。 |
+| 网络与投放 | 按规则选择代理并处理跳转认证；DoH、请求头、DLNA 与局域网控制；[可选 ECH（默认关闭）](docs/ech-validation.md)。 |
 
 当前默认分支为 [`ui/apple-tv-redesign`](https://github.com/wobuhui666/TV/tree/ui/apple-tv-redesign)，已合入新播放内核。发布 APK 可能滞后于源码；例如 [v421](https://github.com/wobuhui666/TV/releases/tag/v421) 早于这轮内核修复，下载时请核对对应发布说明。
 

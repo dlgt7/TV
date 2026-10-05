@@ -23,6 +23,7 @@ dependencies {
     api libs.annotation
     api libs.brotli
     api libs.bundles.okhttp
+    implementation libs.conscrypt.android
     api libs.gson
     api libs.guava
     api libs.juniversalchardet

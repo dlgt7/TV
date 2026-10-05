@@ -49,6 +49,7 @@ import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.TmdbEndpoint;
 import com.github.catvod.bean.Doh;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.net.ech.EchSettings;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.greenrobot.eventbus.EventBus;
@@ -111,6 +112,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
     private void setOtherText() {
         mBinding.themeColorText.setText(getThemeText());
         mBinding.dohText.setText(getDohList()[getDohIndex()]);
+        mBinding.echText.setText(Setting.getSwitch(EchSettings.isEnabled()));
         mBinding.flagFilterText.setText(getFilterStatus(Setting.getFlagFilter()));
         mBinding.detailFilterText.setText(getFilterStatus(Setting.getDetailFilter()));
         mBinding.tmdbProxyText.setText(getTmdbProxyStatus());
@@ -134,6 +136,8 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
     protected void initEvent() {
         mBinding.vod.setOnClickListener(this::onVod);
         mBinding.doh.setOnClickListener(this::setDoh);
+        mBinding.ech.setOnClickListener(this::setEch);
+        mBinding.echInfo.setOnClickListener(this::showEchInfo);
         mBinding.live.setOnClickListener(this::onLive);
         mBinding.wall.setOnClickListener(this::onWall);
         mBinding.size.setOnClickListener(this::setSize);
@@ -420,6 +424,19 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
             setDoh(VodConfig.get().getDoh().get(which));
             dialog.dismiss();
         }).show();
+    }
+
+    private void setEch(View view) {
+        EchSettings.setEnabled(!EchSettings.isEnabled());
+        OkHttp.echConfigurationChanged();
+        mBinding.echText.setText(Setting.getSwitch(EchSettings.isEnabled()));
+    }
+
+    private void showEchInfo(View view) {
+        new MaterialAlertDialogBuilder(requireActivity())
+                .setTitle(R.string.setting_ech_info)
+                .setMessage(R.string.setting_ech_description)
+                .setPositiveButton(R.string.dialog_positive, null).show();
     }
 
     private void setDoh(Doh doh) {

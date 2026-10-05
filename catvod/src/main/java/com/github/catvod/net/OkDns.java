@@ -24,6 +24,7 @@ public class OkDns implements Dns {
     private final ConcurrentHashMap<String, String> map;
     private volatile Supplier<Doh> supplier;
     private volatile DnsOverHttps doh;
+    private Doh selectedDoh = new Doh();
 
     public OkDns() {
         this.map = new ConcurrentHashMap<>();
@@ -32,15 +33,26 @@ public class OkDns implements Dns {
     public synchronized void setDoh(Doh item) {
         HttpUrl url = HttpUrl.parse(item.getUrl());
         this.doh = url == null ? null : new DnsOverHttps.Builder().client(new OkHttpClient()).url(url).bootstrapDnsHosts(item.getHosts()).build();
+        this.selectedDoh = Doh.objectFrom(item.toString());
         this.supplier = null;
+        OkHttp.echConfigurationChanged();
     }
 
     public synchronized void setDoh(Supplier<Doh> supplier) {
         this.supplier = supplier;
+        OkHttp.echConfigurationChanged();
+    }
+
+    /** Snapshot of the same DoH selection used for address lookups. */
+    public synchronized Doh getDoh() {
+        Supplier<Doh> pending = supplier;
+        if (pending != null) initDoh(pending);
+        return Doh.objectFrom(selectedDoh.toString());
     }
 
     public void clear() {
         map.clear();
+        OkHttp.echConfigurationChanged();
     }
 
     public void addAll(List<String> hosts) {

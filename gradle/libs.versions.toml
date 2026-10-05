@@ -46,6 +46,7 @@ materialdesigncolors = "1.0.0"
 nanohttpd = "2.3.1"
 newpipeextractor = "v0.26.3"
 okhttp = "5.5.0"
+conscrypt = "2.7.0"
 permissionx = "1.8.1"
 quickjs = "3.2.3"
 sardine = "0.9"
@@ -114,6 +115,7 @@ materialdesigncolors = { group = "com.github.bassaer", name = "materialdesigncol
 nanohttpd = { group = "org.nanohttpd", name = "nanohttpd", version.ref = "nanohttpd" }
 newpipeextractor = { group = "com.github.TeamNewPipe", name = "NewPipeExtractor", version.ref = "newpipeextractor" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+conscrypt-android = { group = "org.conscrypt", name = "conscrypt-android", version.ref = "conscrypt" }
 okhttp-dnsoverhttps = { group = "com.squareup.okhttp3", name = "okhttp-dnsoverhttps", version.ref = "okhttp" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 org-jupnp = { group = "org.jupnp", name = "org.jupnp", version.ref = "jupnp" }

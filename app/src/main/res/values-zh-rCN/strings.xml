@@ -150,6 +150,9 @@
     <string name="setting_default">默认</string>
     <string name="setting_size">图片尺寸</string>
     <string name="setting_doh">DoH</string>
+    <string name="setting_ech">ECH</string>
+    <string name="setting_ech_info">ECH 使用说明</string>
+    <string name="setting_ech_description">仅对使用应用网络客户端的源和请求生效。\n\n站点提供 ECH 配置时尝试加密握手域名；没有配置或 DNS 查询失败时使用常规 TLS。\n\n查询使用所选 DoH，未选择 DoH 时使用 Cloudflare。\n\nECH 握手失败时请求可能失败，可关闭后重试。\n\n更改对新连接生效。</string>
     <string name="setting_proxy">Proxy</string>
     <string name="setting_cache">缓存</string>
     <string name="setting_backup">备份</string>
