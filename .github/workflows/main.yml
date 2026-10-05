@@ -1,7 +1,14 @@
-name: Build and Upload APKs
+name: Build TV release (manual)
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -23,6 +30,26 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Set up Android SDK 37.0
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: "13114758"
+          packages: "platform-tools platforms;android-37.0 build-tools;37.0.0"
+
+      - name: Configure SDK 37.0 target
+        run: |
+          cat > "$RUNNER_TEMP/tv-sdk-compat.init.gradle" <<'GRADLE'
+          gradle.beforeProject { p ->
+              ['com.android.application', 'com.android.library'].each { pluginId ->
+                  p.pluginManager.withPlugin(pluginId) {
+                      p.extensions.getByName('androidComponents').finalizeDsl { dsl ->
+                          if (dsl.compileSdk == 37) dsl.compileSdkMinor = 0
+                      }
+                  }
+              }
+          }
+          GRADLE
+
       - name: Checkout Media3 fork
         uses: actions/checkout@v4
         with:
@@ -32,7 +59,14 @@ jobs:
           fetch-depth: 1
 
       - name: Limit Media3 composite modules
-        run: cp .github/media3-composite-settings.gradle.kts .media3/settings.gradle.kts
+        run: |
+          test -d .media3/build-logic
+          test -d .media3/build-logic-settings
+          test -f .media3/libraries/ui_danmaku/build.gradle.kts
+          for module in lib-inspector test-data test-utils test-utils-robolectric; do
+            test -f ".github/media3-stubs/$module/build.gradle"
+          done
+          cp .github/media3-composite-settings.gradle.kts .media3/settings.gradle.kts
 
       - name: Prepare signing config
         env:
@@ -63,7 +97,7 @@ jobs:
       - name: Build release APKs
         env:
           MEDIA3_SOURCE_DIR: ${{ github.workspace }}/.media3
-        run: ./gradlew assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
+        run: ./gradlew -I "$RUNNER_TEMP/tv-sdk-compat.init.gradle" assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
 
       - name: Verify APKs exist
         id: apk-check
@@ -88,7 +122,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: "Release ${{ github.run_number }}"
-          tag_name: "v${{ github.run_number }}"
+          tag_name: "build-${{ github.run_id }}"
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            Source: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            Branch: `${{ github.ref_name }}`
+
+            Android TV APKs for ARM64 and ARMv7. Choose the ABI supported by your Android system.
           files: app/build/outputs/apk/**/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

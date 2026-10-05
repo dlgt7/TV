@@ -157,7 +157,7 @@ Debug 使用 Android 默认调试签名，不需要配置 release keystore：
 ./gradlew -I "$TV_SDK_INIT" :app:assembleMobileArm64_v8aDebug --max-workers=2
 ```
 
-默认 APK 路径如下，均相对于仓库根目录；Gradle 不会自动把它们复制到 `Release/apk/`：
+默认 APK 路径如下，均相对于仓库根目录。Release 构建完成后还会将 release APK 复制到 `Release/apk/`；debug APK 保留在下表的输出目录：
 
 | 变体 | APK |
 | --- | --- |
