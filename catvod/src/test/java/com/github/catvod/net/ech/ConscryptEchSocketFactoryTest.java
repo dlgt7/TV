@@ -2,6 +2,7 @@ package com.github.catvod.net.ech;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -12,6 +13,7 @@ import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.cert.CertificateException;
@@ -144,6 +146,31 @@ public class ConscryptEchSocketFactoryTest {
     }
 
     @Test
+    public void androidReflectiveTrustChecksPreserveContextAndOriginalRejection() throws Exception {
+        RecordingExtendedTrustManager original = new RecordingExtendedTrustManager();
+        ConscryptEchSocketFactory.PolicyTrustManager wrapper =
+                new ConscryptEchSocketFactory.PolicyTrustManager(original);
+        // ConscryptEngineSocket wraps extended managers and loses their policy method.
+        assertFalse(X509ExtendedTrustManager.class.isInstance(wrapper));
+        X509Certificate[] chain = new X509Certificate[0];
+        Socket socket = new Socket();
+        SSLEngine engine = SSLContext.getDefault().createSSLEngine("ech.example", 443);
+
+        assertReflectiveCertificateFailure(original.failure, wrapper,
+                "checkServerTrusted", chain, "RSA", Socket.class, socket);
+        original.assertCall("serverSocket", chain, "RSA", socket);
+        assertReflectiveCertificateFailure(original.failure, wrapper,
+                "checkClientTrusted", chain, "EC", Socket.class, socket);
+        original.assertCall("clientSocket", chain, "EC", socket);
+        assertReflectiveCertificateFailure(original.failure, wrapper,
+                "checkServerTrusted", chain, "EC", SSLEngine.class, engine);
+        original.assertCall("serverEngine", chain, "EC", engine);
+        assertReflectiveCertificateFailure(original.failure, wrapper,
+                "checkClientTrusted", chain, "RSA", SSLEngine.class, engine);
+        original.assertCall("clientEngine", chain, "RSA", engine);
+    }
+
+    @Test
     public void legacyContextAwareTrustFailureIsUnwrappedWithoutBasicFallback() {
         LegacyContextTrustManager original = new LegacyContextTrustManager();
         ConscryptEchSocketFactory.PolicyTrustManager wrapper =
@@ -178,6 +205,16 @@ public class ConscryptEchSocketFactoryTest {
 
     private static void assertCertificateFailure(CertificateException expected, ThrowingRunnable call) {
         assertSame(expected, assertThrows(CertificateException.class, call));
+    }
+
+    private static void assertReflectiveCertificateFailure(CertificateException expected,
+            X509TrustManager wrapper, String method, X509Certificate[] chain, String authType,
+            Class<?> contextType, Object context) {
+        InvocationTargetException error = assertThrows(InvocationTargetException.class,
+                () -> wrapper.getClass().getMethod(method, X509Certificate[].class,
+                        String.class, contextType).invoke(wrapper, chain, authType, context));
+        // Android's Platform.checkTrusted unwraps and rethrows this exact cause.
+        assertSame(expected, error.getCause());
     }
 
     private static final class TestConfigProvider implements ConscryptEchSocketFactory.ConfigProvider {

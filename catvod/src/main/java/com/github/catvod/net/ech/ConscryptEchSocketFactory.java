@@ -147,9 +147,12 @@ public final class ConscryptEchSocketFactory extends SSLSocketFactory {
      * Conscrypt 2.7.0 discovers this public class's getNetworkSecurityPolicy by reflection.
      * Its unbundled Android policy otherwise returns UNKNOWN and ignores ECHConfigList.
      * Keep the reflection contract while delegating all certificate decisions unchanged.
+     * Do not extend X509ExtendedTrustManager: Conscrypt's EngineSocket wraps extended
+     * managers in an anonymous adapter which loses this policy method. Android discovers
+     * the public socket/engine trust overloads below by reflection instead.
      */
     @Keep
-    public static final class PolicyTrustManager extends X509ExtendedTrustManager {
+    public static final class PolicyTrustManager implements X509TrustManager {
         private final X509TrustManager delegate;
         private final NetworkSecurityPolicy policy = new ConscryptNetworkSecurityPolicy() {
             @Override
@@ -184,7 +187,6 @@ public final class ConscryptEchSocketFactory extends SSLSocketFactory {
             return delegate.getAcceptedIssuers();
         }
 
-        @Override
         public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
                 throws CertificateException {
             if (delegate instanceof X509ExtendedTrustManager extended) {
@@ -195,7 +197,6 @@ public final class ConscryptEchSocketFactory extends SSLSocketFactory {
             }
         }
 
-        @Override
         public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
                 throws CertificateException {
             if (delegate instanceof X509ExtendedTrustManager extended) {
@@ -206,7 +207,6 @@ public final class ConscryptEchSocketFactory extends SSLSocketFactory {
             }
         }
 
-        @Override
         public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
                 throws CertificateException {
             if (delegate instanceof X509ExtendedTrustManager extended) {
@@ -217,7 +217,6 @@ public final class ConscryptEchSocketFactory extends SSLSocketFactory {
             }
         }
 
-        @Override
         public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
                 throws CertificateException {
             if (delegate instanceof X509ExtendedTrustManager extended) {
