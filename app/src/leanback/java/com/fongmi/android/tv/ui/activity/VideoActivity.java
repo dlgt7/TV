@@ -1504,6 +1504,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         boolean owner = service() != null && isOwner();
         boolean playing = owner && player().isPlaying();
         boolean repeating = owner && player().isRepeatOne();
+        if (owner) player().setDanmakuEnabled(DanmakuSetting.isShow());
         mBinding.control.jetstream.setPlayer(controller());
         mBinding.control.jetstream.setMediaTitle(getJetStreamTitle(), getJetStreamSecondaryText(), getJetStreamTertiaryText());
         mBinding.control.jetstream.setPlaybackState(playing, repeating);
