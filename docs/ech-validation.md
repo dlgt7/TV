@@ -4,16 +4,16 @@
 
 - ECH 默认关闭，开启后使用官方 `org.conscrypt:conscrypt-android:2.7.0`。
 - `EchDnsResolver` 查询 DNS HTTPS 记录（类型 65），从中获取 ECHConfigList。
-- 普通 DNS 选择“自动”时，ECH 查询默认使用 `https://1.1.1.1/dns-query`。
+- 未选择 DoH（界面显示“系统”）时，ECH 查询默认使用 `https://1.1.1.1/dns-query`。
 - 已选择 DoH 时，ECH 查询复用当前 DoH 选择。
-- 未找到配置或 DoH 查询失败时，回退到原 TLS 路径。
+- 未找到配置、DoH 查询失败或目标端口不是 443 时，回退到原 TLS 路径。
 - 已尝试 ECH 的握手本身失败时，不自动降级重试；可关闭 ECH 后重新连接。
 - 因此该开关不提供“必须使用 ECH，否则拒绝连接”的强制隐私模式。
 
 ## 覆盖范围与证据
 
-- 共享 `Spider.client()`、项目共享 OkHttp，以及使用该宿主客户端的 JAR 请求可经过此路径。
-- 无法控制自带网络栈的独立 JAR，也不覆盖 MPV、WebView 的独立请求。
+- 共享 `Spider.client()`、项目共享 OkHttp，以及通过受控宿主 API 使用该客户端的 JAR 请求可经过此路径。
+- 本次共享路径实测覆盖宿主客户端集成，不能推广为所有 JAR 均使用 ECH。独立或 shaded 网络栈的 JAR、native MPV、WebView 不在覆盖范围内。
 - 获取到配置、调用 `setEchConfigList` 成功或普通 TLS 握手成功，都不等于 ECH 已被服务端接受。
 - Conscrypt 2.7.0 没有公开的 SSLSocket ECH accepted 查询 API。
 - 当前探针请求发布 ECH 配置的 `crypto.cloudflare.com/cdn-cgi/trace`，以同一 HTTPS 响应中的 Cloudflare trace `sni=encrypted` 为服务端证据。
@@ -54,7 +54,7 @@ Instrumentation 参数 `ech_doh_mode`：
 | `alidns` | 固定 `https://dns.alidns.com/dns-query`，共享测试会同步选择这个 DoH |
 
 可选代理参数 `ech_proxy_mode=fixture` 只用于独立方法；不传或 `direct` 为直连。
-它使用固定任务夹具 HTTP CONNECT 代理，仅对该夹具的 Basic 挑战回应一次，不向源站发送代理凭据。
+它使用固定任务夹具 HTTP CONNECT 代理，仅对该夹具的 Basic 挑战回应，每次连接拒绝重复认证，不向源站发送代理凭据。
 DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由及认证发生。
 共享方法拒绝 `fixture`，这项测试不能证明用户全局代理规则或其他代理兼容性。
 独立方法总上限 60 秒；共享方法上限 90 秒。代理夹具必须由测试操作者先启动。
@@ -72,11 +72,32 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 - `ech-validation/conscrypt-shared-probe.json`：共享客户端结果。
 - 报告仅保存状态和必要计数，不输出 trace 正文、地址信息或凭据。
 
-## 当前验证状态
+## 2026-10-05 实测结果
 
-已核验源码、官方发布 API，以及离线 TrustManager 拒绝传播。
-设备上的 ECH 接受结果尚未确认为 PASS；必须读取本次完整报告后再判断。
-HTTP CONNECT 认证夹具的测试代码已提供，设备代理结果仍待实测；SOCKS 未测。
-ECH 不保证通过 Cloudflare 风控、验证码或其他站点访问策略。
+完整 CI 构建的 `sourceprobe` 隔离包已在 Android 13 / ARM64 设备完成直连及 HTTP CONNECT 夹具实测。源码为 `ae072fb82fbc862073b6a5050ee665114875851c`，CI run `37364398536`（attempt 2），sourceprobe 构建成功。71 项网络单测通过：DNS parser 32、resolver 14、factory 11、proxy 14；factory 新增 Android 反射式上下文信任检查，原先合计为 70 项。
 
-设备初测确认 Cloudflare DoH 的 TCP/TLS 连接受当前网络限制；阿里 DoH 的正常证书验证、GET/POST 均可达。应用继续尊重用户的 DoH 选择，不会在失败时偷偷更换提供商。`www.cloudflare.com` 当时未发布 ECH 配置，不能作为开启组的成功目标；测试已改用实际提供配置的 `crypto.cloudflare.com`。这些初测只定位 DNS 条件，尚不代表 ECH 已成功。
+| 路径 | DoH | 关闭 / 开启服务端证据 | 结果 |
+| --- | --- | --- | --- |
+| 独立客户端，正常证书及主机名验证，直连 | 阿里 | `plaintext` / `encrypted` | PASS |
+| 真实共享 `Spider.client()`，直连 | 阿里 | `plaintext` / `encrypted` | PASS |
+| 独立客户端，HTTP CONNECT 认证夹具 | 默认 Cloudflare | `plaintext` / `encrypted` | PASS |
+
+三项实测响应均为 HTTP 200、TLS 1.3、HTTP/2；开启组均为实际 Conscrypt socket、ALPN `h2`。独立路径经真实 resolver 取得 71 字节 ECHConfigList。共享路径保留原 factory、DNS、应用 interceptors，并恢复 ECH 设置及 DoH；它没有单独插桩配置字节数。直连 instrumentation 为 `OK (2 tests)`。代理 instrumentation 为 `OK (1 test)`；实际 HTTP 代理路由匹配，关闭组认证回应 1 次，开启组 2 次（包含 DoH），源站凭据 guard 通过。该结果仅覆盖所用 HTTP CONNECT 夹具。
+
+设置界面验证通过：缺省设置键不存在时为关闭；遥控器可聚焦、切换，重启保留切换状态，Material 使用说明可打开；测试结束已恢复关闭。`ech-settings.png` 与 `ech-info.png` 是切换过程截图，截图中的开启状态不代表默认值。
+
+修复了 Conscrypt EngineSocket 对 `X509ExtendedTrustManager` 的内部包装会丢失反射式 ECH policy 的问题。适配器改为实现 `X509TrustManager`，保留 public Socket/SSLEngine 重载，Android 仍可反射调用上下文证书检查；未增加证书放行或全局 provider。原始 `CertificateException` 的传播有回归测试。
+
+本设备直连 `1.1.1.1`、`1.0.0.1` 超时，`cloudflare-dns.com` 在 TLS 阶段被重置；阿里 DoH 的正常证书验证、GET/POST 均可达。应用尊重用户的 DoH 选择，不自动更换提供商。本设备使用步骤为：**设置 → 应用 → DoH 选择阿里 → 开启 ECH**，对新连接生效。
+
+Cloudflare 站点并非全部发布 ECH 配置：本次 `www.cloudflare.com` 没有配置，`crypto.cloudflare.com` 有配置。ECH 不保证通过风控、验证码或其他站点访问策略。SOCKS、任意用户代理与全部 JAR 网络栈未验证。
+
+## 预览包安装与构建来源
+
+预览包已安装，设备核验 APK SHA-256 为 `b3743c93a58f1a7c6cde1ac52c420345383711aafc18ea0e721b195950d63b4a`，首页已启动。安装前后、首次启动前的 11 个偏好设置 / 数据库文件哈希全部相同，并与本次会话最初快照一致；原应用包未改动，未替用户更改 ECH 偏好设置。
+
+安装包基于 CI run `37359756519`、源码 `4f2bbb6` 的预览产物，替换为实际从 `ae072fb` Java 源码经 javac / D8 编译得到的四个 factory 类。独立审查确认四个替换类与编译结果一致，其余 265 个同 DEX 类的规范化哈希、另 37 个 DEX 和其余非签名资源均未变，签名及对齐检查通过。这是本地源码编译更新，不是完整的新源码预览 CI 产物；完整 `ae072fb` sourceprobe CI 包已通过上述三项设备实测。
+
+完整预览 CI 因 GitHub 托管 runner 未能启动而取消。正式 release run `37367866351` 在本次归档时仍排队，未记为正式发布成功。
+
+脱敏报告、最终 JSON、界面截图及已安装 APK 位于 `/home/ubuntu/ECH实测-20261005/`，入口为 `REPORT.md`，APK 为 `TV-preview-ECH-arm64.apk`。报告区分完整 CI sourceprobe 证据和本地编译预览包来源；不包含 DNS 查询正文、完整 trace、设备地址或凭据。
