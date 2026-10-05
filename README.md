@@ -1,238 +1,129 @@
-# TV
+# TV · JetStream
 
-<p align="center">
-  <img src="other/image/logo.svg" width="128" alt="TV Logo">
-</p>
+**让大屏回归内容，让遥控器操作更顺手。**
 
-简体中文 | [English](README.en.md)
+面向 Android TV 和电视盒子的影音应用，也提供 Android 手机版。基于 [FongMi/TV](https://github.com/FongMi/TV) 与 [CatVod](https://github.com/CatVodTVOfficial/CatVodTVJarLoader)，围绕首页、片库、搜索、播放和设置，持续完善 JetStream 大屏界面与播放内核。
 
-基于 [FongMi/TV](https://github.com/FongMi/TV) 和 [CatVod](https://github.com/CatVodTVOfficial/CatVodTVJarLoader) 的 Android 影音应用，支持 **Android TV 大屏** 和 **Android 手机** 两种使用场景，并通过外部配置扩展点播、直播、解析、弹幕、字幕和爬虫能力。
+[![TV · 点击观看 90 秒界面宣传片](docs/media/TV-promo-cover.jpg)](docs/media/TV-promo.mp4)
 
-Bug请提交Issue
+[下载安装](#下载安装) · [功能亮点](#功能亮点) · [构建指南](LOCAL_BUILD_ENV.md) · [内核验证](docs/player-core-sync.md) · [反馈问题](https://github.com/wobuhui666/TV/issues) · [English](README.en.md)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=wobuhui666/TV&type=Date)](https://www.star-history.com/#wobuhui666/TV&Date)
+[观看宣传片](docs/media/TV-promo.mp4) / [下载 MP4](https://github.com/wobuhui666/TV/raw/refs/heads/ui/apple-tv-redesign/docs/media/TV-promo.mp4) · 90 秒 · 1080p · 中文字幕与配乐
 
----
+宣传片由模拟器实录制作，使用演示片库展示界面，不提供影片资源或订阅服务。演示片段为 Sintel © Blender Foundation（CC BY 3.0）；完整[素材来源与署名](docs/media/CREDITS.md)。
 
-## 目录
+## 功能亮点
 
-- [项目架构](#项目架构)
-- [免责声明](#免责声明)
-- [本 Fork 改了什么](#本-fork-改了什么)
-- [播放器](#播放器)
-- [点播功能](#点播功能)
-- [直播功能](#直播功能)
-- [爬虫引擎](#爬虫引擎)
-- [网络功能](#网络功能)
-- [DLNA 投放](#dlna-投放)
-- [Android Auto](#android-auto)
-- [远程控制](#远程控制)
-- [配置说明](#配置说明)
-- [构建命令](#构建命令)
-- [延伸阅读](#延伸阅读)
-
----
-
-## 免责声明
-
-本项目仅供学习、研究和个人合法使用，不内置、不存储、不分发任何影视资源、直播源、解析接口或爬虫规则。外部配置、第三方接口及其返回内容均由用户自行添加和管理，相关版权、合规和使用风险由使用者自行承担。
-
-请在遵守所在地法律法规和版权要求的前提下使用本项目，支持正版内容。
-
----
-
-## 项目架构
-
-| 项目 | 值 |
+| 体验 | 当前源码提供的能力 |
 | --- | --- |
-| package | `com.fongmi.android.tv` |
-| minSdk | 24（Android 7.0 Nougat） |
-| abi | `arm64-v8a`、`armeabi-v7a` |
-| flavor | `leanback`（电视版）、`mobile`（手机版） |
+| 遥控器优先 | 清晰的焦点状态、Material 控件、海报浏览、详情选集和播放设置抽屉。 |
+| 首页与片库 | 主视觉、继续观看、收藏与历史；按来源分类筛选，跨站搜索。 |
+| 多种主题 | 主题色覆盖首页、详情、播放与设置，支持跟随内容营造背景氛围。 |
+| 双播放内核 | Exo / Media3 与 MPV；倍速、缩放、字幕轨道、片头片尾设置。 |
+| 原生 ASS 与双字幕 | libass 样式和动画、内嵌／导入字体、独立主副字幕；MPV 保留原生渲染。 |
+| 复杂字幕 | 已验证 SUP / PGS、高分辨率内嵌 VobSub、DVB，以及 ASS 重叠、卡拉 OK、裁剪和矢量绘图。 |
+| 下一集预加载 | Exo 提前准备符合条件的下一集，预载约 10 秒并在切集时复用媒体源。 |
+| 音频效果 | 对白、夜间、音乐和自定义预设；五段 EQ、中置增强、响度归一化及限幅。 |
+| 直播与扩展 | 直播分组、EPG、追看；Java JAR、QuickJS、Python 配置扩展。 |
+| 网络与投放 | 按规则选择代理并处理跳转认证；DoH、请求头、DLNA 与局域网控制。 |
 
-```text
-TV/
-├── app/            主应用（包含 leanback 与 mobile 两套 UI）
-├── catvod/         爬虫抽象层（Spider 接口、OkHttp 网络栈）
-├── quickjs/        QuickJS JavaScript 引擎
-├── chaquo/         Chaquopy Python 引擎
-├── docs/           配置、Spider、本地 API、直播源文档
-└── Release/apk/    CI 或本地 release 产物输出目录
-```
+当前默认分支为 [`ui/apple-tv-redesign`](https://github.com/wobuhui666/TV/tree/ui/apple-tv-redesign)，已合入新播放内核。发布 APK 可能滞后于源码；例如 [v421](https://github.com/wobuhui666/TV/releases/tag/v421) 早于这轮内核修复，下载时请核对对应发布说明。
 
-`app/src/main/` 存放两端共用业务逻辑，`app/src/leanback/` 存放电视端 UI，`app/src/mobile/` 存放手机端 UI。
+<details>
+<summary>展开界面预览：从首页到播放与设置</summary>
 
----
+![TV 宣传片分镜总览： 首页、片库、推荐、搜索、详情、播放、直播与主题设置](docs/media/TV-promo-contact.jpg)
 
-## 本 Fork 改了什么
+来自成片的 13 个章节。宣传画面展示录制时的界面版本，后续细节以当前应用为准。
 
-这个仓库是 `wobuhui666/TV` 维护的个人增强版，重点改动集中在 TV 大屏交互、mpv 播放体验、弹幕字幕、爬虫兼容和构建流程。
+</details>
 
-### 1. JetStream 风格 TV UI
+## 下载安装
 
-- 新增并持续完善 JetStream 风格电视端界面，包括首页、详情页、播放控制层、推送页、站点选择、线路选择、选集、速度、UA、字幕等页面和弹窗。
-- 大量重做 leanback 布局组件，增加 `JetStream*` 自定义 View、焦点态、动效、圆角、阴影、卡片比例、海报信息标签和播放控件样式。
-- 使用 Material Symbols Rounded 图标资源，统一 TV 端按钮、控制栏、设置项和弹窗图标风格。
-- 优化大屏遥控器操作体验，补充长按命令处理、焦点移动、弹窗尺寸、framed 属性和不同弹窗的安全边距。
-- 优化首页推荐海报加载，新增 `FeaturedPosterCache`，减少重复请求并提升封面加载稳定性。
+### 1. 选择适合设备的 APK
 
-### 2. 播放器与 mpv 增强
+进入本仓库的 **[Releases](https://github.com/wobuhui666/TV/releases)**，阅读发布说明并下载对应安装包。
 
-- 增强 mpv 播放链路，补充文件加载状态、首帧渲染标记、seek 逻辑、日志输出和 HTTP header 传递。
-- 增加 mpv 相关设置入口，包括 `mpv.conf` 查看/编辑/导入、Vulkan、`gpu-next`、Anime4K 着色器档位等选项。
-- 新增 `MpvAnime4K` 支持，用于动画内容的上采样与锐化场景。
-- 修复和优化播放边界问题，包括外部播放器长进度、重复控制栈溢出、横竖屏处理、选集位置归一化、倒序选集时保持当前集位置等。
-- 增加顶部字幕信息显示控制，让播放页上方信息与字幕显示可独立控制。
+| 选择 | 适用设备 |
+| --- | --- |
+| `leanback` / TV 版 | Android TV、电视盒子，以及主要使用遥控器的设备。 |
+| `mobile` / 手机版 | Android 手机和触屏设备；以当次发布实际提供的 APK 为准。 |
+| `arm64-v8a` | 运行 64 位 ARM Android 系统的设备。 |
+| `armeabi-v7a` | 需要 32 位 ARM 安装包的设备。 |
 
-### 3. 字幕与弹幕能力
+最低支持 **Android 7.0 / API 24**。请按 Android 系统 ABI 选包，处理器支持 64 位不等于系统支持 64 位。升级时使用相同签名的安装包，保留已有配置与记录。
 
-- 重做字幕弹窗布局和控制按钮，补充字幕放大、缩小、上移、下移、重置等入口，提升 TV 与移动端的字幕调节体验。
-- 增加 Logvar 弹幕 API 支持，可配置 Logvar 根地址，自动通过播放 URL 或片名集数匹配弹幕，失败后再回退到旧弹幕接口。
-- 为 Logvar 地址归一化、URL 构造、剧集匹配、返回解析等逻辑增加单元测试。
-- 保留远程字幕/弹幕注入能力，可通过本地 HTTP API 推送字幕或弹幕到当前播放器。
+### 2. 添加自己的配置
 
-### 4. 爬虫、解析与脚本兼容
+安装后，在 **设置 → 来源** 中添加配置 URL 或本地文件。点播、直播、解析和扩展能力取决于所添加的配置及其服务。
 
-- 为 QuickJS 增加 drpy 兼容层，补充 `pdfh`、`pdfa`、`pd`、`pdfl` 等常用解析方法适配，降低迁移旧脚本的成本。
-- 增加 `jsoup` 依赖和 drpy 相关解析实现，提高 HTML 解析稳定性。
-- 增强 `Connect` 内容处理和脚本 patch 能力，便于对外部脚本做运行时兼容修正。
-- 集成 QuickLog，便于 JavaScript 爬虫、解析过程和异常场景的日志排查。
+- 点播、解析、网络与弹幕字段：[配置说明](docs/CONFIG.md)。
+- M3U、TXT、JSON 和频道分组：[直播来源格式](docs/LIVE.md)。
 
-### 5. 网络、数据与体验修复
+### 3. 开始播放，按需调节
 
-- 优化 HTTP 响应处理和播放失败后的 fallback 流程，提高换源、线路切换和解析失败时的容错性。
-- 调整热门搜索接口和 TMDB 代理接口，减少接口变动对页面展示的影响。
-- 修复多处 TV 大屏尺寸定义、进度条、卡片形状、弹窗关闭标签、UI 间距和文字样式问题。
-- 补充崩溃日志复制入口，方便在设备上直接提取错误信息。
+选择来源，浏览片库或搜索片名，然后进入详情选集播放。常用新增入口：
 
-### 6. 构建与测试
+| 入口 | 可以设置 |
+| --- | --- |
+| 设置 → 预加载 | 下一集预加载。 |
+| 播放器 → 字幕轨道 → 高级字幕 | 第二字幕、ASS 样式和字体导入。 |
+| 播放器 → 音轨 → 音效 | 对白增强、EQ、响度和限幅。 |
+| 我的 → 设置 | 主题、播放及其他偏好。 |
 
-- 增加 release APK 构建和签名相关工作流，覆盖 `arm64-v8a` 与 `armeabi-v7a`。
-- 对齐 Gradle、AGP、AndroidX 和本地 Media3 composite build 相关配置，降低本地构建差异。
-- 增加 `testInstrumentationRunner`、JUnit 依赖和若干播放器/状态/弹幕相关测试。
+下一集预加载面向 Exo 的已解析 HTTP(S) 点播，排除 DRM、仍需解析和非 HTTP 来源；MPV 使用自己的当前流缓存。音频效果处理 PCM，开启后可能需要退出编码直通。字幕格式、容器和设备差异见[播放内核说明](docs/player-core-sync.md)。
 
----
+## 配置与集成
 
-## 播放器
+| 文档 | 内容 |
+| --- | --- |
+| [CONFIG.md](docs/CONFIG.md) | 点播、直播、解析、代理、DoH、弹幕与配置示例。 |
+| [SPIDER.md](docs/SPIDER.md) | Java、JavaScript、Python 爬虫接口与返回结构。 |
+| [LOCAL.md](docs/LOCAL.md) | 局域网推送、播放控制、字幕和弹幕注入。 |
+| [LIVE.md](docs/LIVE.md) | 直播来源、频道分组与格式。 |
 
-- **核心**：ExoPlayer（Media3）+ FFmpeg 软解，支持硬解 / 软解自动降级切换。
-- **mpv**：支持 mpv 播放、配置文件编辑、Vulkan、`gpu-next`、Anime4K、播放日志和 HTTP header。
-- **渲染**：SurfaceView / TextureView。
-- **DRM**：Widevine、PlayReady、ClearKey，支持 `#KODIPROP` 声明。
-- **弹幕**：DanmakuFlameMaster，和播放时间轴同步，支持远程推送与 Logvar 匹配。
-- **字幕**：SRT / SSA / ASS 外挂字幕、系统 CaptioningManager、远程实时注入。
-- **其他**：倍速、多缩放比例、画中画（PiP）、背景音频、片头 / 片尾自动跳过。
+支持配置文档所列范围内的 Forward Widget 适配，包括部分视频列表、搜索和播放模块；依赖 WebView、加密格式或未实现宿主 API 的模块不能直接通用。
 
----
+手机版可控制兼容的 DLNA 设备，TV 版可接收投放。画中画等手机专属能力、DRM、HDR 和音频直通均取决于相应平台与设备，不应视为所有电视上的统一能力。
 
-## 点播功能
+## 开发与验证
 
-- 多站点分类浏览，支持 Filter 筛选（年份 / 地区 / 类型等）。
-- 多站点并行搜索，关键字自动繁转简提升兼容性。
-- 播放失败自动换源：解析器 -> 线路 -> 搜索其他站 -> 下一站点。
-- 观看记录（保留 60 天）、收藏、无痕模式。
-- 电视版支持遥控器操作；手机版支持手势调节亮度、音量、进度、上下滑切集、屏幕旋转与锁定。
+完整步骤见 **[本地构建指南](LOCAL_BUILD_ENV.md)**。需要 JDK 21、Python 3.10、Android SDK 37，以及配套 Media3 fork；首次构建先完成指南中的 SDK 和 composite build 配置。
 
----
-
-## 直播功能
-
-- 支持 M3U、TXT（`#genre#` 分组）、JSON 三种直播源格式。
-- **EPG**：XMLTV 格式，支持 `.gz`，每 6 小时自动刷新。
-- **追看 / 时移**：支持 `append`、`pltv` 等多种类型。
-- 支持频道收藏、隐藏分组密码保护。
-- 特殊引擎：TVBus、ForceTech。
-
----
-
-## 爬虫引擎
-
-支持三种语言编写爬虫：
-
-- Java JAR（DexClassLoader）
-- JavaScript（QuickJS）
-- Python（Chaquopy）
-
-通过 `api` 字段指定爬虫，通过 `ext` 字段传入初始化参数。完整 API 规格见 [SPIDER.md](docs/SPIDER.md)。
-
-同时支持部分 [Forward Widget](https://github.com/InchStudio/ForwardWidgets) 模块：`api` 可直接填写 Forward 单文件 `.js` 或 `.fwd` 合集地址。当前支持 `video` / `list` 视频模块的列表、筛选、详情、搜索、播放地址和自定义播放 header；`stream` 模块可按片名搜索并作为直接播放来源。兼容同步 `Widget.html.load`、同步或 `await` 形式的 `Widget.storage`，并支持缓存 TTL。TMDB 请求会优先使用 `ext` 中的 token/key，未配置时回退到应用构建的 `TMDB_API_KEY`；相对海报路径会自动补全为 `https://image.tmdb.org/t/p/...`。Bangumi/TMDB 这类资料源本身不含视频，开启 `changeable` 后可沿用应用现有换源逻辑：无播放线路时按片名搜索其他可换源站点并播放。暂不支持 `danmu`、`subtitle`、`requiresWebView: true` 和 `FWENC1` 加密 Widget。配置示例见 [CONFIG.md](docs/CONFIG.md#forward-widget-配置)。
-
----
-
-## 网络功能
-
-- **DoH**：DNS over HTTPS，支持 Bootstrap IP。
-- **代理**：HTTP / HTTPS / SOCKS4 / SOCKS5，可按 host 正则规则动态选择。
-- **Hosts**：DNS 解析覆盖，支持通配符 `*`。
-- **CORS 注入**：按 host 规则在响应中注入自定义 header。
-- **广告拦截**：通过 `ads` 黑名单拦截匹配域名。
-- **WebView 嗅探**：Sniffer 通过 regex 拦截媒体 URL，支持 UA 伪装。
-
----
-
-## DLNA 投放
-
-- **DMC（投放端）**：手机版扫描局域网 DLNA 设备并投放媒体。
-- **DMR（被投放端）**：电视版作为 DLNA Renderer 接收其他设备投放。
-
-使用 JUPnP 3.0.4（UPnP），支持 play / pause / stop / seek / next / repeat 控制，可传递自定义 HTTP header（User-Agent、Referer 等）到目标串流。
-
----
-
-## Android Auto
-
-电视版支持 Android Auto。`PlaybackService` 实现 `MediaLibraryService`，可在车机上浏览播放记录与直播频道：
-
-- **点播**：历史记录条目可直接续播，恢复上次进度。
-- **直播**：按分组浏览频道，可直接选台。
-- **播放控制**：支持车机端 play / pause / prev / next / stop。
-- **懒加载**：App 退出后 Auto 仍保持连接，配置会自动重新载入。
-
----
-
-## 远程控制
-
-应用启动后会绑定本地 HTTP 服务器（NanoHTTPD），端口号从 **9978** 起自动探测到 **9998**，可用于播放控制、推送字幕 / 弹幕、多设备同步等。完整端点见 [LOCAL.md](docs/LOCAL.md)。
-
----
-
-## 配置说明
-
-Vod 配置是应用主要入口，可通过 URL 或本地路径载入，顶层字段包括：
-
-- 点播站点（`sites`）、解析规则（`parses`）
-- 直播来源（`lives`）
-- 网络设置（`doh`、`proxy`、`hosts`、`ads`）
-- 弹幕设置（`danmaku`、`logvar`）
-
-Live 配置可内嵌或独立存放。完整字段说明见 [CONFIG.md](docs/CONFIG.md)。
-
----
-
-## 构建命令
+也可以从公开的 **[TV Codespace 模板](https://github.com/zhhshss/tv-codespace-template)** 开始，复用工具链和测试环境。
 
 ```bash
-chmod +x ./gradlew
+# 按构建指南准备环境；手动配置 SDK 37.0 时带上对应的 -I 参数。
 ./gradlew :app:assembleLeanbackArm64_v8aDebug
 ./gradlew :app:assembleMobileArm64_v8aDebug
-./gradlew :app:testLeanbackArm64_v8aDebugUnitTest
+./gradlew :app:testLeanbackArm64_v8aDebugUnitTest :catvod:testDebugUnitTest
 ```
 
-复现 CI release 构建：
+共享业务位于 `app/src/main/`，TV 与手机界面分别位于 `app/src/leanback/`、`app/src/mobile/`；`catvod`、`quickjs`、`chaquo` 提供扩展基础，`mpv` 和 `subtitle-ass` 集成原生播放与字幕库。
 
-```bash
-./gradlew assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
-```
+以下为 2026-10-04 已记录的内核验证结果，完整条件、日志和限制见[验证报告](docs/player-core-sync.md)：
 
-release 构建需要 JDK 21、Python 3.10、Android SDK 37、`local.properties` 中的签名配置，以及使用本地 Media3 composite build 时的 `MEDIA3_SOURCE_DIR`。更多本地环境说明见 [LOCAL_BUILD_ENV.md](LOCAL_BUILD_ENV.md)。
-
----
-
-## 延伸阅读
-
-| 文档 | 说明 |
+| 验证项目 | 结果 |
 | --- | --- |
-| [CONFIG.md](docs/CONFIG.md) | Vod / Live 完整配置字段说明 |
-| [SPIDER.md](docs/SPIDER.md) | Spider 所有方法规格与返回格式 |
-| [LOCAL.md](docs/LOCAL.md) | 本地 HTTP API 所有端点说明 |
-| [LIVE.md](docs/LIVE.md) | 直播来源格式说明 |
+| 应用单元测试 | 267 项通过。 |
+| 代理测试 | 14 项通过。 |
+| x86_64 Android 模拟器 | 12 项受控播放回归通过。 |
+| ARM64 Android 环境 | 15 项通过，包含 Python 原生扩展、MPV、双字幕、音效和缩略图。 |
+| 构建 | TV ARM64 / ARMv7 APK 构建通过，手机 ARM64 Java / Kotlin 编译通过。 |
+| TV Lint | 0 错误，现有 311 条警告。 |
+
+ARM64 验证节点的系统标识为 `redroid`，不代表三星实体设备验证；HDMI、硬件 HDR、真实片源速度及端到端 AI 识别仍需相应环境实测。
+
+## 反馈与贡献
+
+欢迎通过 [Issues](https://github.com/wobuhui666/TV/issues) 提交问题。请附上应用版本或提交号、Android 版本、设备 ABI、播放内核、复现步骤和相关日志；分享前去掉令牌、私人地址与配置凭据。
+
+改动前可阅读 [仓库开发约定](AGENTS.md)。播放器、解析和数据行为的变更请附上对应回归验证。
+
+## 致谢与许可证
+
+感谢 [FongMi/TV](https://github.com/FongMi/TV)、[CatVod](https://github.com/CatVodTVOfficial/CatVodTVJarLoader) 以及相关开源项目的作者与贡献者。
+
+项目采用 [GNU GPL v3.0](LICENSE.md)。第三方组件保留各自许可证，详见 [libass 说明](third_party/libass/NOTICE.md)、[MPV 来源与重编说明](third_party/mpv/README.md) 和[宣传素材署名](docs/media/CREDITS.md)。
+
+应用是播放与配置工具，不提供影视资源、订阅或第三方内容的使用权。请自行添加并合法使用有权访问的来源。

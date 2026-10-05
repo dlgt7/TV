@@ -1,236 +1,148 @@
-# TV
+# TV · JetStream
 
-<p align="center">
-  <img src="other/image/logo.svg" width="128" alt="TV Logo">
-</p>
+**A media experience designed for the big screen and your remote.**
 
-[简体中文](README.md) | English
+TV brings an Apple TV–inspired JetStream interface to Android TV, with a shared playback foundation for Android phones. Browse your library, resume a series, discover titles, and switch between live channels in one app.
 
-An Android media app based on [FongMi/TV](https://github.com/FongMi/TV) and [CatVod](https://github.com/CatVodTVOfficial/CatVodTVJarLoader). It supports both **Android TV** and **Android phones**, and can extend VOD, live TV, parsers, danmaku, subtitles, and spiders through external configuration.
+[![TV — watch the 90-second interface tour](docs/media/TV-promo-cover.jpg)](docs/media/TV-promo.mp4)
 
-[Discussion Group](https://t.me/fongmi_official) | [Release Channel](https://t.me/fongmi_release)
+[Download APKs](https://github.com/wobuhui666/TV/releases) · [Getting started](#getting-started) · [Playback core](docs/player-core-sync.md) · [Report an issue](https://github.com/wobuhui666/TV/issues) · [简体中文](README.md)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=wobuhui666/TV&type=Date)](https://www.star-history.com/#wobuhui666/TV&Date)
+[Watch or download the video](docs/media/TV-promo.mp4) · 90 seconds · 1080p · H.264/AAC
 
----
+The tour uses emulator recordings and a demonstration library. The displayed titles and sources are examples, not a supplied content service. See [media credits](docs/media/CREDITS.md) for footage, images, music, and fonts.
 
-## Contents
+## At a glance
 
-- [Project Structure](#project-structure)
-- [Disclaimer](#disclaimer)
-- [What This Fork Changes](#what-this-fork-changes)
-- [Player](#player)
-- [VOD](#vod)
-- [Live TV](#live-tv)
-- [Spider Engine](#spider-engine)
-- [Networking](#networking)
-- [DLNA Casting](#dlna-casting)
-- [Android Auto](#android-auto)
-- [Remote Control](#remote-control)
-- [Configuration](#configuration)
-- [Build Commands](#build-commands)
-- [Further Reading](#further-reading)
-
----
-
-## Disclaimer
-
-This project is provided only for learning, research, and lawful personal use. It does not include, store, or distribute any media content, live TV sources, parser endpoints, or spider rules. External configurations, third-party APIs, and returned content are added and managed by users, who are responsible for related copyright, compliance, and usage risks.
-
-Use this project only in compliance with applicable laws and copyright requirements, and support legitimate content sources.
-
----
-
-## Project Structure
-
-| Item | Value |
+| Area | What you can do |
 | --- | --- |
-| package | `com.fongmi.android.tv` |
-| minSdk | 24 (Android 7.0 Nougat) |
-| abi | `arm64-v8a`, `armeabi-v7a` |
-| flavor | `leanback` (TV), `mobile` (phone) |
+| TV interface | Navigate with a remote, use clear focus states, browse large artwork, and choose a theme color. |
+| Library and search | Resume from history, manage favorites, browse categories, and search across configured sources. |
+| Playback | Choose ExoPlayer/Media3 or MPV, with playback speed, aspect ratio, and subtitle controls. |
+| Styled and dual subtitles | Render native ASS styles and animation, select primary and secondary subtitles independently, and import fonts. |
+| Bitmap subtitles | Use SUP/PGS, embedded VobSub, and DVB subtitles on the documented playback paths. |
+| Next episode | Let Exo prepare the next eligible episode with up to 10 seconds of preloaded media. |
+| Audio | Adjust EQ, dialogue emphasis, loudness normalization, and limiting through audio profiles. |
+| Extensions | Connect Python, JavaScript, or Java JAR spiders through external configuration. |
+| Networking | Apply proxy routing rules and authentication, including handling across redirects. |
 
-```text
-TV/
-├── app/            Main app module with leanback and mobile UI flavors
-├── catvod/         Spider abstraction layer, Spider API, and OkHttp stack
-├── quickjs/        QuickJS JavaScript engine
-├── chaquo/         Chaquopy Python engine
-├── docs/           Configuration, Spider, local API, and live-source docs
-└── Release/apk/    Output directory for CI or local release artifacts
-```
+The current default branch is [`ui/apple-tv-redesign`](https://github.com/wobuhui666/TV/tree/ui/apple-tv-redesign). It includes the redesigned TV interface and the integrated playback core.
 
-Shared application logic lives in `app/src/main/`. TV-specific UI lives in `app/src/leanback/`, and phone-specific UI lives in `app/src/mobile/`.
+Published APKs may lag behind this source branch. Check the notes and source revision of the release you install: [`v421`](https://github.com/wobuhui666/TV/releases/tag/v421), for example, predates the playback core integration described here.
 
----
+## A closer look
 
-## What This Fork Changes
+<details>
+<summary>Open the interface overview</summary>
 
-This repository is the `wobuhui666/TV` maintained fork. The main work is focused on TV UI, mpv playback, subtitles and danmaku, spider compatibility, and build reliability.
+![TV interface overview: home, library, discovery, search, playback, live TV, and settings](docs/media/TV-promo-contact.jpg)
 
-### 1. JetStream-Style TV UI
+Frames from the finished promotional video, including the demonstration library and emulator UI.
 
-- Added and refined a JetStream-style TV experience, covering the home screen, detail pages, playback controls, push screen, site selector, line selector, episode selector, speed dialog, UA dialog, subtitle dialog, and related sheets.
-- Reworked many leanback layouts with `JetStream*` custom views, focus states, animations, rounded shapes, shadows, card ratios, poster metadata pills, and playback control styling.
-- Switched TV controls and dialogs to Material Symbols Rounded icon assets for a more consistent large-screen visual system.
-- Improved remote-control interaction with long-click command handling, focus movement, dialog dimensions, framed attributes, and safer margins for different dialogs.
-- Added `FeaturedPosterCache` to reduce duplicate artwork requests and make poster loading more stable.
+</details>
 
-### 2. Player And mpv Improvements
+The home screen puts featured artwork and continued viewing within reach. Library and discovery pages lead into search results, title details, and episode selection. Playback controls and settings use the same remote-friendly interaction patterns.
 
-- Enhanced the mpv playback path with file-loaded state tracking, first-frame render flags, seek handling, logging, and HTTP header forwarding.
-- Added mpv settings for viewing, editing, and importing `mpv.conf`, plus Vulkan, `gpu-next`, and Anime4K shader level options.
-- Added `MpvAnime4K` support for anime upscaling and sharpening use cases.
-- Fixed and improved playback edge cases, including long external-player positions, repeat-control stack overflow, orientation handling, episode position normalization, and preserving the current episode when reversing episode order.
-- Added control over top subtitle information visibility so the top playback info and subtitles can be adjusted separately.
+Live TV brings channel groups and channel selection together. The personal page provides entry points for favorites, history, media push, casting reception, local files, and settings.
 
-### 3. Subtitles And Danmaku
+## Getting started
 
-- Reworked subtitle dialog layouts and controls, including subtitle size up/down, move up/down, and reset actions for both TV and mobile workflows.
-- Added Logvar danmaku API support. Users can configure a Logvar root URL, match by playback URL or title and episode, and fall back to the legacy danmaku API when needed.
-- Added unit tests for Logvar base URL normalization, request URL construction, episode matching, and response parsing.
-- Kept remote subtitle and danmaku injection through the local HTTP API.
+### 1. Choose an APK
 
-### 4. Spider, Parser, And Script Compatibility
+Open this repository's [Releases](https://github.com/wobuhui666/TV/releases) and read the release notes before downloading.
 
-- Added a drpy compatibility layer for QuickJS and adapted common helpers such as `pdfh`, `pdfa`, `pd`, and `pdfl`, making old scripts easier to migrate.
-- Added `jsoup` and drpy-related parsing implementations for more stable HTML parsing.
-- Enhanced `Connect` content handling and script patching so external scripts can be adjusted at runtime for compatibility.
-- Integrated QuickLog for JavaScript spider logs, parser diagnostics, and failure investigation.
+| Choice | Intended device |
+| --- | --- |
+| `leanback` / TV | Android TV, a TV box, or another device operated with a remote. |
+| `mobile` | Android phones and touch devices, when that release provides a mobile APK. |
+| `arm64-v8a` | A device with a 64-bit ARM Android environment. |
+| `armeabi-v7a` | A device that requires a 32-bit ARM APK. |
 
-### 5. Networking, Data, And UX Fixes
+Android 7.0 / API 24 is the minimum supported version. Match the APK to your device's Android ABI; a 64-bit processor alone does not guarantee a 64-bit Android environment.
 
-- Improved HTTP response handling and playback fallback behavior when parser, line, or source switching fails.
-- Adjusted hot-search and TMDB proxy endpoints to reduce breakage caused by upstream API changes.
-- Fixed multiple large-screen sizing, progress indicator, card shape, dialog closing tag, spacing, and text-style issues.
-- Added a crash-log copy action to make device-side error collection easier.
+### 2. Install and add your configuration
 
-### 6. Build And Tests
+Install the selected APK on your device, then open **Settings → Sources** to add your own configuration URL or local file.
 
-- Added release APK build and signing workflows for `arm64-v8a` and `armeabi-v7a`.
-- Aligned Gradle, AGP, AndroidX, and local Media3 composite build configuration to reduce local build differences.
-- Added `testInstrumentationRunner`, JUnit dependencies, and focused tests for player state, playback, and danmaku behavior.
+A configuration can define VOD sites, parsers, live channels, subtitles, danmaku, and network behavior. The app does not bundle a ready-to-watch media library or live TV subscription.
 
----
+Start with [the configuration reference](docs/CONFIG.md). For live channels, see [supported live-source formats](docs/LIVE.md).
 
-## Player
+### 3. Make it yours
 
-- **Core**: ExoPlayer (Media3) + FFmpeg software decoding, with automatic hardware/software fallback.
-- **mpv**: mpv playback, config editing, Vulkan, `gpu-next`, Anime4K, playback logs, and HTTP headers.
-- **Rendering**: SurfaceView / TextureView.
-- **DRM**: Widevine, PlayReady, and ClearKey with `#KODIPROP` support.
-- **Danmaku**: DanmakuFlameMaster synchronized with the playback timeline, with remote push and Logvar matching.
-- **Subtitles**: External SRT / SSA / ASS subtitles, system CaptioningManager, and remote real-time injection.
-- **Other**: Playback speed, aspect scaling, Picture-in-Picture, background audio, and intro/outro skipping.
+Choose a theme color, open a source, and browse or search for a title. During playback, use the subtitle and audio controls to select tracks and adjust presentation.
 
----
+Exo's next-episode feature is controlled in **Settings → Preload**. It applies to eligible HTTP sources; parser-dependent, DRM, and non-HTTP sources are excluded. MPV retains its own current-stream cache.
 
-## VOD
+## Playback details
 
-- Multi-site category browsing with filters for year, region, type, and more.
-- Parallel multi-site search, with automatic Traditional-to-Simplified keyword conversion for better compatibility.
-- Automatic fallback when playback fails: parser -> line -> search other sites -> next site.
-- Watch history retained for 60 days, favorites, and incognito mode.
-- TV flavor supports remote-control navigation. Mobile flavor supports gestures for brightness, volume, progress, episode switching, rotation, and screen locking.
+The two playback engines share the app's browsing experience while retaining their own rendering and audio paths.
 
----
+- **Exo / Media3:** native libass rendering for ASS, embedded font attachments, external ASS, and independent secondary subtitles.
+- **MPV:** native subtitle rendering, secondary-track selection, font and style controls, and configurable playback options.
+- **Subtitle formats:** text and bitmap coverage includes SRT, ASS, WebVTT, TTML, SUP/PGS, embedded VobSub, and DVB in the validated paths.
+- **Audio profiles:** off, dialogue, night, music, and custom modes, with five EQ bands, multichannel center gain, normalization, and a limiter.
+- **Continuity:** subtitle and audio changes preserve playback position and pause state; next-episode preloading is specific to Exo.
 
-## Live TV
+Audio processing may require PCM output instead of encoded passthrough. Subtitle containers, codecs, and device capabilities also affect the available path. The [playback core notes](docs/player-core-sync.md) describe supported cases and their boundaries, including VobSub container coverage.
 
-- Supports M3U, TXT (`#genre#` grouping), and JSON live-source formats.
-- **EPG**: XMLTV with `.gz` support and automatic refresh every 6 hours.
-- **Catch-up / time shift**: supports `append`, `pltv`, and other types.
-- Channel favorites and password-protected hidden groups.
-- Special engines: TVBus and ForceTech.
+## Configuration and integrations
 
----
+Bring your own lawful sources and choose only the extensions you need.
 
-## Spider Engine
+| Guide | Use it for |
+| --- | --- |
+| [Configuration](docs/CONFIG.md) | VOD sites, parsers, live sources, network rules, subtitles, and danmaku settings. |
+| [Spider API](docs/SPIDER.md) | Python, QuickJS JavaScript, and Java JAR integrations. |
+| [Local API](docs/LOCAL.md) | Media push, playback controls, and subtitle or danmaku injection on your local network. |
+| [Live formats](docs/LIVE.md) | M3U, TXT, JSON, channel groups, and live-source configuration. |
 
-Spiders can be written in three languages:
+Forward Widget compatibility is limited to the supported adapter behavior; scripts that depend on unavailable host APIs may need changes. Use the configuration and Spider references when integrating a widget or another external script.
 
-- Java JAR (DexClassLoader)
-- JavaScript (QuickJS)
-- Python (Chaquopy)
+The mobile app can control compatible DLNA devices, and the TV app can receive casting requests. Availability depends on the receiving device, network, and media format.
 
-Use the `api` field to select the spider and the `ext` field to pass initialization parameters. See [SPIDER.md](docs/SPIDER.md) for the full API contract.
+## Build and contribute
 
----
+Begin with [LOCAL_BUILD_ENV.md](LOCAL_BUILD_ENV.md) for the supported toolchain, local properties, signing setup, and Media3 source configuration.
 
-## Networking
-
-- **DoH**: DNS over HTTPS with Bootstrap IP support.
-- **Proxy**: HTTP / HTTPS / SOCKS4 / SOCKS5 with host-regex based routing.
-- **Hosts**: DNS override with `*` wildcard support.
-- **CORS injection**: inject custom response headers by host rule.
-- **Ad blocking**: block matched domains through the `ads` blacklist.
-- **WebView sniffing**: intercept media URLs with regex-based sniffers and custom UA support.
-
----
-
-## DLNA Casting
-
-- **DMC (controller)**: the mobile flavor can scan LAN DLNA devices and cast media.
-- **DMR (renderer)**: the TV flavor can work as a DLNA renderer and receive casts from other devices.
-
-The app uses JUPnP 3.0.4 (UPnP), supports play / pause / stop / seek / next / repeat controls, and can forward custom HTTP headers such as User-Agent and Referer to the target stream.
-
----
-
-## Android Auto
-
-The TV flavor supports Android Auto. `PlaybackService` implements `MediaLibraryService`, allowing car head units to browse watch history and live channels:
-
-- **VOD**: resume history items from the last position.
-- **Live TV**: browse channels by group and play directly.
-- **Playback controls**: play / pause / prev / next / stop from the car UI.
-- **Lazy loading**: Auto can stay connected after the app exits, and configuration reloads automatically.
-
----
-
-## Remote Control
-
-When the app starts, it binds a local HTTP server (NanoHTTPD). It scans ports from **9978** to **9998** and exposes playback control, subtitle / danmaku push, multi-device sync, and related actions. See [LOCAL.md](docs/LOCAL.md) for the full endpoint list.
-
----
-
-## Configuration
-
-VOD configuration is the main entry point. It can be loaded from a URL or local path, with top-level fields including:
-
-- VOD sites (`sites`) and parse rules (`parses`)
-- Live sources (`lives`)
-- Network settings (`doh`, `proxy`, `hosts`, `ads`)
-- Danmaku settings (`danmaku`, `logvar`)
-
-Live configuration can be embedded or stored separately. See [CONFIG.md](docs/CONFIG.md) for all fields.
-
----
-
-## Build Commands
+A public [TV Codespace template](https://github.com/zhhshss/tv-codespace-template) is also available as a development starting point.
 
 ```bash
-chmod +x ./gradlew
+# Build a debug TV APK for ARM64.
 ./gradlew :app:assembleLeanbackArm64_v8aDebug
+
+# Build a debug mobile APK for ARM64.
 ./gradlew :app:assembleMobileArm64_v8aDebug
-./gradlew :app:testLeanbackArm64_v8aDebugUnitTest
+
+# Run the app and proxy unit-test variants.
+./gradlew :app:testLeanbackArm64_v8aDebugUnitTest :catvod:testDebugUnitTest
 ```
 
-To reproduce the CI release build:
+Shared application code lives in `app/src/main/`; TV and mobile interfaces live in `app/src/leanback/` and `app/src/mobile/`. The `catvod`, `quickjs`, and `chaquo` modules provide the extension foundations.
 
-```bash
-./gradlew assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
-```
+For a bug report, include the APK version or source commit, Android version, device ABI, playback engine, reproduction steps, and relevant logs. Remove credentials and private source URLs before posting to [Issues](https://github.com/wobuhui666/TV/issues).
 
-Release builds require JDK 21, Python 3.10, Android SDK 37, signing values in `local.properties`, and `MEDIA3_SOURCE_DIR` when using the local Media3 composite build. See [LOCAL_BUILD_ENV.md](LOCAL_BUILD_ENV.md) for more local environment details.
+## Validation
 
----
+The [playback integration report](docs/player-core-sync.md) records the following completed checks on 2026-10-04:
 
-## Further Reading
-
-| Document | Description |
+| Check | Recorded result |
 | --- | --- |
-| [CONFIG.md](docs/CONFIG.md) | Full Vod / Live configuration field reference |
-| [SPIDER.md](docs/SPIDER.md) | Spider method contract and response formats |
-| [LOCAL.md](docs/LOCAL.md) | Full local HTTP API endpoint reference |
-| [LIVE.md](docs/LIVE.md) | Live-source format reference |
+| App JUnit tests | 267 passed. |
+| Proxy tests | 14 passed. |
+| x86_64 Android emulator | 12 controlled playback scenarios passed. |
+| ARM64 Android environment | 15 controlled scenarios passed, including native Python, MPV, and dual subtitles. |
+| Builds | TV ARM64 and ARMv7 debug APKs built; mobile ARM64 Java/Kotlin compilation passed. |
+| TV lint | 0 errors; 311 warnings remain. |
+
+These runs cover controlled fixtures and the environments described in the report. They do not establish physical Samsung hardware, HDMI/HDR behavior, universal DRM support, or end-to-end AI recognition. Consult the linked evidence before applying those results to a different device or content source.
+
+## Credits and license
+
+This fork builds on [FongMi/TV](https://github.com/FongMi/TV) and [CatVod](https://github.com/CatVodTVOfficial/CatVodTVJarLoader), with thanks to their authors and the wider open-source community.
+
+The project is distributed under [GNU GPL v3.0](LICENSE.md). Third-party components retain their own licenses and notices; see the attribution and reproducible-source information in [third_party/libass](third_party/libass) and [third_party/mpv](third_party/mpv).
+
+Promotional footage includes **Sintel © Blender Foundation, CC BY 3.0**, demonstration photos from Unsplash, and a synthesized soundtrack. See [the complete media credits](docs/media/CREDITS.md).
+
+TV is a media application, not a content provider. It does not supply media catalogs, subscriptions, or rights to third-party content. Add and use external sources only when you have the necessary permission.
