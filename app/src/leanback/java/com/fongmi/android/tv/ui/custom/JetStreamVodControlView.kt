@@ -142,6 +142,8 @@ class JetStreamVodControlView @JvmOverloads constructor(
     private var previousVisible by mutableStateOf(true)
     private var nextVisible by mutableStateOf(true)
     private var repeatVisible by mutableStateOf(true)
+    private var danmakuToggleVisible by mutableStateOf(false)
+    private var danmakuEnabled by mutableStateOf(false)
     private var controlPanelVisible by mutableStateOf(false)
     private var topInfoVisible by mutableStateOf(false)
     private var centerInfoVisible by mutableStateOf(false)
@@ -205,6 +207,11 @@ class JetStreamVodControlView @JvmOverloads constructor(
         previousVisible = previous
         nextVisible = next
         repeatVisible = repeat
+    }
+
+    fun setDanmakuToggle(visible: Boolean, enabled: Boolean) {
+        danmakuToggleVisible = visible
+        danmakuEnabled = enabled
     }
 
     fun setTopActions(playlist: Boolean, captions: Boolean, settings: Boolean) {
@@ -523,6 +530,18 @@ class JetStreamVodControlView @JvmOverloads constructor(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (danmakuToggleVisible) {
+                    ControlIcon(
+                        icon = if (danmakuEnabled) R.drawable.ic_control_danmaku_on else R.drawable.ic_control_danmaku_off,
+                        isPlaying = isPlaying,
+                        enabled = true,
+                        selected = danmakuEnabled,
+                        contentDescription = stringResource(if (danmakuEnabled) R.string.danmaku_on else R.string.danmaku_off),
+                        showLabel = true
+                    ) {
+                        listener?.onCommand("danmaku_toggle")
+                    }
+                }
                 commandGroups.filter { hasVisibleCommands(it.key) }.forEach { group ->
                     ControlIcon(group.icon, isPlaying, true, activeGroup == group.key, groupLabel(group), showLabel = true) {
                         toggleGroup(group.key)
