@@ -1275,9 +1275,19 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void onDanmakuToggle() {
         if (service() == null || !isOwner()) return;
-        boolean enabled = !DanmakuSetting.isShow();
+        boolean enabled = !(DanmakuSetting.isLoad() && DanmakuSetting.isShow());
+        if (enabled && !DanmakuSetting.isLoad()) DanmakuSetting.putLoad(true);
         DanmakuSetting.putShow(enabled);
         player().setDanmakuEnabled(enabled);
+        if (enabled && !player().haveDanmaku()) {
+            if (!player().isEmpty() && mQualityResult != null) {
+                // The original result retains its sources while loading is disabled.
+                List<Danmaku> items = new ArrayList<>(mQualityResult.getDanmaku());
+                for (Danmaku item : items) player().addDanmaku(item);
+                if (!items.isEmpty()) player().setDanmaku(items.get(0));
+            }
+            if (!player().haveDanmaku()) Notify.show(R.string.danmaku_no_source);
+        }
     }
 
     private void onToggle() {
@@ -1504,11 +1514,12 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         boolean owner = service() != null && isOwner();
         boolean playing = owner && player().isPlaying();
         boolean repeating = owner && player().isRepeatOne();
-        if (owner) player().setDanmakuEnabled(DanmakuSetting.isShow());
+        boolean danmakuEnabled = DanmakuSetting.isLoad() && DanmakuSetting.isShow();
+        if (owner) player().setDanmakuEnabled(danmakuEnabled);
         mBinding.control.jetstream.setPlayer(controller());
         mBinding.control.jetstream.setMediaTitle(getJetStreamTitle(), getJetStreamSecondaryText(), getJetStreamTertiaryText());
         mBinding.control.jetstream.setPlaybackState(playing, repeating);
-        mBinding.control.jetstream.setDanmakuToggle(owner && (DanmakuSetting.isLoad() || player().haveDanmaku()), DanmakuSetting.isShow());
+        mBinding.control.jetstream.setDanmakuToggle(owner, danmakuEnabled);
         mBinding.control.jetstream.setTopActions(true, true, true);
         syncJetStreamCommands();
         updateActionFocusBoundary(mBinding.control.action.getRoot());
@@ -1525,7 +1536,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         setJetStreamCommand("text", mBinding.control.action.text, isVisible(mBinding.control.action.text));
         setJetStreamCommand("audio", mBinding.control.action.audio, isVisible(mBinding.control.action.audio));
         setJetStreamCommand("video", mBinding.control.action.video, isVisible(mBinding.control.action.video));
-        setJetStreamCommand("danmaku", mBinding.control.action.danmaku, isVisible(mBinding.control.action.danmaku));
+        setJetStreamCommand("danmaku", mBinding.control.action.danmaku, DanmakuSetting.isLoad());
         setJetStreamCommand("speed", mBinding.control.action.speed, true);
         setJetStreamCommand("scale", mBinding.control.action.scale, true);
         setJetStreamCommand("player", mBinding.control.action.player, true);

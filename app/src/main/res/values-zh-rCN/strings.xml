@@ -77,6 +77,7 @@
     <string name="danmaku">弹幕</string>
     <string name="danmaku_on">弹幕：开</string>
     <string name="danmaku_off">弹幕：关</string>
+    <string name="danmaku_no_source">本集暂无弹幕，可在弹幕菜单选择文件或设置接口</string>
     <string name="danmaku_select">选择弹幕</string>
     <string name="danmaku_setting">弹幕设置</string>
     <string name="danmaku_text_size">字体缩放</string>

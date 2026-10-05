@@ -77,6 +77,7 @@
     <string name="danmaku">Danmaku</string>
     <string name="danmaku_on">Danmaku: on</string>
     <string name="danmaku_off">Danmaku: off</string>
+    <string name="danmaku_no_source">No danmaku for this episode. Choose a file or configure an API in the danmaku menu.</string>
     <string name="danmaku_select">Select danmaku</string>
     <string name="danmaku_setting">Danmaku setting</string>
     <string name="danmaku_text_size">Text scale</string>
