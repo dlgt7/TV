@@ -34,14 +34,96 @@
 
     </com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout>
 
+    <HorizontalScrollView
+        android:id="@+id/danmakuTabsScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="8dp"
+        android:clipToPadding="false"
+        android:descendantFocusability="afterDescendants"
+        android:focusable="false"
+        android:overScrollMode="never"
+        android:padding="2dp"
+        android:scrollbars="none">
 
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/tabGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:descendantFocusability="afterDescendants"
+            android:focusable="false"
+            android:orientation="horizontal"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
+                android:id="@+id/tabAppearance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:maxLines="1"
+                android:nextFocusLeft="@id/tabAppearance"
+                android:nextFocusRight="@id/tabTiming"
+                android:nextFocusUp="@id/reset"
+                android:nextFocusDown="@id/textBoldSwitch"
+                android:text="@string/danmaku_section_appearance" />
+
+            <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
+                android:id="@+id/tabTiming"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:maxLines="1"
+                android:nextFocusLeft="@id/tabAppearance"
+                android:nextFocusRight="@id/tabDensity"
+                android:nextFocusUp="@id/reset"
+                android:nextFocusDown="@id/timeOffsetSlider"
+                android:text="@string/danmaku_section_timing" />
+
+            <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
+                android:id="@+id/tabDensity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:maxLines="1"
+                android:nextFocusLeft="@id/tabTiming"
+                android:nextFocusRight="@id/tabDisplay"
+                android:nextFocusUp="@id/reset"
+                android:nextFocusDown="@id/maxOnScreenSlider"
+                android:text="@string/danmaku_section_density" />
+
+            <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
+                android:id="@+id/tabDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:maxLines="1"
+                android:nextFocusLeft="@id/tabDensity"
+                android:nextFocusRight="@id/tabDisplay"
+                android:nextFocusUp="@id/reset"
+                android:nextFocusDown="@id/showScrollSwitch"
+                android:text="@string/danmaku_section_display" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+    </HorizontalScrollView>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/danmakuContentScroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="4dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
         android:fillViewport="true"
+        android:focusable="false"
         android:overScrollMode="never">
 
         <com.fongmi.android.tv.ui.custom.JetStreamDialogContentLayout
@@ -52,45 +134,6 @@
             android:paddingTop="8dp"
             android:paddingEnd="24dp"
             android:paddingBottom="24dp">
-
-    <com.fongmi.android.tv.ui.custom.JetStreamDialogToggleGroup
-        android:id="@+id/tabGroup"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="16dp"
-        app:selectionRequired="true"
-        app:singleSelection="true">
-
-        <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
-            android:id="@+id/tabAppearance"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:focusable="true"
-            android:text="@string/danmaku_section_appearance" />
-
-        <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
-            android:id="@+id/tabTiming"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:focusable="true"
-            android:text="@string/danmaku_section_timing" />
-
-        <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
-            android:id="@+id/tabDensity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:focusable="true"
-            android:text="@string/danmaku_section_density" />
-
-        <com.fongmi.android.tv.ui.custom.MaterialPlaybackButton
-            android:id="@+id/tabDisplay"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:focusable="true"
-            android:text="@string/danmaku_section_display" />
-
-    </com.fongmi.android.tv.ui.custom.JetStreamDialogToggleGroup>
 
             <include
                 android:id="@+id/appearance"

@@ -28,7 +28,13 @@ open class MaterialPlaybackButton @JvmOverloads constructor(
         includeFontPadding = false
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
         gravity = if (role == Role.CHOICE) Gravity.CENTER_VERTICAL or Gravity.START else Gravity.CENTER
-        setPaddingRelative(jetStreamDpInt(24), jetStreamDpInt(10), jetStreamDpInt(24), jetStreamDpInt(10))
+        val paddingAttrs = context.obtainStyledAttributes(attrs, intArrayOf(android.R.attr.paddingHorizontal))
+        val horizontalPadding = try {
+            paddingAttrs.getDimensionPixelSize(0, jetStreamDpInt(24))
+        } finally {
+            paddingAttrs.recycle()
+        }
+        setPaddingRelative(horizontalPadding, jetStreamDpInt(10), horizontalPadding, jetStreamDpInt(10))
         iconSize = jetStreamDpInt(20)
         iconPadding = jetStreamDpInt(8)
         iconGravity = ICON_GRAVITY_TEXT_START
