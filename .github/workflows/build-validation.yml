@@ -1,0 +1,139 @@
+name: Build isolated TV validation APKs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [sourceprobe, preview]
+    env:
+      VALIDATION_PACKAGE: ${{ matrix.package }}
+      MEDIA3_SOURCE_DIR: ${{ github.workspace }}/.media3
+
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: gradle
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Set up Android SDK 37.0
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: "13114758"
+          packages: "platform-tools platforms;android-37.0 build-tools;37.0.0"
+
+      - name: Checkout Media3 fork
+        uses: actions/checkout@v4
+        with:
+          repository: wobuhui666/media
+          ref: release-1.11.0-fongmi
+          path: .media3
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Configure isolated debug build
+        run: |
+          test -d .media3/build-logic
+          test -d .media3/build-logic-settings
+          test -f .media3/libraries/ui_danmaku/build.gradle.kts
+          cp .github/media3-composite-settings.gradle.kts .media3/settings.gradle.kts
+          test ! -f local.properties
+          cat > "$RUNNER_TEMP/tv-validation.init.gradle" <<'GRADLE'
+          def suffix = System.getenv('VALIDATION_PACKAGE')
+          if (!(suffix in ['sourceprobe', 'preview'])) throw new GradleException('Invalid validation package')
+          gradle.beforeProject { p ->
+              ['com.android.application', 'com.android.library'].each { pluginId ->
+                  p.pluginManager.withPlugin(pluginId) {
+                      p.extensions.getByName('androidComponents').finalizeDsl { dsl ->
+                          if (dsl.compileSdk == 37) dsl.compileSdkMinor = 0
+                          if (p.path == ':app' && pluginId == 'com.android.application') {
+                              dsl.defaultConfig.applicationId = "com.fongmi.android.tv.${suffix}"
+                              dsl.defaultConfig.testApplicationId = "com.fongmi.android.tv.${suffix}.test"
+                              dsl.buildTypes.getByName('debug').signingConfig = dsl.signingConfigs.getByName('debug')
+                          }
+                      }
+                  }
+              }
+          }
+          GRADLE
+          chmod +x ./gradlew
+
+      - name: Build application and instrumentation APKs
+        run: |
+          ./gradlew -I "$RUNNER_TEMP/tv-validation.init.gradle" \
+            :app:assembleLeanbackArm64_v8aDebug \
+            :app:assembleLeanbackArm64_v8aDebugAndroidTest \
+            --no-daemon --build-cache --max-workers=2
+
+      - name: Verify packages and collect APKs
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, re, shutil, subprocess
+          root = pathlib.Path('app/build/outputs/apk')
+          apks = list(root.rglob('*.apk'))
+          groups = {
+              'app': [p for p in apks if 'androidTest' not in p.parts],
+              'test': [p for p in apks if 'androidTest' in p.parts],
+          }
+          package = os.environ['VALIDATION_PACKAGE']
+          app_id = 'com.fongmi.android.tv.' + package
+          aapt = pathlib.Path(os.environ['ANDROID_HOME']) / 'build-tools/37.0.0/aapt'
+          destination = pathlib.Path('validation-apks')
+          destination.mkdir()
+          metadata = {
+              'applicationCommit': os.environ['GITHUB_SHA'],
+              'media3Commit': subprocess.check_output(['git', '-C', '.media3', 'rev-parse', 'HEAD'], text=True).strip(),
+              'abi': 'arm64-v8a', 'buildType': 'debug',
+              'instrumentationExecuted': False, 'files': [],
+          }
+          for role, candidates in groups.items():
+              if len(candidates) != 1:
+                  raise SystemExit('Expected exactly one ' + role + ' APK')
+              source = candidates[0]
+              badging = subprocess.check_output([str(aapt), 'dump', 'badging', str(source)], text=True)
+              expected = app_id + ('.test' if role == 'test' else '')
+              actual = re.search(r"^package: name='([^']+)'", badging, re.MULTILINE)
+              if actual is None or actual.group(1) != expected:
+                  raise SystemExit('Unexpected APK application ID')
+              if role == 'test':
+                  manifest = subprocess.check_output([str(aapt), 'dump', 'xmltree', str(source), 'AndroidManifest.xml'], text=True)
+                  if not re.search(r'android:targetPackage[^\n]*="' + re.escape(app_id) + r'"', manifest):
+                      raise SystemExit('Unexpected instrumentation target package')
+              output = destination / (package + '-' + role + '-debug.apk')
+              shutil.copyfile(source, output)
+              metadata['files'].append({'file': output.name, 'applicationId': expected,
+                                        'sha256': hashlib.sha256(output.read_bytes()).hexdigest()})
+          (destination / 'build-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+          PY
+
+      - name: Upload debug APK pair
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-validation-${{ matrix.package }}-arm64-${{ github.run_id }}
+          path: validation-apks/
+          if-no-files-found: error
+          retention-days: 7
