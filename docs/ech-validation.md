@@ -16,7 +16,7 @@
 - 无法控制自带网络栈的独立 JAR，也不覆盖 MPV、WebView 的独立请求。
 - 获取到配置、调用 `setEchConfigList` 成功或普通 TLS 握手成功，都不等于 ECH 已被服务端接受。
 - Conscrypt 2.7.0 没有公开的 SSLSocket ECH accepted 查询 API。
-- 当前探针以同一 HTTPS 响应中的 Cloudflare trace `sni=encrypted` 为服务端证据。
+- 当前探针请求发布 ECH 配置的 `crypto.cloudflare.com/cdn-cgi/trace`，以同一 HTTPS 响应中的 Cloudflare trace `sni=encrypted` 为服务端证据。
 - 同时核对实际 Conscrypt socket、TLS 1.3/ALPN、请求目标及预期路由。
 - 关闭组的预期结果为 `sni=plaintext`，开启组为 `sni=encrypted`。
 
@@ -51,6 +51,7 @@ Instrumentation 参数 `ech_doh_mode`：
 | --- | --- |
 | `default`（默认） | `https://1.1.1.1/dns-query` |
 | `cloudflare` | 固定 `https://cloudflare-dns.com/dns-query` |
+| `alidns` | 固定 `https://dns.alidns.com/dns-query`，共享测试会同步选择这个 DoH |
 
 可选代理参数 `ech_proxy_mode=fixture` 只用于独立方法；不传或 `direct` 为直连。
 它使用固定任务夹具 HTTP CONNECT 代理，仅对该夹具的 Basic 挑战回应一次，不向源站发送代理凭据。
@@ -77,3 +78,5 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 设备上的 ECH 接受结果尚未确认为 PASS；必须读取本次完整报告后再判断。
 HTTP CONNECT 认证夹具的测试代码已提供，设备代理结果仍待实测；SOCKS 未测。
 ECH 不保证通过 Cloudflare 风控、验证码或其他站点访问策略。
+
+设备初测确认 Cloudflare DoH 的 TCP/TLS 连接受当前网络限制；阿里 DoH 的正常证书验证、GET/POST 均可达。应用继续尊重用户的 DoH 选择，不会在失败时偷偷更换提供商。`www.cloudflare.com` 当时未发布 ECH 配置，不能作为开启组的成功目标；测试已改用实际提供配置的 `crypto.cloudflare.com`。这些初测只定位 DNS 条件，尚不代表 ECH 已成功。

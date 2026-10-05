@@ -63,8 +63,8 @@ import okhttp3.TlsVersion;
 /** Separate strict-client and shared-transport probes; only isolated packages are permitted. */
 @RunWith(AndroidJUnit4.class)
 public final class ConscryptEchProbeTest {
-    private static final String HOST = "www.cloudflare.com";
-    private static final String TRACE_URL = "https://www.cloudflare.com/cdn-cgi/trace";
+    private static final String HOST = "crypto.cloudflare.com";
+    private static final String TRACE_URL = "https://crypto.cloudflare.com/cdn-cgi/trace";
     private static final String DOH_URL = "https://cloudflare-dns.com/dns-query";
     private static final long TOTAL_MS = 90_000L;
     private static final int MAX_TRACE_BYTES = 32 * 1024;
@@ -177,7 +177,7 @@ public final class ConscryptEchProbeTest {
             String mode = dohMode();
             report.put("dohMode", mode);
             // Only the in-memory DoH selection changes; no stored source/DoH configuration is edited.
-            OkHttp.dns().setDoh(new Doh().name("ECH probe").url("cloudflare".equals(mode) ? DOH_URL : ""));
+            OkHttp.dns().setDoh(new Doh().name("ECH probe").url("default".equals(mode) ? "" : dohUrl(mode)));
             OkHttpClient shared = Spider.client();
             assertSame("Spider must expose the actual shared host client", OkHttp.client(), shared);
             assertTrue("Shared transport must contain the production ECH factory",
@@ -341,13 +341,17 @@ public final class ConscryptEchProbeTest {
 
     private static String dohMode() {
         String mode = InstrumentationRegistry.getArguments().getString("ech_doh_mode", "default");
-        if (!"default".equals(mode) && !"cloudflare".equals(mode))
+        if (!"default".equals(mode) && !"cloudflare".equals(mode) && !"alidns".equals(mode))
             throw new IllegalArgumentException("UNSUPPORTED_DOH_TEST_MODE");
         return mode;
     }
 
     private static String dohUrl(String mode) {
-        return "cloudflare".equals(mode) ? DOH_URL : EchDnsResolver.DEFAULT_DOH_URL;
+        return switch (mode) {
+            case "cloudflare" -> DOH_URL;
+            case "alidns" -> "https://dns.alidns.com/dns-query";
+            default -> EchDnsResolver.DEFAULT_DOH_URL;
+        };
     }
 
     private static String proxyMode() {
