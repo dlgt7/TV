@@ -8,7 +8,6 @@ import org.conscrypt.DomainEncryptionMode;
 import org.conscrypt.NetworkSecurityPolicy;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -100,12 +99,6 @@ public final class ConscryptEchSocketFactory extends SSLSocketFactory {
     public Socket createSocket(InetAddress host, int port, InetAddress localHost, int localPort)
             throws IOException {
         return legacyFactory.createSocket(host, port, localHost, localPort);
-    }
-
-    @Override
-    public Socket createSocket(Socket socket, InputStream consumed, boolean autoClose)
-            throws IOException {
-        return legacyFactory.createSocket(socket, consumed, autoClose);
     }
 
     private byte[] configuration(String hostname, int port) throws IOException {

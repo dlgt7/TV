@@ -11,9 +11,7 @@ import org.conscrypt.NetworkSecurityPolicy;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.cert.CertificateException;
@@ -43,7 +41,7 @@ public class ConscryptEchSocketFactoryTest {
         assertSame(legacy.supportedCiphers, factory.getSupportedCipherSuites());
         assertHostnameOverloads(443);
         assertHostlessOverloads();
-        assertEquals(7, legacy.calls);
+        assertEquals(6, legacy.calls);
         assertTrue(config.hostnames.isEmpty());
     }
 
@@ -71,7 +69,7 @@ public class ConscryptEchSocketFactoryTest {
         config.failure = new IOException("Do not resolve an IP or reverse-resolve a socket");
         assertHostlessOverloads();
         assertTrue(config.hostnames.isEmpty());
-        assertEquals(4, legacy.calls);
+        assertEquals(3, legacy.calls);
     }
 
     @Test
@@ -170,16 +168,12 @@ public class ConscryptEchSocketFactoryTest {
 
     private void assertHostlessOverloads() throws Exception {
         InetAddress address = InetAddress.getByAddress(new byte[]{127, 0, 0, 1});
-        Socket transport = new Socket();
-        InputStream consumed = new ByteArrayInputStream(new byte[]{1, 2, 3});
         assertSame(legacy.result, factory.createSocket());
         legacy.assertCall("unconnected");
         assertSame(legacy.result, factory.createSocket(address, 443));
         legacy.assertCall("address", address, 443);
         assertSame(legacy.result, factory.createSocket(address, 443, address, 41234));
         legacy.assertCall("addressLocal", address, 443, address, 41234);
-        assertSame(legacy.result, factory.createSocket(transport, consumed, true));
-        legacy.assertCall("consumed", transport, consumed, true);
     }
 
     private static void assertCertificateFailure(CertificateException expected, ThrowingRunnable call) {
@@ -222,7 +216,6 @@ public class ConscryptEchSocketFactoryTest {
         @Override public Socket createSocket(String h, int p, InetAddress l, int lp) throws IOException { return record("hostnameLocal", h, p, l, lp); }
         @Override public Socket createSocket(InetAddress h, int p) throws IOException { return record("address", h, p); }
         @Override public Socket createSocket(InetAddress h, int p, InetAddress l, int lp) throws IOException { return record("addressLocal", h, p, l, lp); }
-        @Override public Socket createSocket(Socket s, InputStream in, boolean close) throws IOException { return record("consumed", s, in, close); }
 
         private Socket record(String name, Object... args) throws IOException {
             calls++;
