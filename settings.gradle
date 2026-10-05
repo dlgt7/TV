@@ -33,6 +33,18 @@ def media3SourceDir = System.getenv("MEDIA3_SOURCE_DIR")
 if (media3SourceDir != null && !media3SourceDir.isBlank()) {
     def media3Dir = file(media3SourceDir)
     if (media3Dir.exists()) {
+        // One entry point for CI and local composites; the script refuses a different
+        // baseline, partial patches, or extra edits to the two affected source files.
+        def patchApplication = providers.exec {
+            commandLine 'python3', file('third_party/media3/apply_patches.py').absolutePath, media3Dir.absolutePath
+            ignoreExitValue = true
+        }
+        def patchOutput = patchApplication.standardOutput.asText.get().trim()
+        def patchError = patchApplication.standardError.asText.get().trim()
+        if (patchApplication.result.get().exitValue != 0) {
+            throw new GradleException("Cannot prepare the required Media3 patch: ${patchError}")
+        }
+        logger.lifecycle(patchOutput)
         includeBuild(media3Dir) {
             dependencySubstitution {
                 substitute module("androidx.media3:media3-common") using project(":lib-common")
@@ -53,5 +65,7 @@ if (media3SourceDir != null && !media3SourceDir.isBlank()) {
                 substitute module("androidx.media3:media3-ui-danmaku") using project(":lib-ui-danmaku")
             }
         }
+    } else {
+        throw new GradleException("MEDIA3_SOURCE_DIR does not exist: ${media3Dir}")
     }
 }

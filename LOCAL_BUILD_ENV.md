@@ -11,7 +11,7 @@
 | Android SDK | `platform-tools`、`platforms;android-37.0`、`build-tools;37.0.0` |
 | Android Gradle Plugin | 仓库固定为 9.0.1 |
 | Gradle | 使用 `./gradlew`，仓库固定为 9.1.0，无需另装系统 Gradle |
-| Media3 | 公开仓库 `wobuhui666/media` 的 `release-1.11.0-fongmi` 分支，以及本仓库配套的 composite settings |
+| Media3 | 公开仓库 `wobuhui666/media` 的固定提交 `3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d`、本仓库配套的 composite settings 与固定补丁 |
 | APK 目标 | Android 7.0 / API 24 起；`arm64-v8a` 或 `armeabi-v7a` |
 
 建议准备 4 核、16 GB 内存和至少 64 GB 磁盘；同时运行模拟器会增加资源占用。通常无需安装 NDK：MPV、FFmpeg、libass 等原生库已经随仓库提供。修改 MPV 桥时，再按 [MPV 原生桥说明](third_party/mpv/README.md) 使用固定 NDK r29 重编。
@@ -123,8 +123,12 @@ GRADLE
 
 ```bash
 cd "$TV_PROJECT_DIR"
-git clone --depth 1 --branch release-1.11.0-fongmi \
-  https://github.com/wobuhui666/media.git .media3
+# 以下初始化命令仅用于全新目录，不修改已有 checkout。
+test ! -e .media3
+git init .media3
+git -C .media3 remote add origin https://github.com/wobuhui666/media.git
+git -C .media3 fetch --depth 1 origin 3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d
+git -C .media3 checkout --detach FETCH_HEAD
 cp .github/media3-composite-settings.gradle.kts .media3/settings.gradle.kts
 export MEDIA3_SOURCE_DIR="$TV_PROJECT_DIR/.media3"
 
@@ -136,9 +140,11 @@ git -C "$MEDIA3_SOURCE_DIR" rev-parse HEAD
 ./gradlew -I "$TV_SDK_INIT" --version
 ```
 
-已有 `.media3` 时不必重复克隆；先核对分支和本地修改，再更新配套 settings。该 settings 会从 Media3 目录的父目录寻找 `.github/media3-stubs`，所以推荐放在当前 TV 工作树的 `.media3/`，不要随意指向其他目录。
+已有 `.media3` 时不要执行上面的初始化块；先核对 HEAD 和本地修改，再更新配套 settings。该 settings 会从 Media3 目录的父目录寻找 `.github/media3-stubs`，所以推荐放在当前 TV 工作树的 `.media3/`，不要随意指向其他目录。
 
-根目录 `settings.gradle` 通过 `MEDIA3_SOURCE_DIR` 启用 composite build；每个新终端都要重新导出该变量，以及 `JAVA_HOME`、SDK 路径和 `TV_SDK_INIT`。记录两个仓库的提交 SHA，才能复现相同源码；分支名本身会随上游更新。
+根目录 `settings.gradle` 在加载 `MEDIA3_SOURCE_DIR` composite 前，统一调用 [固定补丁脚本](third_party/media3/apply_patches.py)。脚本需 `python3` 和 Git 位于 PATH；先校验固定 HEAD、补丁 SHA-256 和两个目标文件的完整 blob ID，再应用暂停弹幕开关修复。首次应用与重复构建均可通过；不匹配的 HEAD、部分应用、目标文件额外改动或不兼容补丁会明确失败，不自动 checkout/reset。其他文件（包括 composite settings）的本地改动会保留。补丁基准、SHA 及更新约束见 [Media3 补丁说明](third_party/media3/README.md)。
+
+每个新终端都要重新导出 `MEDIA3_SOURCE_DIR`、`JAVA_HOME`、SDK 路径和 `TV_SDK_INIT`。记录 TV 提交、固定 Media3 提交及补丁 SHA，才能复现相同源码。
 
 ## 构建 APK
 

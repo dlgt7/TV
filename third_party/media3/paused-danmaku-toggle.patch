@@ -1,0 +1,143 @@
+# Base: wobuhui666/media 3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d
+# Restore current, unexpired danmaku when enabling or loading while paused.
+diff --git a/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuController.java b/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuController.java
+index 7bf291c6d1a94bc7a8028b1dbaf05b4245b19c0a..00940a1d713aee360f9eb4a5239e2b1de9772602 100644
+--- a/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuController.java
++++ b/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuController.java
+@@ -522,11 +522,8 @@ public final class DanmakuController {
+       } else {
+         currentView.seekTo(positionMs);
+       }
+-    } else if (currentView.isStarted()) {
+-      currentView.seekTo(positionMs);
+-      if (!currentView.isPaused()) {
+-        currentView.pause();
+-      }
++    } else {
++      currentView.pauseAt(positionMs);
+     }
+   }
+ 
+diff --git a/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuView.java b/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuView.java
+index 2142ac75048dfca17ade5aa37b7fbd766db9f657..c5f877e37ef219b651fdde3ac8da996a8c619ce0 100644
+--- a/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuView.java
++++ b/libraries/ui_danmaku/src/main/java/androidx/media3/ui/danmaku/DanmakuView.java
+@@ -45,6 +45,7 @@ public final class DanmakuView extends View {
+   private final PlaybackClock clock = new PlaybackClock();
+   private DanmakuConfig config;
+   private boolean drawEnabled = true;
++  private boolean pausedFramePending;
+   private long lastActivationPositionMs = Long.MIN_VALUE;
+   private boolean released;
+   private int viewWidth;
+@@ -159,6 +160,7 @@ public final class DanmakuView extends View {
+     resetActivationCursor(positionMs);
+     clock.started = true;
+     clock.paused = false;
++    pausedFramePending = false;
+     clearActiveItems();
+     postInvalidateOnAnimation();
+   }
+@@ -172,6 +174,15 @@ public final class DanmakuView extends View {
+     clock.paused = true;
+   }
+ 
++  /** Renders a paused snapshot at {@code positionMs}, without changing media playback. */
++  public void pauseAt(long positionMs) {
++    clock.rebase(positionMs);
++    clock.started = true;
++    clock.paused = true;
++    pausedFramePending = true;
++    invalidate();
++  }
++
+   /** Resumes rendering. */
+   public void resume() {
+     if (!clock.started || !clock.paused) {
+@@ -183,6 +194,10 @@ public final class DanmakuView extends View {
+ 
+   /** Seeks to {@code positionMs} and clears active items. */
+   public void seekTo(long positionMs) {
++    if (clock.paused) {
++      pauseAt(positionMs);
++      return;
++    }
+     clock.rebase(positionMs);
+     resetActivationCursor(positionMs);
+     clearActiveItems();
+@@ -212,6 +227,7 @@ public final class DanmakuView extends View {
+   public void stop() {
+     clock.started = false;
+     clock.paused = false;
++    pausedFramePending = false;
+     clearActiveItems();
+     invalidate();
+   }
+@@ -293,6 +309,9 @@ public final class DanmakuView extends View {
+     recalculateTracks();
+     if (clock.started && !clock.paused) {
+       postInvalidateOnAnimation();
++    } else if (clock.started) {
++      pausedFramePending = true;
++      invalidate();
+     }
+   }
+ 
+@@ -343,7 +362,10 @@ public final class DanmakuView extends View {
+     }
+     long currentMs = getCurrentPositionMs();
+     painter.beginFrame();
+-    if (!clock.paused) {
++    if (clock.paused && pausedFramePending) {
++      rebuildPausedFrame(currentMs);
++      pausedFramePending = false;
++    } else if (!clock.paused) {
+       activateNewItems(currentMs);
+     }
+     int activeItemCount = drawActiveItems(canvas, currentMs);
+@@ -352,6 +374,35 @@ public final class DanmakuView extends View {
+     }
+   }
+ 
++  private void rebuildPausedFrame(long currentMs) {
++    clearActiveItems();
++    long sourceMs = currentMs - config.timeOffsetMs;
++    activationScratch.clear();
++    // Use the retained pool, not the short window for newly arriving playback events.
++    renderPool.copyRange(Long.MIN_VALUE, sourceMs, activationScratch);
++    for (int i = 0; i < activationScratch.size(); i++) {
++      DanmakuRenderItem item = activationScratch.get(i);
++      if (!isTypeVisible(item.type) || !isPoolVisible(item.pool)) {
++        continue;
++      }
++      long startMs = item.timeMs + config.timeOffsetMs;
++      item.activatedTimeMs = startMs;
++      // The painter owns per-type lifetime rules. A null canvas checks expiry without drawing.
++      if (!painter.draw(null, item, currentMs, viewWidth, viewHeight)) {
++        deactivate(item);
++        continue;
++      }
++      if (activeItems.size() >= config.maxOnScreen) {
++        break;
++      }
++      if (trackManager.tryActivate(item, startMs)) {
++        activeItems.add(item);
++      }
++    }
++    activationScratch.clear();
++    lastActivationPositionMs = sourceMs;
++  }
++
+   private int drawActiveItems(Canvas canvas, long currentMs) {
+     int writeIdx = 0;
+     for (int i = 0; i < activeItems.size(); i++) {
+@@ -544,6 +595,9 @@ public final class DanmakuView extends View {
+       return;
+     }
+     if (clock.started) {
++      if (clock.paused) {
++        pausedFramePending = true;
++      }
+       long activationMs = getCurrentPositionMs() - config.timeOffsetMs;
+       long windowStartMs = activationMs - MAX_ACTIVATION_WINDOW_MS;
+       long earliestDueMs = Long.MAX_VALUE;
