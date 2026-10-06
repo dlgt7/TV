@@ -52,6 +52,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.fongmi.android.tv.R
@@ -64,6 +65,7 @@ import androidx.tv.material3.darkColorScheme
 import androidx.tv.material3.MaterialTheme as TvMaterialTheme
 import androidx.tv.material3.Text as TvText
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
+import com.fongmi.android.tv.utils.TmdbLogoTransformation
 
 class JetStreamVodDetailView @JvmOverloads constructor(
     context: Context,
@@ -206,7 +208,8 @@ class JetStreamVodDetailView @JvmOverloads constructor(
             AndroidView(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    // Preserve the original 48 dp title height and reserve 3 dp per edge.
+                    .height(54.dp),
                 factory = { context ->
                     AppCompatImageView(context).apply {
                         scaleType = ImageView.ScaleType.FIT_START
@@ -218,7 +221,9 @@ class JetStreamVodDetailView @JvmOverloads constructor(
                     image.tag = requestedLogo
                     Glide.with(image)
                         .load(requestedLogo)
-                        .fitCenter()
+                        .disallowHardwareConfig()
+                        .downsample(DownsampleStrategy.FIT_CENTER)
+                        .transform(TmdbLogoTransformation(image.resources.displayMetrics.density))
                         .listener(object : RequestListener<Drawable> {
                             override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
                                 if (image.tag == requestedLogo) logoLoadFailed = true
