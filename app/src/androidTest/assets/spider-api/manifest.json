@@ -1,0 +1,27 @@
+{
+  "apiSha256": "1dadb0bff8925022a185bb724aabb17fd577b120e8fe10c9ffd9655d20ff203c",
+  "fixtures": {
+    "legacy": {
+      "sha256": "2189604ba9afd7e361c1c08c961c1e3d203fca429738cd32754ad4ef392c3ec2",
+      "bytes": 1833,
+      "sources": [
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/bean/Result.java",
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/bean/Vod.java",
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/crawler/Spider.java",
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/net/Net.java",
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/spider/Init.java",
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/spider/LegacyFixture.java",
+        "app/src/androidTest/fixtures/spider-api/legacy/com/github/catvod/spider/Proxy.java"
+      ]
+    },
+    "modern": {
+      "sha256": "828f097741f2eae6d79e8ff4be38592c50b39b9abb4dc97ec3c7744ac4ba4d5d",
+      "bytes": 1766,
+      "sources": [
+        "app/src/androidTest/fixtures/spider-api/modern/com/github/catvod/spider/Init.java",
+        "app/src/androidTest/fixtures/spider-api/modern/com/github/catvod/spider/ModernFixture.java",
+        "app/src/androidTest/fixtures/spider-api/modern/com/github/catvod/spider/Proxy.java"
+      ]
+    }
+  }
+}
