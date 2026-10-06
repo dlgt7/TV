@@ -60,4 +60,14 @@ public class SyncplaySynchronizerTest {
         assertEquals(Long.valueOf(20000), forced.seekMs); assertEquals(Boolean.TRUE, forced.paused);
         assertEquals(Long.valueOf(100000), sync.correction(10, true, 100000, 1, remote(200, true, true, "Other"), "TV", 0).seekMs);
     }
+
+    @Test public void bufferingRecoveryDoesNotSeekAnAlreadyAlignedVideoAgain() {
+        sync.correction(10000, true, 100000, 1, remote(10, true, false, "TV"), "TV", 0);
+        sync.gateChanged(SyncplaySynchronizer.Gate.READY, SyncplaySynchronizer.Gate.PLAYER_NOT_READY);
+        sync.gateChanged(SyncplaySynchronizer.Gate.PLAYER_NOT_READY, SyncplaySynchronizer.Gate.READY);
+        assertNull(sync.correction(10000, true, 100000, 1, remote(10, true, false, "TV"), "TV", 0).seekMs);
+        sync.gateChanged(SyncplaySynchronizer.Gate.READY, SyncplaySynchronizer.Gate.DIFFERENT_MEDIA);
+        sync.gateChanged(SyncplaySynchronizer.Gate.DIFFERENT_MEDIA, SyncplaySynchronizer.Gate.READY);
+        assertEquals(Long.valueOf(10000), sync.correction(10000, true, 100000, 1, remote(10, true, false, "TV"), "TV", 0).seekMs);
+    }
 }

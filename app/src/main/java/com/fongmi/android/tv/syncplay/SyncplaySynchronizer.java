@@ -17,6 +17,13 @@ public final class SyncplaySynchronizer {
 
     public void reset() { initial = true; }
 
+    public void gateChanged(Gate previous, Gate next) {
+        // A seek itself can briefly buffer. Re-aligning on every recovery would
+        // issue another seek and can keep a slower HLS stream in a buffering loop.
+        if (next == Gate.DIFFERENT_MEDIA || next == Gate.WAITING_FOR_ROOM
+                || next == Gate.READY && previous != Gate.PLAYER_NOT_READY) reset();
+    }
+
     public static boolean shouldSeedRoom(Gate gate, boolean seeded, String username, List<SyncplayProtocol.Member> members) {
         if (gate != Gate.READY || seeded) return false;
         for (SyncplayProtocol.Member member : members) if (!member.username.equals(username)) return false;

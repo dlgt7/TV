@@ -195,7 +195,8 @@ public final class SyncplaySession {
         SyncplaySynchronizer.Gate next = SyncplaySynchronizer.gate(listed, ready(), username, filename,
                 player == null ? 0 : Math.max(0, player.getDuration() / 1000.0), members, sameMediaConfirmed);
         if (next != gate) {
-            gate = next; synchronizer.reset();
+            synchronizer.gateChanged(gate, next);
+            gate = next;
             if (phase != Phase.OFFLINE && gate != SyncplaySynchronizer.Gate.READY) setSpeed(1);
             notifyObservers();
         }
