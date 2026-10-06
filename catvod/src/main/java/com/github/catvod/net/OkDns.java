@@ -32,7 +32,8 @@ public class OkDns implements Dns {
 
     public synchronized void setDoh(Doh item) {
         HttpUrl url = HttpUrl.parse(item.getUrl());
-        this.doh = url == null ? null : new DnsOverHttps.Builder().client(new OkHttpClient()).url(url).bootstrapDnsHosts(item.getHosts()).build();
+        // POST avoids stale shared HTTP GET responses; ECH discovery uses POST as well.
+        this.doh = url == null ? null : new DnsOverHttps.Builder().client(new OkHttpClient()).url(url).post(true).bootstrapDnsHosts(item.getHosts()).build();
         this.selectedDoh = Doh.objectFrom(item.toString());
         this.supplier = null;
         OkHttp.echConfigurationChanged();
