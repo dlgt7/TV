@@ -12,7 +12,9 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.fongmi.android.tv.api.loader.JarLoader;
 import com.fongmi.quickjs.crawler.Loader;
 import com.fongmi.quickjs.crawler.Spider;
+import com.fongmi.quickjs.utils.Module;
 import com.fongmi.quickjs.utils.QuickLog;
+import com.github.catvod.net.OkHttp;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,6 +24,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -36,6 +39,12 @@ import java.util.concurrent.TimeUnit;
 
 import dalvik.system.DexClassLoader;
 import fi.iki.elonen.NanoHTTPD;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * Opt in with quickjs_legacy=true. Stage exact API/rule bytes under private files/quickjs-regression/.
@@ -43,6 +52,8 @@ import fi.iki.elonen.NanoHTTPD;
  * Init/home may contact the publisher; quickjs_legacy_live=true adds browsing/search/play resolution.
  * quickjs_legacy_jar=true loads the configured main JAR from runtime.jar after SHA-256 verification
  * against private runtime.json. Public reports contain only hashes/counts/error types.
+ * quickjs_legacy_original=true reads private scripts.json and preserves original API/rule URLs,
+ * replacing only their exact response bodies so relative ES modules retain their original base.
  * Exception traces stay in separate app-private files and must never be published unredacted.
  */
 @RunWith(AndroidJUnit4.class)
@@ -68,14 +79,18 @@ public final class QuickJsLegacySourcesTest {
         assertTrue(List.of("all", "tencent", "bili").contains(selected));
         boolean live = Boolean.parseBoolean(arguments.getString("quickjs_legacy_live", "false"));
         boolean withJar = Boolean.parseBoolean(arguments.getString("quickjs_legacy_jar", "false"));
+        boolean originalUrls = Boolean.parseBoolean(arguments.getString("quickjs_legacy_original", "false"));
         boolean logging = QuickLog.isEnabled();
         QuickLog.putEnabled(false);
         ScriptServer server = new ScriptServer(new File(target.getFilesDir(), "quickjs-regression"));
         JarLoader jarLoader = withJar ? new JarLoader() : null;
+        OriginalScripts originals = null;
         int failures = 0;
         try {
-            server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
-            report.put("sources", sources).put("liveCalls", live).put("status", "RUNNING");
+            if (originalUrls) originals = new OriginalScripts(server.directory);
+            else server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
+            Module.get().clear();
+            report.put("sources", sources).put("liveCalls", live).put("originalModuleUrls", originalUrls).put("status", "RUNNING");
             DexClassLoader dex = withJar ? runtimeJar(jarLoader, server.directory) : null;
             for (String name : List.of("tencent", "bili")) {
                 if (!selected.equals("all") && !selected.equals(name)) continue;
@@ -93,10 +108,12 @@ public final class QuickJsLegacySourcesTest {
                     assertEquals("Rule fixture bytes changed", RULE_SHA.get(name), ruleSha);
                     row.put("apiSha256", apiSha).put("ruleSha256", ruleSha);
                     String base = "http://127.0.0.1:" + server.getListeningPort() + "/" + name;
-                    spider = new Loader().spider(base + "/api.js", dex);
+                    String apiUrl = originals == null ? base + "/api.js" : originals.url(name, "api");
+                    String ruleUrl = originals == null ? base + "/rule.js" : originals.url(name, "rule");
+                    spider = new Loader().spider(apiUrl, dex);
                     spider.siteKey = "quickjs-legacy-" + name;
                     Spider current = spider;
-                    step(name + ".init", () -> { current.init(target, base + "/rule.js"); return ""; });
+                    step(name + ".init", () -> { current.init(target, ruleUrl); return ""; });
                     JSONObject home = new JSONObject(step(name + ".home", () -> current.homeContent(true)));
                     JSONArray classes = home.optJSONArray("class");
                     assertNotNull("Legacy home must return categories", classes);
@@ -128,6 +145,8 @@ public final class QuickJsLegacySourcesTest {
             worker.shutdownNow();
             server.stop();
             if (jarLoader != null) jarLoader.clear();
+            if (originals != null) originals.close();
+            Module.get().clear();
             QuickLog.putEnabled(logging);
             write();
         }
@@ -210,6 +229,45 @@ public final class QuickJsLegacySourcesTest {
         try (FileOutputStream output = new FileOutputStream(new File(target.getFilesDir(), "quickjs-legacy-result.json"))) {
             output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    /** Test-only exact response replacement; all dependencies keep the normal shared HTTP path. */
+    private final class OriginalScripts implements AutoCloseable {
+        private final JSONObject config;
+        private final Field clientField;
+        private final OkHttpClient original;
+
+        OriginalScripts(File directory) throws Exception {
+            stage = "runtime.scripts";
+            config = new JSONObject(Files.readString(new File(directory, "scripts.json").toPath(), StandardCharsets.UTF_8));
+            Map<String, String> bodies = new HashMap<>();
+            for (String name : List.of("tencent", "bili")) {
+                for (String kind : List.of("api", "rule")) {
+                    File file = new File(directory, name + "-" + kind + ".js");
+                    assertEquals("Private script fixture bytes changed", kind.equals("api") ? API_SHA : RULE_SHA.get(name), hash(file));
+                    String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                    if (kind.equals("api")) content = "console.log=console.info=console.warn=console.error=console.debug=function(){};\n" + content;
+                    String key = new Request.Builder().url(url(name, kind)).build().url().toString();
+                    bodies.put(key, content);
+                }
+            }
+            original = OkHttp.client();
+            OkHttpClient.Builder builder = original.newBuilder();
+            builder.interceptors().add(0, chain -> {
+                String body = bodies.get(chain.request().url().toString());
+                if (body == null) return chain.proceed(chain.request());
+                return new Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                        .code(200).message("Private script fixture")
+                        .body(ResponseBody.create(body, MediaType.get("application/javascript; charset=utf-8"))).build();
+            });
+            clientField = OkHttp.class.getDeclaredField("client");
+            clientField.setAccessible(true);
+            clientField.set(OkHttp.get(), builder.build());
+        }
+
+        String url(String name, String kind) throws Exception { return config.getJSONObject(name).getString(kind); }
+
+        @Override public void close() throws Exception { clientField.set(OkHttp.get(), original); }
     }
 
     private static final class ScriptServer extends NanoHTTPD {
