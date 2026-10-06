@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import dalvik.system.DexClassLoader;
 import fi.iki.elonen.NanoHTTPD;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -121,7 +122,8 @@ public final class QuickJsLegacySourcesTest {
                     row.put("categories", classes.length());
                     row.put("homeVideos", count(home));
                     if (live) exercise(name, current, home, row);
-                    row.put("status", live ? "PASS_LIVE" : "PASS_INIT_HOME");
+                    row.put("status", !live ? "PASS_INIT_HOME" : row.optBoolean("categoryHasValidVods")
+                            ? "PASS_LIVE" : "PASS_SEARCH_PLAY_CATEGORY_EMPTY");
                 } catch (Throwable failure) {
                     failures++;
                     row.put("status", "FAIL").put("stage", stage);
@@ -175,21 +177,70 @@ public final class QuickJsLegacySourcesTest {
         JSONObject first = new JSONObject(step(name + ".category1", () -> spider.categoryContent(category, "1", true, new HashMap<>())));
         JSONObject second = new JSONObject(step(name + ".category2", () -> spider.categoryContent(category, "2", true, new HashMap<>())));
         row.put("page1Count", count(first)).put("page2Count", count(second));
-        assertTrue("Known legacy category returned no videos", count(first) > 0);
+        int firstValid = validVideos(first).length(), secondValid = validVideos(second).length();
+        row.put("page1ValidVods", firstValid).put("page2ValidVods", secondValid);
+        row.put("page1ExcludedRows", count(first) - firstValid).put("page2ExcludedRows", count(second) - secondValid);
+        row.put("categoryHasValidVods", firstValid > 0 && secondValid > 0);
         String keyword = arguments.getString("quickjs_legacy_keyword_" + name, name.equals("tencent") ? "三体" : "科学");
         JSONObject search = new JSONObject(step(name + ".search", () -> spider.searchContent(keyword, false, "1")));
-        row.put("searchCount", count(search));
-        assertTrue("Known legacy search returned no videos", count(search) > 0);
-        String id = first.getJSONArray("list").getJSONObject(0).getString("vod_id");
+        JSONArray results = validVideos(search);
+        row.put("searchCount", count(search)).put("searchValidVods", results.length());
+        assertTrue("Known legacy search returned no valid videos", results.length() > 0);
+        String id = results.getJSONObject(0).getString("vod_id");
+        row.put("detailInput", "search");
         JSONObject detail = new JSONObject(step(name + ".detail", () -> spider.detailContent(List.of(id))));
         JSONObject vod = detail.getJSONArray("list").getJSONObject(0);
         String[] lines = vod.getString("vod_play_from").split("\\$\\$\\$");
         String[] playlists = vod.getString("vod_play_url").split("\\$\\$\\$");
         String[] episode = playlists[0].split("#")[0].split("\\$", 2);
         assertEquals("Legacy detail needs a playable episode", 2, episode.length);
+        assertFalse("Legacy detail episode ID is empty", episode[1].trim().isEmpty());
         JSONObject play = new JSONObject(step(name + ".play", () -> spider.playerContent(lines[0], episode[1], List.of())));
-        assertTrue("Legacy player response lacks URL", play.has("url") && !play.isNull("url"));
-        row.put("playResolved", true).put("playParse", play.optInt("parse", 0));
+        int urls = playerUrlCount(play.opt("url"));
+        assertTrue("Legacy player needs a non-empty HTTP(S) URL or valid URL list", urls > 0);
+        row.put("playResolved", true).put("playParse", play.optInt("parse", 0)).put("playUrlCount", urls);
+    }
+
+    private static JSONArray validVideos(JSONObject data) {
+        JSONArray valid = new JSONArray(), list = data.optJSONArray("list");
+        if (list == null) return valid;
+        for (int index = 0; index < list.length(); index++) {
+            JSONObject item = list.optJSONObject(index);
+            if (item == null || item.isNull("vod_id")) continue;
+            String id = item.optString("vod_id", "").trim();
+            String tag = item.optString("vod_tag", "");
+            String folder = item.optString("folder", "");
+            if (id.isEmpty() || "no_data".equals(id) || "folder".equalsIgnoreCase(tag)
+                    || "folder".equalsIgnoreCase(folder) || "true".equalsIgnoreCase(folder) || "1".equals(folder)) continue;
+            valid.put(item);
+        }
+        return valid;
+    }
+
+    private static int playerUrlCount(Object value) {
+        if (value instanceof String) return HttpUrl.parse(((String) value).trim()) == null ? 0 : 1;
+        if (value instanceof JSONArray) {
+            JSONArray list = (JSONArray) value;
+            if (list.length() == 0 || list.length() % 2 != 0) return 0;
+            // This is the application's UrlAdapter format: alternating display name and URL.
+            for (int index = 0; index < list.length(); index += 2)
+                if (!(list.opt(index) instanceof String) || !(list.opt(index + 1) instanceof String)
+                        || playerUrlCount(list.opt(index + 1)) != 1) return 0;
+            return list.length() / 2;
+        }
+        if (value instanceof JSONObject) {
+            JSONObject object = (JSONObject) value;
+            JSONArray values = object.optJSONArray("values");
+            if (values == null || values.length() == 0) return 0;
+            int position = object.optInt("position", 0);
+            if (position < 0 || position >= values.length()) return 0;
+            for (int index = 0; index < values.length(); index++) {
+                JSONObject item = values.optJSONObject(index);
+                if (item == null || !(item.opt("v") instanceof String) || playerUrlCount(item.opt("v")) != 1) return 0;
+            }
+            return values.length();
+        }
+        return 0;
     }
 
     private <T> T step(String name, Callable<T> callable) throws Exception {
