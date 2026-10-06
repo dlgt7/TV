@@ -236,8 +236,15 @@ public final class SyncplaySession {
     }
 
     private void sendLocal(boolean seek) {
-        if (phase != Phase.JOINED || client == null) return;
-        updateGate(); if (gate != SyncplaySynchronizer.Gate.READY) return;
+        if (phase != Phase.JOINED || client == null || player == null) return;
+        updateGate();
+        // Exo enters BUFFERING before dispatching a user's SEEK. The user intent
+        // is valid while the known, matching video seeks; READY is required only
+        // when applying a remote state, not when publishing this explicit action.
+        boolean available = player.getPlaybackState() != Player.STATE_IDLE && !player.isCurrentMediaItemLive()
+                && player.isCurrentMediaItemSeekable() && player.getDuration() > 0;
+        if (SyncplaySynchronizer.gate(listed, available, username, filename, player.getDuration() / 1000.0,
+                members, sameMediaConfirmed) != SyncplaySynchronizer.Gate.READY) return;
         client.localChange(Math.max(0, player.getCurrentPosition()) / 1000.0, !player.getPlayWhenReady(), seek);
     }
 
