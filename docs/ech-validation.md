@@ -84,7 +84,24 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 - 整次补全共用 6 秒/8 次 DNS 查询预算；两种查询模式共用最多 4 个进行中任务、128 条 LRU。借用条目有效期受目标缺失记录、地址和共享配置各自期限约束。
 - HTTP/SOCKS 代理仍按原配置连接。这里判断的是所选 DoH 给出的域名归属，不宣称看到了代理实际连接的目标地址；保留原站身份和证书策略，握手拒绝不自动改为明文重试。
 
-主机已验证生产解析器自动处理 `www.cloudflare.com`、`cloudflare.com`：目标自有配置为零，`cloudflare_ech_fallback` 返回共享配置，同响应由 `plaintext` 变为 `encrypted`，TLS 1.3/HTTP2、证书验证和原域名保持正常。Android 本轮结果及新版安装待实际验证后记录，不沿用下面上一版结果冒充。
+主机已验证生产解析器自动处理 `www.cloudflare.com`、`cloudflare.com`：目标自有配置为零，`cloudflare_ech_fallback` 返回共享配置，同响应由 `plaintext` 变为 `encrypted`，TLS 1.3/HTTP2、证书验证和原域名保持正常。`crypto.cloudflare.com` 的自有配置路径也通过 OFF/ON 回归；`www.google.com` 的非 CF 地址结果不借配置。`example.com` 当前 A/AAAA 均属于 CF 网段，不能作为非 CF 负例。四个生产源码与 `c39e777` 提交一致，主机组合单测 86 项通过。
+
+完整 CI run `37395642484` 的 preview、sourceprobe 构建成功，sourceprobe 网络单测及 mobile 编译步骤成功。生产应用来自 `c39e777` 的完整 CI APK，仅重签名且非签名内容一致。测试提交 `ed85d19` 只增加腾讯/360及 apex 参数，测试 APK 来自 CI run `37398331981`，没有替换生产应用代码。
+
+Android 本轮完成六组 OFF/ON 对照，均得到同响应 `plaintext` / `encrypted`、HTTP 200、TLS 1.3、HTTP/2，开启组为实际 Conscrypt socket、ALPN `h2`：
+
+| 路径 | 目标 / DoH | 证据 |
+| --- | --- | --- |
+| 独立与共享直连，补全 | `www.cloudflare.com` / 腾讯 | 自有配置 0，独立 ON 为 `cloudflare_ech_fallback` / 71 字节；instrumentation `OK (2 tests)` |
+| 独立直连，补全 | `cloudflare.com` / 阿里 | 自有配置 0，ON 为 `cloudflare_ech_fallback` / 71 字节；`OK (1 test)` |
+| 独立 HTTP CONNECT 认证夹具，补全 | `www.cloudflare.com` / 默认 Cloudflare | 同上且预期代理路由通过；`OK (1 test)` |
+| 独立与共享直连，原生配置回归 | `crypto.cloudflare.com` / 阿里 | 独立 ON 为 `ech_config_available`；`OK (2 tests)` |
+
+独立路径保持正常证书及域名校验，共享路径沿用既有策略并恢复设置与 DoH；不把共享结果作为证书安全证明。首轮 AliDNS 对 `www.cloudflare.com` 返回非 CF 的 A 和 CF 的 AAAA，独立路径按混合结果拒绝借用，共享请求为 `ConnectException`，失败证据单独保留。腾讯重测通过不改变这一拒绝规则。
+
+本设备推荐：设置 → 应用 → DoH 选择腾讯 → 开启 ECH，无需新开关。360 只验证了 DNS 查询及地址归属，未记为 Android ECH 全链路通过。
+
+本轮完整 CI 预览包已安装并启动首页，设备独立核验 APK SHA-256 为 `c64106b75cd7febc17fa77548d64d6f3698484001ea49072c75cc156a91857ee`。安装前后、首次启动前的 11 个设置/数据库文件哈希全部相同，并与本轮初始快照一致；用户 ECH 偏好未更改，原应用包未触碰。报告与 APK 分别为 `/home/ubuntu/CF补全ECH实测-20261006/REPORT.md`、`CF-ECH-preview-arm64.apk`，与昨天的局部编译更新包区分。正式 release run `37399371147` 已成功，发布 [build-37399371147](https://github.com/wobuhui666/TV/releases/tag/build-37399371147)，目标源码为 `ed85d19`，包含 ARM64、ARMv7 两个 APK。
 
 ## 2026-10-05 实测结果（上一版）
 
@@ -106,7 +123,7 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 
 Cloudflare 站点并非全部发布 ECH 配置：本次 `www.cloudflare.com` 没有配置，`crypto.cloudflare.com` 有配置。ECH 不保证通过风控、验证码或其他站点访问策略。SOCKS、任意用户代理与全部 JAR 网络栈未验证。
 
-## 预览包安装与构建来源
+## 2026-10-05 上一版预览包安装与构建来源
 
 预览包已安装，设备核验 APK SHA-256 为 `b3743c93a58f1a7c6cde1ac52c420345383711aafc18ea0e721b195950d63b4a`，首页已启动。安装前后、首次启动前的 11 个偏好设置 / 数据库文件哈希全部相同，并与本次会话最初快照一致；原应用包未改动，未替用户更改 ECH 偏好设置。
 
