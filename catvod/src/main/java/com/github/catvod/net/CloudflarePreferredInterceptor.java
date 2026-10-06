@@ -15,10 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -50,8 +50,10 @@ final class CloudflarePreferredInterceptor implements Interceptor {
     private final LongSupplier clock;
     private final LinkedHashMap<String, Lookup> lookups = new LinkedHashMap<>(16, .75f, true);
     private final LinkedHashMap<String, Long> cooldowns = new LinkedHashMap<>(16, .75f, true);
-    private final ThreadPoolExecutor resolver = new ThreadPoolExecutor(0, 2, 30, TimeUnit.SECONDS,
-            new SynchronousQueue<>(), task -> {
+    // A completed Future can wake its caller before the worker returns to take().
+    // Buffer that handoff without growing DNS concurrency or allowing an unbounded backlog.
+    private final ThreadPoolExecutor resolver = new ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(2), task -> {
                 Thread thread = new Thread(task, "CloudflarePreferredDns");
                 thread.setDaemon(true);
                 return thread;
@@ -72,12 +74,14 @@ final class CloudflarePreferredInterceptor implements Interceptor {
         this.overridden = overridden;
         this.cloudflare = cloudflare;
         this.clock = clock;
+        resolver.allowCoreThreadTimeOut(true);
     }
 
     void clear() {
         synchronized (lock) {
             generation++;
             for (Lookup lookup : lookups.values()) if (lookup.future != null) lookup.future.cancel(true);
+            resolver.purge();
             lookups.clear();
             cooldowns.clear();
         }

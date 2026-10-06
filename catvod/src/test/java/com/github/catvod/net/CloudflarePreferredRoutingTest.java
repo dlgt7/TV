@@ -27,6 +27,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -363,6 +365,69 @@ public class CloudflarePreferredRoutingTest {
                 workers.shutdownNow();
             }
         }
+    }
+
+    @Test
+    public void completedDnsWorkersAcceptNextLookupBeforeReturningToTheirQueue() throws Exception {
+        try (Fixture f = new Fixture()) {
+            ThreadPoolExecutor resolver = resolver(f.router);
+            CountDownLatch completed = new CountDownLatch(2), release = new CountDownLatch(1);
+            ExecutorService caller = Executors.newSingleThreadExecutor();
+            try {
+                holdCompletedWorkers(resolver, completed, release);
+                f.preferred.enqueue(ok("queued preferred lookup"));
+                f.original.enqueue(ok("incorrectly rejected optional DNS"));
+                Future<String> response = caller.submit(() -> body(f.client));
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+                while (!response.isDone() && resolver.getQueue().isEmpty() && System.nanoTime() < deadline)
+                    Thread.sleep(1);
+                // Future completion wakes its waiter before the worker returns to take().
+                // Keep that real executor handoff window open until the next request arrives.
+                boolean queued = !resolver.getQueue().isEmpty();
+                release.countDown();
+                assertEquals("queued preferred lookup", response.get(3, TimeUnit.SECONDS));
+                assertTrue("The next lookup must wait briefly instead of being negatively cached", queued);
+                assertEquals(1, f.dns.count(PREFERRED)); assertEquals(0, f.original.getRequestCount());
+            } finally {
+                release.countDown(); caller.shutdownNow();
+            }
+        }
+    }
+
+    @Test
+    public void queueWaitCountsTowardsTheExistingDnsTimeout() throws Exception {
+        try (Fixture f = new Fixture()) {
+            CountDownLatch completed = new CountDownLatch(2), release = new CountDownLatch(1);
+            try {
+                holdCompletedWorkers(resolver(f.router), completed, release);
+                f.original.enqueue(ok("bounded queue wait"));
+                long started = System.nanoTime();
+                assertEquals("bounded queue wait", body(f.client));
+                long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+                assertTrue("Queue wait must not add another DNS timeout: " + elapsed, elapsed < 4000);
+                assertEquals(0, f.dns.count(PREFERRED)); assertEquals(0, f.preferred.getRequestCount());
+            } finally { release.countDown(); }
+        }
+    }
+
+    private static ThreadPoolExecutor resolver(CloudflarePreferredInterceptor router) throws Exception {
+        java.lang.reflect.Field field = CloudflarePreferredInterceptor.class.getDeclaredField("resolver");
+        field.setAccessible(true); return (ThreadPoolExecutor) field.get(router);
+    }
+
+    private static void holdCompletedWorkers(ThreadPoolExecutor resolver, CountDownLatch completed,
+                                             CountDownLatch release) throws Exception {
+        for (int i = 0; i < 2; i++) {
+            FutureTask<Void> task = new FutureTask<>(() -> null) {
+                @Override protected void done() {
+                    completed.countDown();
+                    try { release.await(5, TimeUnit.SECONDS); }
+                    catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
+                }
+            };
+            resolver.execute(task);
+        }
+        assertTrue("Both DNS futures complete before their workers are released", completed.await(2, TimeUnit.SECONDS));
     }
 
     @Test
