@@ -347,15 +347,23 @@ public final class ConscryptEchProbeTest {
         return result;
     }
 
-    private static boolean requiresBorrowing() {
+    private static String targetMode() {
         String mode = InstrumentationRegistry.getArguments().getString("ech_target_mode", "cloudflare_fallback");
-        if (!"cloudflare_fallback".equals(mode) && !"published".equals(mode))
+        if (!"cloudflare_fallback".equals(mode) && !"cloudflare_apex".equals(mode) && !"published".equals(mode))
             throw new IllegalArgumentException("UNSUPPORTED_TARGET_TEST_MODE");
-        return "cloudflare_fallback".equals(mode);
+        return mode;
+    }
+
+    private static boolean requiresBorrowing() {
+        return !"published".equals(targetMode());
     }
 
     private static String host() {
-        return requiresBorrowing() ? "www.cloudflare.com" : "crypto.cloudflare.com";
+        return switch (targetMode()) {
+            case "published" -> "crypto.cloudflare.com";
+            case "cloudflare_apex" -> "cloudflare.com";
+            default -> "www.cloudflare.com";
+        };
     }
 
     private static String traceUrl() {
@@ -379,7 +387,7 @@ public final class ConscryptEchProbeTest {
 
     private static String dohMode() {
         String mode = InstrumentationRegistry.getArguments().getString("ech_doh_mode", "default");
-        if (!"default".equals(mode) && !"cloudflare".equals(mode) && !"alidns".equals(mode))
+        if (!"default".equals(mode) && !"cloudflare".equals(mode) && !"alidns".equals(mode) && !"tencent".equals(mode) && !"360".equals(mode))
             throw new IllegalArgumentException("UNSUPPORTED_DOH_TEST_MODE");
         return mode;
     }
@@ -388,6 +396,8 @@ public final class ConscryptEchProbeTest {
         return switch (mode) {
             case "cloudflare" -> DOH_URL;
             case "alidns" -> "https://dns.alidns.com/dns-query";
+            case "tencent" -> "https://doh.pub/dns-query";
+            case "360" -> "https://doh.360.cn/dns-query";
             default -> EchDnsResolver.DEFAULT_DOH_URL;
         };
     }
