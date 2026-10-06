@@ -46,16 +46,19 @@ public class OkHttp {
     private volatile OkHttpClient client;
     private volatile OkHttpClient player;
     private final Object echLock = new Object();
+    private final OkDns dns = new OkDns();
+    private final IdleConnectionEvictor poolEvictor = new IdleConnectionEvictor(
+            () -> { if (client != null) client.connectionPool().evictAll(); },
+            () -> { if (player != null) player.connectionPool().evictAll(); });
     private EchResolverState echResolver;
-    private OkDns dns;
+    private long echGeneration;
 
     public static OkHttp get() {
         return Loader.INSTANCE;
     }
 
     public static OkDns dns() {
-        if (get().dns != null) return get().dns;
-        return get().dns = new OkDns();
+        return get().dns;
     }
 
     public static ResponseInterceptor responseInterceptor() {
@@ -222,26 +225,34 @@ public class OkHttp {
     }
 
     private static EchDnsResolver echResolver() {
-        // Read DNS outside echLock: lazy DNS initialization invalidates the ECH cache.
-        Doh selection = dns().getDoh();
-        String url = selection.getUrl();
-        List<String> ips = new ArrayList<>(selection.getIps());
         OkHttp instance = get();
-        synchronized (instance.echLock) {
-            EchResolverState state = instance.echResolver;
-            if (state == null || !state.url.equals(url) || !state.ips.equals(ips)) {
-                EchDnsResolver resolver = null;
-                try {
-                    OkHttpClient bootstrap = new OkHttpClient.Builder()
-                            .proxySelector(selector()).proxyAuthenticator(authenticator()).build();
-                    resolver = new EchDnsResolver(bootstrap, url, selection.getHosts());
-                } catch (IllegalArgumentException ignored) {
-                    // An unsupported DoH configuration falls back to ordinary TLS.
-                }
-                state = new EchResolverState(url, ips, resolver);
-                instance.echResolver = state;
+        while (true) {
+            long generation;
+            synchronized (instance.echLock) {
+                generation = instance.echGeneration;
             }
-            return state.resolver;
+            // Read DNS outside echLock: lazy DNS initialization invalidates the ECH cache.
+            Doh selection = dns().getDoh();
+            String url = selection.getUrl();
+            List<String> ips = new ArrayList<>(selection.getIps());
+            synchronized (instance.echLock) {
+                // A settings change must not be overwritten by an older DNS snapshot.
+                if (generation != instance.echGeneration) continue;
+                EchResolverState state = instance.echResolver;
+                if (state == null || !state.url.equals(url) || !state.ips.equals(ips)) {
+                    EchDnsResolver resolver = null;
+                    try {
+                        OkHttpClient bootstrap = new OkHttpClient.Builder()
+                                .proxySelector(selector()).proxyAuthenticator(authenticator()).build();
+                        resolver = new EchDnsResolver(bootstrap, url, selection.getHosts());
+                    } catch (IllegalArgumentException ignored) {
+                        // An unsupported DoH configuration falls back to ordinary TLS.
+                    }
+                    state = new EchResolverState(url, ips, resolver);
+                    instance.echResolver = state;
+                }
+                return state.resolver;
+            }
         }
     }
 
@@ -249,12 +260,11 @@ public class OkHttp {
     public static void echConfigurationChanged() {
         OkHttp instance = get();
         synchronized (instance.echLock) {
+            instance.echGeneration++;
             instance.echResolver = null;
         }
-        OkHttpClient client = instance.client;
-        OkHttpClient player = instance.player;
-        if (client != null) client.connectionPool().evictAll();
-        if (player != null) player.connectionPool().evictAll();
+        // TLS close may write close_notify. Never close sockets on the settings/UI thread.
+        instance.poolEvictor.request();
     }
 
     private static final class EchResolverState {
