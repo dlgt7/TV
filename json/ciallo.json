@@ -1,0 +1,29 @@
+{
+  "spider": "../jar/custom_spider.jar",
+  "sites": [
+    {
+      "key": "ciallo_girigiri",
+      "name": "girigiri 爱动漫",
+      "type": 3,
+      "api": "csp_Girigiri",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": {
+        "host": "https://gl.ciallo0d000721.cc.cd"
+      }
+    },
+    {
+      "key": "ciallo_sorani",
+      "name": "青空 Sorani",
+      "type": 3,
+      "api": "csp_Sorani",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": {
+        "host": "https://sorani.ciallo0d000721.cc.cd"
+      }
+    }
+  ]
+}

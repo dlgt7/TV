@@ -1,0 +1,56 @@
+name: Build compatible Ciallo spiders
+
+on:
+  push:
+    branches: [feat/ciallo-anime-sources]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          packages: 'platform-tools platforms;android-37.0 build-tools;37.0.0'
+      - name: Select installed SDK minor version
+        shell: pwsh
+        run: |
+          @'
+          gradle.beforeProject { p ->
+              ['com.android.application', 'com.android.library'].each { pluginId ->
+                  p.pluginManager.withPlugin(pluginId) {
+                      p.extensions.getByName('androidComponents').finalizeDsl { dsl ->
+                          if (dsl.compileSdk == 37) dsl.compileSdkMinor = 0
+                      }
+                  }
+              }
+          }
+          '@ | Set-Content "$env:RUNNER_TEMP/ciallo.init.gradle"
+      - name: Build and verify JAR
+        shell: pwsh
+        run: |
+          ./gradlew.bat -I "$env:RUNNER_TEMP/ciallo.init.gradle" spiderJar --no-daemon --max-workers=2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $meta = @{ sourceCommit=$env:GITHUB_SHA; jarSha256=(Get-FileHash jar/custom_spider.jar -Algorithm SHA256).Hash.ToLower(); legacyClient=$true; appExecuted=$false }
+          $meta | ConvertTo-Json | Set-Content jar/build-metadata.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ciallo-spiders-${{ github.run_id }}
+          path: |
+            jar/custom_spider.jar
+            jar/custom_spider.jar.md5
+            jar/build-metadata.json
+            json/ciallo.json
+          if-no-files-found: error
+          retention-days: 14

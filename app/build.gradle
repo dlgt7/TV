@@ -1,0 +1,69 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+configurations {
+    sardine {
+        canBeConsumed = false
+        transitive = false
+    }
+}
+
+def sardineJar = layout.buildDirectory.file('libs/sardine.jar')
+def extractSardine = tasks.register('extractSardine') {
+    inputs.files(configurations.sardine)
+    outputs.file(sardineJar)
+    doLast {
+        copy {
+            from zipTree(configurations.sardine.singleFile)
+            include 'classes.jar'
+            rename 'classes.jar', 'sardine.jar'
+            into sardineJar.get().asFile.parentFile
+        }
+    }
+}
+
+android {
+    namespace = 'com.github.catvod'
+    enableKotlin = false
+
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        applicationId = "com.github.catvod.demo"
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = true
+            proguardFiles 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    configurations.configureEach {
+        resolutionStrategy {
+            force "com.squareup.okhttp3:okhttp:${libs.versions.okhttp.get()}"
+        }
+    }
+}
+
+dependencies {
+    sardine libs.sardine.android
+    compileOnly files('libs/catvod-api.jar')
+    compileOnly libs.androidx.annotation
+    compileOnly libs.androidx.core
+    compileOnly(libs.okhttp) { transitive = false }
+    compileOnly files(sardineJar).builtBy(extractSardine)
+    compileOnly libs.quickjs.wrapper
+    compileOnly libs.gson
+    compileOnly libs.smbj
+    compileOnly libs.slf4j
+    implementation libs.jsoup
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Tangsan",
+    "server": "http://192.168.0.1",
+    "search": true,
+    "hidden": false,
+    "login": {
+      "username": "1234",
+      "password": "1234"
+    },
+    "params": [
+      {
+        "path": "/test",
+        "pass": "1234"
+      }
+    ]
+  }
+]
