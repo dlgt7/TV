@@ -1,0 +1,83 @@
+{
+  "checkedAtUtc": "2026-10-06T14:02:00.780069+00:00",
+  "scriptFile": "/data/gl-search-check-20261006/host-regression/live-pages/current-script.js",
+  "scriptSha256": "6d6b49c01b196e8ab619477f8e4a1b5b121232176d4f7c75d69ac65afc3a547b",
+  "scriptBytes": 127714,
+  "javascriptEndpoint": "/index.php/ds_api/vod",
+  "method": "POST",
+  "knownExplicitRequestFields": [
+    "by",
+    "page"
+  ],
+  "otherFieldsSource": "jQuery data() from #dataList element",
+  "expectedResponseFields": [
+    "code",
+    "list",
+    "key",
+    "pagecount",
+    "total"
+  ],
+  "scriptEvidence": [
+    {
+      "match": "const vodData = $(\"#dataList\")",
+      "line": 1956
+    },
+    {
+      "match": "let ajaxData = vodData.data()",
+      "line": 1958
+    },
+    {
+      "match": "EC.flow.get('#dataList',ajaxData,'/index.php/ds_api/vod')",
+      "line": 1964
+    },
+    {
+      "match": "data[\"page\"] = page",
+      "line": 384
+    },
+    {
+      "match": "EC.Ajax(maccms.path + api,'post','json',data",
+      "line": 385
+    }
+  ],
+  "categoryHtmlChecks": [
+    {
+      "categoryId": 2,
+      "htmlBytes": 101414,
+      "hasDataListElement": false,
+      "hasVodAjaxSwitch": false
+    },
+    {
+      "categoryId": 3,
+      "htmlBytes": 67311,
+      "hasDataListElement": false,
+      "hasVodAjaxSwitch": false
+    },
+    {
+      "categoryId": 21,
+      "htmlBytes": 88123,
+      "hasDataListElement": false,
+      "hasVodAjaxSwitch": false
+    },
+    {
+      "categoryId": 20,
+      "htmlBytes": 92735,
+      "hasDataListElement": false,
+      "hasVodAjaxSwitch": false
+    },
+    {
+      "categoryId": 24,
+      "htmlBytes": 49960,
+      "hasDataListElement": false,
+      "hasVodAjaxSwitch": false
+    },
+    {
+      "categoryId": 26,
+      "htmlBytes": 37354,
+      "hasDataListElement": false,
+      "hasVodAjaxSwitch": false
+    }
+  ],
+  "apiRequestAttempted": false,
+  "reason": "No #dataList or vod-ajax-switch exists on any of six real current category pages; category selector, limit and other required request fields cannot be recovered without guessing. Stopped instead of inventing requests.",
+  "recommendation": "Do not replace current catalog parser on this evidence. This is a dormant generic theme implementation, not a proven usable category API."
+}

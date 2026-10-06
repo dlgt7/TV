@@ -1,0 +1,36 @@
+{
+  "scope": "ISOLATED_SOURCEPROBE_APP",
+  "steps": [
+    {
+      "step": "configure-source-through-settings-dialog",
+      "status": "PASS"
+    },
+    {
+      "step": "home-real-recommendations",
+      "status": "PASS"
+    },
+    {
+      "step": "library-four-ranking-folders",
+      "status": "PASS"
+    },
+    {
+      "step": "enter-all-hot-ranking",
+      "status": "PASS"
+    },
+    {
+      "step": "open-ranked-series-detail",
+      "status": "PASS",
+      "episodeCount": 209
+    },
+    {
+      "step": "fullscreen-real-video",
+      "status": "PASS"
+    },
+    {
+      "step": "playback-danmaku-toggle",
+      "status": "PASS",
+      "evidence": "danmaku-ui-fixed-pixel-evidence.json"
+    }
+  ],
+  "note": "UI-only wrapper adds a local XML danmaku fixture; delivered source SHA72 remains unchanged."
+}

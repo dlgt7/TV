@@ -1,0 +1,40 @@
+{
+  "scope": "LOCAL_SOURCE_COMPILED_PREVIEW_PATCH_NOT_FULL_PREVIEW_CI_BUILD",
+  "fullPreviewCiForPatchCommitCompleted": false,
+  "reason": "GitHub Actions preview jobs could not obtain runner; final preview job cancelled",
+  "baseCiRun": "37359756519",
+  "baseCiSource": "4f2bbb6ecac023c74b567893ff8780d6fe110352",
+  "baseCiArtifactSha256": "f89b6d1077546a13ccb95aa9933bb45e3c7838cdf92d56c7e47fe2f2808ce606",
+  "baseCiApkSha256": "fdd454ead27b70ca7526cb24dd4a1f4ba96001960b12d4721977f436dfbed900",
+  "patchSourceCommit": "ae072fb82fbc862073b6a5050ee665114875851c",
+  "patchSourceSha256": "b794888a989a2c886db86b2e583c7f6203f2b7599d6bed733945e03ed0518517",
+  "actualD8DexSha256": "59a262c56f0c0ca49bf881092be0332edae29edd8332bbcc65b7c3b696f736e4",
+  "outputApkSha256": "b3743c93a58f1a7c6cde1ac52c420345383711aafc18ea0e721b195950d63b4a",
+  "outputBytes": 92828770,
+  "package": "com.fongmi.android.tv.preview",
+  "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+  "signatureVerified": true,
+  "zipAlignmentVerified": true,
+  "changedDex": "classes6.dex",
+  "otherDexByteIdentical": 37,
+  "nonSignatureEntriesIdenticalExceptChangedDex": true,
+  "classAudit": {
+    "originalClassCount": 269,
+    "outputClassCount": 269,
+    "untouchedClassesCanonicalEqual": 265,
+    "replacedClassCount": 4,
+    "addedTypes": [],
+    "removedTypes": [],
+    "policySuperclass": "Ljava/lang/Object;",
+    "policyInterfaces": [
+      "Ljavax/net/ssl/X509TrustManager;"
+    ]
+  },
+  "sameSourceFullCiSourceprobe": {
+    "runId": "37364398536",
+    "sourceSha": "ae072fb82fbc862073b6a5050ee665114875851c",
+    "directIndependentPassed": true,
+    "directSharedPassed": true,
+    "httpConnectFixturePassed": true
+  }
+}

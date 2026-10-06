@@ -1,0 +1,68 @@
+{
+  "schema": "tv.asr-model-download.v1",
+  "status": "FAIL",
+  "startedAtEpochMs": 1791201938404,
+  "budgetSeconds": 240,
+  "completionWaitBudgetSeconds": 235,
+  "finalizationReserveSeconds": 5,
+  "junitTimeoutSeconds": 270,
+  "model": "mandarin-zipformer-ctc",
+  "modelTotalBytes": 162311515,
+  "progress": [],
+  "progressByteEstimateBasis": "PRODUCTION_PERCENT_TIMES_REQUIRED_BYTES",
+  "presentBytesAreFileSizesNotIntegrityProof": true,
+  "installedBefore": false,
+  "requiredBytesBefore": 162311515,
+  "totalRamMb": 8192,
+  "requiredRamMb": 1280,
+  "ramSufficient": true,
+  "storageAvailableBytesBefore": 112751099904,
+  "storageSufficient": true,
+  "filesBefore": [
+    {
+      "file": "model.int8.onnx",
+      "expectedBytes": 162290887,
+      "expectedSha256": "24ffdc19ba9aaed5a6a9beaede1e087745217d82425cf4041bca0c696661801e",
+      "finalBytes": 0,
+      "partialBytes": 0
+    },
+    {
+      "file": "tokens.txt",
+      "expectedBytes": 20628,
+      "expectedSha256": "6193c7ea1c96d0d9a1e9652789b40d13a8a913b434a5451e93158f5a09fd6652",
+      "finalBytes": 0,
+      "partialBytes": 0
+    }
+  ],
+  "elapsedMs": 120222,
+  "presentBytes": 0,
+  "downloading": false,
+  "onComplete": false,
+  "onError": true,
+  "timedOut": false,
+  "errorType": "MODEL_DOWNLOAD_ERROR",
+  "installedAfter": false,
+  "fixedShaVerificationPassed": false,
+  "cacheHitOnly": false,
+  "applicationDownloadCompleted": false,
+  "filesAfter": [
+    {
+      "file": "model.int8.onnx",
+      "expectedBytes": 162290887,
+      "expectedSha256": "24ffdc19ba9aaed5a6a9beaede1e087745217d82425cf4041bca0c696661801e",
+      "finalBytes": 0,
+      "partialBytes": 0
+    },
+    {
+      "file": "tokens.txt",
+      "expectedBytes": 20628,
+      "expectedSha256": "6193c7ea1c96d0d9a1e9652789b40d13a8a913b434a5451e93158f5a09fd6652",
+      "finalBytes": 0,
+      "partialBytes": 0
+    }
+  ],
+  "storageAvailableBytesAfter": 112751095808,
+  "ownedExecutorShutdown": true,
+  "finishedAtEpochMs": 1791202058627,
+  "workerStillDownloading": false
+}

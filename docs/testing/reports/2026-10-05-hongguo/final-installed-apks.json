@@ -1,0 +1,10 @@
+{
+  "com.fongmi.android.tv.sourceprobe": {
+    "sha256": "89f307f9764a4e1046c523a65119282166d4097ce9ae05174daabdfef603a24f",
+    "verified": true
+  },
+  "com.fongmi.android.tv.preview": {
+    "sha256": "a69fb2f22fcf3655cd1060f1ef20f3ef82ff22f00f8770111374f3084324b4bf",
+    "verified": true
+  }
+}

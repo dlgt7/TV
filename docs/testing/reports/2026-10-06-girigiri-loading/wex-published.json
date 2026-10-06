@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "fa3161d5d47bcce1e4f9b66124c370ed50c4ef71",
+  "jarUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/wobuhui666/CatVodSpider/fa3161d5d47bcce1e4f9b66124c370ed50c4ef71/jar/custom_spider.jar",
+  "jarSha256": "018ebddcc1da3692c1013bbd0f2a6c775f3ed2bbdeeb62c5a6558fbd32720b95",
+  "jarMd5": "f3822a8f4226a8275da4f25f20abd7bb",
+  "cdnHostStatus": 200,
+  "cdnDeviceStatus": 200,
+  "cdnDeviceSeconds": 1.605152,
+  "siteCount": 78,
+  "changedSourceKeys": [
+    "ciallo_girigiri",
+    "ciallo_sorani"
+  ],
+  "onlyPerSiteJarChanged": true,
+  "putStatus": 204,
+  "readBackVerified": true,
+  "beforeSha256": "2e9b806aef0c1c04f82c57027d4ee85c5a6001a4332507e49832498f6593df0e",
+  "afterSha256": "4275b6035a04091fa4be35624dc867622e4db9757496036818c78a1a3696dd64"
+}

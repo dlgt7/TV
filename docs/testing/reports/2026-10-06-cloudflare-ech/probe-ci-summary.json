@@ -1,0 +1,18 @@
+{
+  "runId": 37398331981,
+  "headSha": "ed85d19abca4f4e4c84be0332df7b307bcd7a805",
+  "status": "completed",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "build (preview)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build (sourceprobe)",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

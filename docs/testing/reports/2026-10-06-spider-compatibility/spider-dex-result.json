@@ -1,0 +1,8 @@
+{
+  "stage": "loader-clear",
+  "status": "PASS",
+  "legacyHelpersPrivate": true,
+  "runtimeTypesFromHost": true,
+  "modernBoundBeforeInit": true,
+  "cleanupSurvivesPluginDestroyFailure": true
+}

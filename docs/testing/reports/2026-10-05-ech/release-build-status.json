@@ -1,0 +1,13 @@
+{
+  "runId": 37367866351,
+  "sourceCommit": "ae072fb82fbc862073b6a5050ee665114875851c",
+  "firstAttempt": "HOSTED_RUNNER_NOT_ACQUIRED",
+  "annotations": [
+    "The job was not acquired by Runner of type hosted even after multiple attempts",
+    "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+    "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+    "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\""
+  ],
+  "retryRequested": true,
+  "releasePublishedAtVerification": false
+}

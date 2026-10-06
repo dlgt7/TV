@@ -1,0 +1,30 @@
+{
+  "device": "Samsung SM-F900F Android13 ARM64",
+  "expected_sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "results": [
+    {
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/wobuhui666/CatVodSpider/0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "curl_exit": 0,
+      "curl_summary": "200 150485 0.754882",
+      "error": "",
+      "status": 200,
+      "bytes": 150485,
+      "download_seconds": 0.754882,
+      "sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "matches": true,
+      "elapsed_ms": 3369
+    },
+    {
+      "url": "https://ghfast.top/https://raw.githubusercontent.com/wobuhui666/CatVodSpider/0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "curl_exit": 0,
+      "curl_summary": "200 150485 2.862939",
+      "error": "",
+      "status": 200,
+      "bytes": 150485,
+      "download_seconds": 2.862939,
+      "sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "matches": true,
+      "elapsed_ms": 4447
+    }
+  ]
+}

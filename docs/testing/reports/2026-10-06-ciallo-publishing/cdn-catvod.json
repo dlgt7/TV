@@ -1,0 +1,116 @@
+{
+  "expected_sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "commit": "0cfe42a0cb1a42081da51a682a5110afa4ed23ad",
+  "results": [
+    {
+      "host": "cdn.jsdmirror.com",
+      "url": "https://cdn.jsdmirror.com/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "path": "jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "response_excerpt": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\">\n<title>403 · 缺首页鸭</title>\n<style>\nhtml,body{height:100%;margin:0;background:url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1200 800\"><rect fill=\"%23ffeef7\" width=\"1200\" height=\"800\"/><circle cx=\"150\"",
+      "matches": false,
+      "elapsed_ms": 2010
+    },
+    {
+      "host": "cdn.jsdmirror.cn",
+      "url": "https://cdn.jsdmirror.cn/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "path": "jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "response_excerpt": "Forbidden",
+      "matches": false,
+      "elapsed_ms": 1276
+    },
+    {
+      "host": "gcore.jsdelivr.net",
+      "url": "https://gcore.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "path": "jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "response_excerpt": "Forbidden",
+      "matches": false,
+      "elapsed_ms": 326
+    },
+    {
+      "host": "fastly.jsdelivr.net",
+      "url": "https://fastly.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "path": "jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "response_excerpt": "Forbidden",
+      "matches": false,
+      "elapsed_ms": 388
+    },
+    {
+      "host": "cdn.jsdelivr.net",
+      "url": "https://cdn.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+      "path": "jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "response_excerpt": "Forbidden",
+      "matches": false,
+      "elapsed_ms": 508
+    },
+    {
+      "host": "cdn.jsdmirror.com",
+      "url": "https://cdn.jsdmirror.com/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "path": "json/ciallo.json",
+      "status": 200,
+      "final_url": "https://cdn.jsdmirror.com/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "bytes": 624,
+      "sha256": "1f7ddb0cdbd24e1494777f05194269abcb6197ca74de14d70ff487b3f0d752e0",
+      "content_type": "application/json; charset=utf-8",
+      "matches": null,
+      "elapsed_ms": 1500
+    },
+    {
+      "host": "cdn.jsdmirror.cn",
+      "url": "https://cdn.jsdmirror.cn/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "path": "json/ciallo.json",
+      "status": 200,
+      "final_url": "https://cdn.jsdmirror.cn/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "bytes": 624,
+      "sha256": "1f7ddb0cdbd24e1494777f05194269abcb6197ca74de14d70ff487b3f0d752e0",
+      "content_type": "application/json; charset=utf-8",
+      "matches": null,
+      "elapsed_ms": 1307
+    },
+    {
+      "host": "gcore.jsdelivr.net",
+      "url": "https://gcore.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "path": "json/ciallo.json",
+      "status": 200,
+      "final_url": "https://gcore.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "bytes": 624,
+      "sha256": "1f7ddb0cdbd24e1494777f05194269abcb6197ca74de14d70ff487b3f0d752e0",
+      "content_type": "application/json; charset=utf-8",
+      "matches": null,
+      "elapsed_ms": 1191
+    },
+    {
+      "host": "fastly.jsdelivr.net",
+      "url": "https://fastly.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "path": "json/ciallo.json",
+      "status": 200,
+      "final_url": "https://fastly.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "bytes": 624,
+      "sha256": "1f7ddb0cdbd24e1494777f05194269abcb6197ca74de14d70ff487b3f0d752e0",
+      "content_type": "application/json; charset=utf-8",
+      "matches": null,
+      "elapsed_ms": 219
+    },
+    {
+      "host": "cdn.jsdelivr.net",
+      "url": "https://cdn.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "path": "json/ciallo.json",
+      "status": 200,
+      "final_url": "https://cdn.jsdelivr.net/gh/wobuhui666/CatVodSpider@0cfe42a0cb1a42081da51a682a5110afa4ed23ad/json/ciallo.json",
+      "bytes": 624,
+      "sha256": "1f7ddb0cdbd24e1494777f05194269abcb6197ca74de14d70ff487b3f0d752e0",
+      "content_type": "application/json; charset=utf-8",
+      "matches": null,
+      "elapsed_ms": 1607
+    }
+  ]
+}

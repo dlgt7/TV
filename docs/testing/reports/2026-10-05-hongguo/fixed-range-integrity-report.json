@@ -1,0 +1,9 @@
+{
+  "original_sha256": "21f77a8ebce2f348900c721119f70a0e236d5d897386cf4c9b5cd05911739814",
+  "fixed_sha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+  "fixed_bytes": 2439418,
+  "embedded_dex_sha256": "e1b804734633dd7325059c2f4aae1d3ad9a00ee4fdafc7bc836ad6676202a71b",
+  "embedded_dex_bytes": 3673032,
+  "original_unchanged": true,
+  "embedded_dex_unchanged": true
+}

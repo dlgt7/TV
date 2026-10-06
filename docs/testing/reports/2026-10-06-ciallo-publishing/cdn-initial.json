@@ -1,0 +1,46 @@
+{
+  "expected_sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "path": "/gh/wobuhui666/TV@7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+  "results": [
+    {
+      "host": "cdn.jsdmirror.com",
+      "url": "https://cdn.jsdmirror.com/gh/wobuhui666/TV@7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "matches": false,
+      "elapsed_ms": 1659
+    },
+    {
+      "host": "cdn.jsdmirror.cn",
+      "url": "https://cdn.jsdmirror.cn/gh/wobuhui666/TV@7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "matches": false,
+      "elapsed_ms": 1315
+    },
+    {
+      "host": "gcore.jsdelivr.net",
+      "url": "https://gcore.jsdelivr.net/gh/wobuhui666/TV@7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "matches": false,
+      "elapsed_ms": 1081
+    },
+    {
+      "host": "fastly.jsdelivr.net",
+      "url": "https://fastly.jsdelivr.net/gh/wobuhui666/TV@7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "matches": false,
+      "elapsed_ms": 252
+    },
+    {
+      "host": "cdn.jsdelivr.net",
+      "url": "https://cdn.jsdelivr.net/gh/wobuhui666/TV@7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden",
+      "matches": false,
+      "elapsed_ms": 271
+    }
+  ]
+}

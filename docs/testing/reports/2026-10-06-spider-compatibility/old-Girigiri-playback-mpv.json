@@ -1,0 +1,206 @@
+{
+  "schema": "tv.python-source-playback.v1",
+  "sourceSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "engine": "mpv",
+  "caseCount": 2,
+  "results": [
+    {
+      "caseIndex": 0,
+      "episodeIndex": 0,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "stage": "complete",
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 942,
+        "frame": true,
+        "videoFrameCallbacks": 0,
+        "videoPresentationTimeUs": -9223372036854775807,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "",
+        "audioDecoderName": "",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video/avc",
+            "codecs": "h264",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio/mp4a-latm",
+            "codecs": "aac",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 48000,
+            "channels": 2
+          }
+        ],
+        "nativeDecoder": "mediacodec",
+        "videoCodec": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 0,
+      "videoPixelHash": "71487801",
+      "width": 1920,
+      "height": 1080,
+      "audioTracks": 1,
+      "subtitleTracks": 0,
+      "subtitleCoverage": "NO_SELECTABLE_SUBTITLE_TRACK",
+      "decoder": "mediacodec",
+      "durationMs": 2924325,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 12030,
+        "videoPixelHash": "62ecb045"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 526,
+        "videoPixelHash": "f59bbb77"
+      },
+      "forwardBackwardSeek": true,
+      "playbackControls": [
+        {
+          "speed": 1.5,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 922,
+          "videoPixelHash": "4dd14fbd",
+          "playbackClockAdvanced": true
+        },
+        {
+          "speed": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 2705,
+          "videoPixelHash": "97396669",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 0,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 2705,
+          "videoPixelHash": "97396669",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 3791,
+          "videoPixelHash": "4924c09e",
+          "playbackClockAdvanced": true
+        }
+      ],
+      "speedAndVolumeRestored": true,
+      "effectsEnabledDisabledWithPauseAndPosition": true,
+      "elapsedMs": 19017
+    },
+    {
+      "caseIndex": 1,
+      "episodeIndex": 1,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "stage": "complete",
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 1018,
+        "frame": true,
+        "videoFrameCallbacks": 0,
+        "videoPresentationTimeUs": -9223372036854775807,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "",
+        "audioDecoderName": "",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video/avc",
+            "codecs": "h264",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio/mp4a-latm",
+            "codecs": "aac",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 48000,
+            "channels": 2
+          }
+        ],
+        "nativeDecoder": "mediacodec",
+        "videoCodec": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 0,
+      "videoPixelHash": "71487801",
+      "width": 1920,
+      "height": 1080,
+      "audioTracks": 1,
+      "subtitleTracks": 0,
+      "subtitleCoverage": "NO_SELECTABLE_SUBTITLE_TRACK",
+      "decoder": "mediacodec",
+      "durationMs": 1516199,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14400,
+        "videoPixelHash": "e89a4f04"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 526,
+        "videoPixelHash": "d61e77d1"
+      },
+      "forwardBackwardSeek": true,
+      "switchedFromPreviousEpisode": true,
+      "elapsedMs": 14835
+    }
+  ],
+  "decodeMode": "hard",
+  "caseLimit": 2,
+  "selectedCaseIndex": -1,
+  "refreshRequested": false,
+  "hardwareScope": "ANDROID_NODE_NO_PHYSICAL_HDMI_ASSERTION"
+}

@@ -1,0 +1,68 @@
+{
+  "updatedUtc": "2026-10-06T01:44:26.921482+00:00",
+  "hostJvmTests": {
+    "status": "PASS",
+    "count": 86,
+    "classes": [
+      "EchDnsParserTest",
+      "AddressParserTest",
+      "EchDnsResolverTest",
+      "EchDnsResolverCloudflareTest",
+      "CloudflareAddressRangesTest"
+    ],
+    "evidenceSha256": "2ff80b5df11e280dcb74030524eb19a8d4db8b9e5899f031b9777e244a57594e"
+  },
+  "ci": {
+    "runId": 37395642484,
+    "commit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+    "status": "SUCCESS",
+    "networkUnitTask": "SUCCESS",
+    "unitTestCount": "NOT_INDEPENDENTLY_VERIFIED",
+    "probeRunId": 37398331981,
+    "probeCommit": "ed85d19abca4f4e4c84be0332df7b307bcd7a805",
+    "probeStatus": "success"
+  },
+  "android": {
+    "status": "PASS",
+    "reviewedOffOnCases": 6,
+    "borrowedDirectTencent": "PASS",
+    "borrowedSharedTencent": "PASS",
+    "apexBorrowedDirectAliDns": "PASS",
+    "borrowedProxyCloudflareDns": "PASS",
+    "publishedDirectAliDns": "PASS",
+    "publishedSharedAliDns": "PASS",
+    "initialAliDnsWwwFailureRetained": true
+  },
+  "newPreviewApk": {
+    "status": "INSTALLED_VERIFIED",
+    "file": "CF-ECH-preview-arm64.apk",
+    "sha256": "c64106b75cd7febc17fa77548d64d6f3698484001ea49072c75cc156a91857ee",
+    "buildRun": 37395642484,
+    "productionCommit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+    "dataFileCount": 11,
+    "dataHashesUnchangedBeforeLaunch": true,
+    "initialSessionSnapshotUnchanged": true,
+    "homeActivityResumed": true,
+    "userEchPreferencesChanged": false,
+    "originalPackageTouched": false
+  },
+  "formalRelease": {
+    "runId": 37399371147,
+    "commit": "ed85d19abca4f4e4c84be0332df7b307bcd7a805",
+    "status": "SUCCESS",
+    "tag": "build-37399371147",
+    "url": "https://github.com/wobuhui666/TV/releases/tag/build-37399371147",
+    "assets": [
+      {
+        "abi": "arm64-v8a",
+        "sha256": "7d2a6925e6479b8b77aa593817cb238cbafa78887e5f6632fbdd85f693bd7557",
+        "bytes": 87867511
+      },
+      {
+        "abi": "armeabi-v7a",
+        "sha256": "36e16f1991aee94210809c17c6fc367c4df34d386de2e91ee437dad3e3bee7b1",
+        "bytes": 84712605
+      }
+    ]
+  }
+}

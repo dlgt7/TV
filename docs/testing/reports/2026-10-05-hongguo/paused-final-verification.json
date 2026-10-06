@@ -1,0 +1,40 @@
+[
+  {
+    "package": "sourceprobe",
+    "runId": 37323072749,
+    "applicationCommit": "67431d56596a31d179a54feddc14a3a3bb9f61ec",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "media3PatchSha256": "463eba72b1c56c19e38065a8d1f4476ed7a8e6b0d5bd39f0a8c05ceb47c169d7",
+    "signatureVerified": true,
+    "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+    "basePath": "/tmp/hongguo-validation-20261005/tv-sourceprobe-toggle-final.apk",
+    "targetPath": "/tmp/hongguo-validation-20261005/tv-sourceprobe-paused-final.apk",
+    "deltaPath": "/tmp/hongguo-validation-20261005/hg-paused-sourceprobe.delta",
+    "installScript": "/tmp/hongguo-validation-20261005/hg-paused-sourceprobe-install.sh",
+    "base_sha256": "973b8af6e16bcfc2bcfd2397bf7d13f296f1744ba9b8ed3b07ddc5543d132b04",
+    "target_sha256": "89f307f9764a4e1046c523a65119282166d4097ce9ae05174daabdfef603a24f",
+    "delta_sha256": "18c59bfa7c9a1e80129476d4c645cd652f31eb2afa7ac9fe0dd2d9e863c64261",
+    "delta_bytes": 11931660,
+    "ops": 259,
+    "reconstructed_exactly": true
+  },
+  {
+    "package": "preview",
+    "runId": 37323072749,
+    "applicationCommit": "67431d56596a31d179a54feddc14a3a3bb9f61ec",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "media3PatchSha256": "463eba72b1c56c19e38065a8d1f4476ed7a8e6b0d5bd39f0a8c05ceb47c169d7",
+    "signatureVerified": true,
+    "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+    "basePath": "/tmp/hongguo-validation-20261005/tv-preview-toggle-final.apk",
+    "targetPath": "/tmp/hongguo-validation-20261005/tv-preview-paused-final.apk",
+    "deltaPath": "/tmp/hongguo-validation-20261005/hg-paused-preview.delta",
+    "installScript": "/tmp/hongguo-validation-20261005/hg-paused-preview-install.sh",
+    "base_sha256": "ba5a931510ec844d8a4febfcd88e515c9dbfed4382b6112a6fb1ddab4ff2552d",
+    "target_sha256": "a69fb2f22fcf3655cd1060f1ef20f3ef82ff22f00f8770111374f3084324b4bf",
+    "delta_sha256": "954df360fef8d4638d0dafccfb12b3aefc1a435d2a89b8330ef03f36fe117fc3",
+    "delta_bytes": 6919604,
+    "ops": 261,
+    "reconstructed_exactly": true
+  }
+]

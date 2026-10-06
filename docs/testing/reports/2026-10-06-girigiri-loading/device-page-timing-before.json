@@ -1,0 +1,62 @@
+[
+  {
+    "path": "/show/2-----------/",
+    "exit": 0,
+    "http_code": 200,
+    "size_download": 101411,
+    "time_namelookup": 0.266392,
+    "time_connect": 5.531683,
+    "time_appconnect": 5.734096,
+    "time_starttransfer": 7.560004,
+    "time_total": 8.302783,
+    "remote_ip": "104.20.38.170"
+  },
+  {
+    "path": "/show/1-----------/",
+    "exit": 0,
+    "http_code": 200,
+    "size_download": 18839,
+    "time_namelookup": 0.008288,
+    "time_connect": 0.1915,
+    "time_appconnect": 0.613347,
+    "time_starttransfer": 1.699991,
+    "time_total": 3.208146,
+    "remote_ip": "104.20.38.170"
+  },
+  {
+    "path": "/show/2--------1---/",
+    "exit": 0,
+    "http_code": 200,
+    "size_download": 101411,
+    "time_namelookup": 0.000945,
+    "time_connect": 0.204023,
+    "time_appconnect": 1.243475,
+    "time_starttransfer": 3.180025,
+    "time_total": 3.832685,
+    "remote_ip": "104.20.38.170"
+  },
+  {
+    "path": "/show/2--------2---/",
+    "exit": 0,
+    "http_code": 200,
+    "size_download": 103340,
+    "time_namelookup": 0.000877,
+    "time_connect": 1.211486,
+    "time_appconnect": 1.619254,
+    "time_starttransfer": 3.674258,
+    "time_total": 4.230624,
+    "remote_ip": "104.20.38.170"
+  },
+  {
+    "path": "/",
+    "exit": 0,
+    "http_code": 200,
+    "size_download": 210772,
+    "time_namelookup": 0.000884,
+    "time_connect": 0.167533,
+    "time_appconnect": 1.011378,
+    "time_starttransfer": 3.340293,
+    "time_total": 4.105257,
+    "remote_ip": "104.20.38.170"
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "installed": true,
+  "applicationId": "com.fongmi.android.tv.preview",
+  "sourceCommit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+  "testCommit": "ed85d19abca4f4e4c84be0332df7b307bcd7a805",
+  "buildRun": 37395642484,
+  "fullCiBuild": true,
+  "apkSha256": "c64106b75cd7febc17fa77548d64d6f3698484001ea49072c75cc156a91857ee",
+  "beforeDataFiles": 11,
+  "afterDataFiles": 11,
+  "dataHashesUnchangedBeforeLaunch": true,
+  "initialSessionSnapshotUnchanged": true,
+  "userEchPreferencesChanged": false,
+  "originalPackageTouched": false,
+  "launched": true,
+  "homeActivityResumed": true,
+  "deliveredApk": "CF-ECH-preview-arm64.apk",
+  "deliveredApkHashVerified": true,
+  "deliveryUsesHardLink": true,
+  "independentlyComparedSnapshotFileCounts": [
+    11,
+    11,
+    11
+  ],
+  "independentlyComparedDataHashesMatch": true
+}

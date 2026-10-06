@@ -1,0 +1,27 @@
+{
+  "ciRun": 37475548128,
+  "sourceCommit": "9b451ccbff2dd5273e6a2a7cc12ca273162f3880",
+  "previewSha256": "2d7034436d2ccc1d70bd32e2843db9b97c14e7681b0e05a6b8cd55844d30ec3d",
+  "unchangedNonSignatureEntries": 1834,
+  "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+  "ciCertificateSha256": "3074df5094944f67f460a9ae23f7e4b5a8d697c34c4c615505424f2cb0282648",
+  "metadata": {
+    "applicationCommit": "9b451ccbff2dd5273e6a2a7cc12ca273162f3880",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "abi": "arm64-v8a",
+    "buildType": "debug",
+    "instrumentationExecuted": false,
+    "files": [
+      {
+        "file": "preview-app-debug.apk",
+        "applicationId": "com.fongmi.android.tv.preview",
+        "sha256": "a33546f9e09ad791bbf102ac379039e80bf6d88555ae7483c0c6795e6e138275"
+      },
+      {
+        "file": "preview-test-debug.apk",
+        "applicationId": "com.fongmi.android.tv.preview.test",
+        "sha256": "0a3b4567ac4f05102ab39838a33607d43a251c7b4e3a4b16c54ea4980daa2151"
+      }
+    ]
+  }
+}

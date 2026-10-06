@@ -1,0 +1,9 @@
+{
+  "path": "/tmp/hongguo-validation-20261005/tv-sourceprobe-paused-final-tests.apk",
+  "bytes": 521087,
+  "sha256": "b01bb4bd02c84592aa998930a5f6a7311d39ea0af5f4d52430ea3a72baf26e5b",
+  "signatureVerified": true,
+  "certificateMatchesF220Base": true,
+  "pausedDanmakuTestCompiled": true,
+  "applicationCommit": "67431d56596a31d179a54feddc14a3a3bb9f61ec"
+}

@@ -1,0 +1,14 @@
+{
+  "remoteUpdated": true,
+  "changedSources": 1,
+  "sourceCount": 76,
+  "fieldsChanged": [
+    "api",
+    "ext"
+  ],
+  "beforeSha256": "f24b5c3a54304210a946fcb40fc28e81c6c0ae2327d2f6eb62a03bf44ee357d7",
+  "afterSha256": "80bb231369e920da0927d5b6b2fa05260e5d88898e438049b45d312008067bbb",
+  "readBackVerified": true,
+  "conditionalUpdate": true,
+  "globalJarChanged": false
+}

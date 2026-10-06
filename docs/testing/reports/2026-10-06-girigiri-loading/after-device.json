@@ -1,0 +1,289 @@
+{
+  "completed": true,
+  "cacheExpected": true,
+  "cacheThresholdMs": 500,
+  "calls": [
+    {
+      "step": "home_first",
+      "status": "PASS",
+      "milliseconds": 4559
+    },
+    {
+      "step": "home_repeat",
+      "status": "PASS",
+      "milliseconds": 9,
+      "cacheThresholdMs": 500
+    },
+    {
+      "step": "home_videos",
+      "status": "PASS",
+      "milliseconds": 3347,
+      "listCount": 96
+    },
+    {
+      "step": "category_page1_first",
+      "status": "PASS",
+      "milliseconds": 23,
+      "listCount": 48,
+      "page": 1,
+      "total": 3146
+    },
+    {
+      "step": "category_page1_repeat",
+      "status": "PASS",
+      "milliseconds": 23,
+      "listCount": 48,
+      "page": 1,
+      "total": 3146,
+      "cacheThresholdMs": 500
+    },
+    {
+      "step": "category_page2_first",
+      "status": "PASS",
+      "milliseconds": 1600,
+      "listCount": 48,
+      "page": 2,
+      "total": 3146
+    },
+    {
+      "step": "category_page2_repeat",
+      "status": "PASS",
+      "milliseconds": 21,
+      "listCount": 48,
+      "page": 2,
+      "total": 3146,
+      "cacheThresholdMs": 500
+    },
+    {
+      "step": "category_filter_changed",
+      "status": "PASS",
+      "milliseconds": 2143,
+      "listCount": 0,
+      "page": 1,
+      "total": 0
+    },
+    {
+      "step": "category_filter_repeat",
+      "status": "PASS",
+      "milliseconds": 2,
+      "listCount": 0,
+      "page": 1,
+      "total": 0,
+      "cacheThresholdMs": 500
+    },
+    {
+      "step": "category_filter_restored",
+      "status": "PASS",
+      "milliseconds": 21,
+      "listCount": 48,
+      "page": 1,
+      "total": 3146,
+      "cacheThresholdMs": 500
+    },
+    {
+      "step": "search_nonempty",
+      "status": "PASS",
+      "milliseconds": 737,
+      "listCount": 7,
+      "page": 1,
+      "total": 7
+    },
+    {
+      "step": "search_no_results",
+      "status": "PASS",
+      "milliseconds": 1734,
+      "listCount": 0,
+      "page": 1,
+      "total": 0
+    },
+    {
+      "step": "detail",
+      "status": "PASS",
+      "milliseconds": 1729,
+      "listCount": 1
+    },
+    {
+      "step": "player_episode1",
+      "status": "PASS",
+      "milliseconds": 1721
+    },
+    {
+      "step": "player_episode2",
+      "status": "PASS",
+      "milliseconds": 2287
+    }
+  ],
+  "jarHashVerified": true,
+  "loaded": true,
+  "categories": 6,
+  "filterCounts": [
+    {
+      "categoryId": 2,
+      "filterCount": 7,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 25
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 28
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 5,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 6,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 3,
+      "filterCount": 5,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 15
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 27
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 21,
+      "filterCount": 5,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 23
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 27
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 4
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 20,
+      "filterCount": 5,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 26
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 28
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 4
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 24,
+      "filterCount": 4,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 23
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 25
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 26,
+      "filterCount": 4,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 4
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 25
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        }
+      ]
+    }
+  ],
+  "homeRepeatSame": true,
+  "categoryPagesDistinct": true,
+  "filterCacheIsolated": true,
+  "searchResultCount": 7,
+  "lineCount": 2,
+  "episodeCount": 3,
+  "resolvedEpisodes": 2,
+  "status": "PASS",
+  "cleanup": "PASS",
+  "jarSha256": "018ebddcc1da3692c1013bbd0f2a6c775f3ed2bbdeeb62c5a6558fbd32720b95",
+  "applicationSha256": "0c18eff7da3a77867ca2fb2334c3e2fa78dd9405e89cc1b38f6ec7e341b7f3f6",
+  "testApkSha256": "b739e7902969d8a5487afd331f61db28c57ac9c0000bcc894b8964405f93792b"
+}

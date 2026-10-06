@@ -1,0 +1,111 @@
+{
+  "candidate_sha256": "4d0c2f8e899cc8979ba91be389042e95eaee4163d6c2c109aa144799f7b08a1f",
+  "checks": [
+    {
+      "label": "real-drama:1",
+      "status": "pass",
+      "count": 24,
+      "page": 1,
+      "pagecount": 34,
+      "limit": 24,
+      "total": 800
+    },
+    {
+      "label": "real-drama:2",
+      "status": "pass",
+      "count": 24,
+      "page": 2,
+      "pagecount": 34,
+      "limit": 24,
+      "total": 800
+    },
+    {
+      "label": "real-drama:34",
+      "status": "pass",
+      "count": 8,
+      "page": 34,
+      "pagecount": 34,
+      "limit": 24,
+      "total": 800
+    },
+    {
+      "label": "real-drama:35",
+      "status": "pass",
+      "count": 0,
+      "page": 35,
+      "pagecount": 34,
+      "limit": 24,
+      "total": 800
+    },
+    {
+      "label": "real-drama|variety:1",
+      "status": "pass",
+      "count": 18,
+      "page": 1,
+      "pagecount": 1,
+      "limit": 24,
+      "total": 18
+    },
+    {
+      "label": "real-drama|variety:2",
+      "status": "pass",
+      "count": 0,
+      "page": 2,
+      "pagecount": 1,
+      "limit": 24,
+      "total": 18
+    },
+    {
+      "label": "rank_home",
+      "status": "pass",
+      "count": 4,
+      "pagecount": 1,
+      "total": 4
+    },
+    {
+      "label": "rank_hot",
+      "status": "pass",
+      "count": 9,
+      "pagecount": 1,
+      "total": 9
+    },
+    {
+      "label": "http500_not_terminal",
+      "status": "pass",
+      "attempts": 2,
+      "exception": "HongguoPluginError"
+    },
+    {
+      "label": "valid_page404_not_terminal",
+      "status": "pass",
+      "exception": "HongguoPluginError"
+    },
+    {
+      "label": "detail_and_free_first:real-drama",
+      "status": "pass",
+      "episodes": 77,
+      "play_lines": 1
+    },
+    {
+      "label": "detail_and_free_first:comic-drama",
+      "status": "pass",
+      "episodes": 209,
+      "play_lines": 1
+    },
+    {
+      "label": "detail_and_free_first:ai-drama",
+      "status": "pass",
+      "episodes": 100,
+      "play_lines": 1
+    },
+    {
+      "label": "search_single_page_retained",
+      "status": "pass"
+    },
+    {
+      "label": "original_unchanged",
+      "status": "pass",
+      "sha256": "21f77a8ebce2f348900c721119f70a0e236d5d897386cf4c9b5cd05911739814"
+    }
+  ]
+}

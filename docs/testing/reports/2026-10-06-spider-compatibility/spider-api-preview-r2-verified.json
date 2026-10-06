@@ -1,0 +1,52 @@
+{
+  "runId": "37428214817",
+  "sourceSha": "e4cc2003d7a770942a978f30b85b54149aceeb67",
+  "variant": "preview",
+  "artifactDirectory": "/tmp/tv-new-spider-api/build-r2/tv-validation-preview-arm64-37428214817",
+  "artifactMetadata": {
+    "applicationCommit": "e4cc2003d7a770942a978f30b85b54149aceeb67",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "abi": "arm64-v8a",
+    "buildType": "debug",
+    "instrumentationExecuted": false,
+    "files": [
+      {
+        "file": "preview-app-debug.apk",
+        "applicationId": "com.fongmi.android.tv.preview",
+        "sha256": "053c25c05b6f015f5d3ced94ba79c26355b7c89551f69fe83f832d3d871315dc"
+      },
+      {
+        "file": "preview-test-debug.apk",
+        "applicationId": "com.fongmi.android.tv.preview.test",
+        "sha256": "80fb64e91fba6e654b959138d7f31c49106def613bb55c4efcdd7ba966a27106"
+      }
+    ]
+  },
+  "base": "/tmp/tv-doh-jar-fix-20261006/build/doh-fix-preview-r2.apk",
+  "baseSha256": "9ba8fa167fa5b30a4a8120ec130361a5baec05bd002ed4f909db342bba0585ca",
+  "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+  "scope": "FULL_CI_APKS_RESIGNED_ONLY",
+  "deviceExecuted": false,
+  "files": [
+    {
+      "role": "app",
+      "path": "/tmp/tv-new-spider-api/build-r2/spider-api-preview-r2.apk",
+      "package": "com.fongmi.android.tv.preview",
+      "sourceSha256": "053c25c05b6f015f5d3ced94ba79c26355b7c89551f69fe83f832d3d871315dc",
+      "sourceCertificateSha256": "1d382d4a93bef03630129b33d09fbbf2d8aaaaf85319594ae6bf1e38d14bdc55",
+      "sha256": "118bf002138858ea0c5fb93b101e964a390f4f35132a34b294fae0767c845106",
+      "bytes": 99021988,
+      "unchangedNonSignatureEntries": 1834
+    },
+    {
+      "role": "test",
+      "path": "/tmp/tv-new-spider-api/build-r2/spider-api-preview-r2-tests.apk",
+      "package": "com.fongmi.android.tv.preview.test",
+      "sourceSha256": "80fb64e91fba6e654b959138d7f31c49106def613bb55c4efcdd7ba966a27106",
+      "sourceCertificateSha256": "1d382d4a93bef03630129b33d09fbbf2d8aaaaf85319594ae6bf1e38d14bdc55",
+      "sha256": "450f161e666e6030ad9cb1e7e3d039400954b7afda06ad5aa30dc25997486cec",
+      "bytes": 582752,
+      "unchangedNonSignatureEntries": 14
+    }
+  ]
+}
