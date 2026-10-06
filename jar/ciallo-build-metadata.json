@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "f7af8e713236aa3ca6b22b1a3403851bdba09d7f",
+  "jarSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "legacyClient": true,
+  "appExecuted": false,
+  "workflowRun": "https://github.com/wobuhui666/TV/actions/runs/37428099682",
+  "spiderSourceCommit": "4b980db92093d59488c242c93ddc722fcf248ae4",
+  "sourceTree": "eb3c1c4dd0029a1893bd2c2962a37867f4be820b",
+  "validation": {
+    "oldAppLoadedBoth": true,
+    "oldAppGirigiriExoEpisodes": 2,
+    "oldAppGirigiriMpvEpisodes": 2,
+    "deviceSorani": "TCP connect timeout before TLS; host API verified HTTP 200"
+  }
+}
