@@ -18,7 +18,8 @@ final class SpiderClassLoader extends DexClassLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (!isPluginHelper(name)) return super.loadClass(name, resolve);
-        synchronized (getClassLoadingLock(name)) {
+        // Android's public ClassLoader API does not expose the JDK per-name lock.
+        synchronized (this) {
             Class<?> result = findLoadedClass(name);
             if (result == null) {
                 try { result = findClass(name); }
