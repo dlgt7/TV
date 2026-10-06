@@ -1,0 +1,28 @@
+[
+  {
+    "package": "sourceprobe",
+    "basePath": "/tmp/hongguo-validation-20261005/tv-sourceprobe.apk",
+    "targetPath": "/tmp/hongguo-validation-20261005/tv-sourceprobe-final.apk",
+    "deltaPath": "/tmp/hongguo-validation-20261005/hg-final-sourceprobe.delta",
+    "installScript": "/tmp/hongguo-validation-20261005/hg-final-sourceprobe-install.sh",
+    "base_sha256": "335176585467d3233b37401bba7ecdc2a170aa0fdf92d0daddda3f46369f0c02",
+    "target_sha256": "6d473907fc24e0a38ca02072e28038368649d61599a9eccd70f3afa7e73790e6",
+    "delta_sha256": "f8e10f4ecb8596a441045060858e8c274be88907fd8a8e79a07d6b9cd786654e",
+    "delta_bytes": 12689948,
+    "ops": 247,
+    "reconstructed_exactly": true
+  },
+  {
+    "package": "preview",
+    "basePath": "/tmp/tv-danmaku-validation/tv-preview-danmaku.apk",
+    "targetPath": "/tmp/hongguo-validation-20261005/tv-preview-final.apk",
+    "deltaPath": "/tmp/hongguo-validation-20261005/hg-final-preview.delta",
+    "installScript": "/tmp/hongguo-validation-20261005/hg-final-preview-install.sh",
+    "base_sha256": "1e3b98dbb21a13ed9a8b2599211bdd3c17422d88ce0d8863391b69d9452f2e73",
+    "target_sha256": "085656b29dcdbe80917609ca29f9c7b13029fa330e4e0df25399db3b3da3c726",
+    "delta_sha256": "eeefbc2a8eabdc2468eb35a4b73d5029ae97029be53057280da6f7399a2875dd",
+    "delta_bytes": 17833669,
+    "ops": 241,
+    "reconstructed_exactly": true
+  }
+]

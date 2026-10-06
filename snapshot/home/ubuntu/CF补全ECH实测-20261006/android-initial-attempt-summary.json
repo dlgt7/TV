@@ -1,0 +1,194 @@
+{
+  "scope": "ANDROID_REAL_DEVICE_EVIDENCE_REVIEW",
+  "status": "IN_PROGRESS_WITH_FAILURES",
+  "results": [
+    {
+      "name": "borrowed_direct",
+      "sourceFile": "final-borrowed-direct-conscrypt-probe.json",
+      "sha256": "67d31c9fb48c4c01fb65a2c00e7370a5d46e5e784c203578c385706578bce97d",
+      "report": {
+        "state": "FAIL",
+        "accepted": false,
+        "targetHost": "www.cloudflare.com",
+        "cloudflareFallbackRequired": true,
+        "targetPublishedConfigBytes": 0,
+        "targetPublishedDnsReason": "no_ech",
+        "fallbackConfigOwner": "crypto.cloudflare.com",
+        "dohMode": "alidns",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "customHostnameVerifier": false,
+        "customTrustAcceptance": false,
+        "offOnControlPassed": false,
+        "proxyFixture": false,
+        "fixtureAuthenticationReplies": 0,
+        "trustRejectionPropagation": {
+          "scope": "OFFLINE_DELEGATION_ONLY",
+          "basic": true,
+          "socket": true,
+          "engine": true
+        }
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 0,
+          "configResolveCalls": 0,
+          "dnsReason": "NOT_QUERIED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "enabled": true,
+          "passed": false,
+          "state": "EVIDENCE_MISMATCH",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 0,
+          "configResolveCalls": 1,
+          "dnsReason": "cloudflare_non_cf_address",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": false,
+        "offOn": false,
+        "phaseEvidence": false,
+        "target": true,
+        "publishedPrecondition": true,
+        "normalTrust": true,
+        "configPath": false,
+        "instrumentation": false
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-borrowed-direct-instrumentation.txt",
+          "sha256": "f154b6c6b808499e40e2f14c72325e3ad18ba07fa4cc52aa8c5a4907a98c37f8",
+          "okTestCounts": [],
+          "failureMarker": true
+        }
+      ],
+      "status": "FAIL"
+    },
+    {
+      "name": "borrowed_shared",
+      "sourceFile": "final-borrowed-direct-conscrypt-shared-probe.json",
+      "sha256": "308fa7095c95e84c18de73e82ceca1ab71bedb4cf8a1ab504a910d5371f77e70",
+      "report": {
+        "state": "FAIL",
+        "accepted": false,
+        "targetHost": "www.cloudflare.com",
+        "cloudflareFallbackRequired": true,
+        "targetPublishedConfigBytes": 0,
+        "targetPublishedDnsReason": "no_ech",
+        "fallbackConfigOwner": "crypto.cloudflare.com",
+        "dohMode": "alidns",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "settingsRestored": true,
+        "dohRestored": true,
+        "certificateValidationScope": "EXISTING_SHARED_POLICY_NOT_A_SECURITY_VALIDATION",
+        "offOnControlPassed": false
+      },
+      "phases": [
+        {
+          "errorType": "ConnectException",
+          "enabled": false,
+          "passed": false,
+          "state": "REQUEST_FAILED",
+          "alpn": "unavailable",
+          "traceSni": "missing",
+          "conscryptSocket": false,
+          "expectedRouteVerified": false,
+          "proxyType": "UNOBSERVED",
+          "echConfigBytes": null,
+          "configResolveCalls": null,
+          "dnsReason": "SHARED_RESOLVER_NOT_INSTRUMENTED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": true,
+          "sharedDnsPreserved": true,
+          "sharedApplicationInterceptorsPreserved": true,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "errorType": "ConnectException",
+          "enabled": true,
+          "passed": false,
+          "state": "REQUEST_FAILED",
+          "alpn": "unavailable",
+          "traceSni": "missing",
+          "conscryptSocket": false,
+          "expectedRouteVerified": false,
+          "proxyType": "UNOBSERVED",
+          "echConfigBytes": null,
+          "configResolveCalls": null,
+          "dnsReason": "SHARED_RESOLVER_NOT_INSTRUMENTED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": true,
+          "sharedDnsPreserved": true,
+          "sharedApplicationInterceptorsPreserved": true,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": false,
+        "offOn": false,
+        "phaseEvidence": false,
+        "target": true,
+        "publishedPrecondition": true,
+        "settingsRestored": true,
+        "instrumentation": false
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-borrowed-direct-instrumentation.txt",
+          "sha256": "f154b6c6b808499e40e2f14c72325e3ad18ba07fa4cc52aa8c5a4907a98c37f8",
+          "okTestCounts": [],
+          "failureMarker": true
+        }
+      ],
+      "status": "FAIL"
+    },
+    {
+      "name": "published_direct",
+      "status": "PENDING"
+    },
+    {
+      "name": "published_shared",
+      "status": "PENDING"
+    },
+    {
+      "name": "borrowed_proxy",
+      "status": "PENDING"
+    }
+  ]
+}

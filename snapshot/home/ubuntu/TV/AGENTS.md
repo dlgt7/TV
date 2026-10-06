@@ -1,0 +1,32 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+
+This is a multi-module Android/Gradle project. `app/` is the main application, with shared logic in `app/src/main/`, TV UI in `app/src/leanback/`, mobile UI in `app/src/mobile/`, and local unit tests in `app/src/test/`. Included library modules are `catvod/`, `chaquo/`, and `quickjs/`. Configuration references live in `docs/`, bundled AARs in `app/libs/`, and release artifacts are copied to `Release/apk/`.
+
+## Build, Test, and Development Commands
+
+- `chmod +x "./gradlew"`: ensure the Gradle wrapper is executable on Unix systems.
+- `./gradlew :app:assembleLeanbackArm64_v8aDebug`: build a debug TV APK for arm64.
+- `./gradlew :app:assembleMobileArm64_v8aDebug`: build a debug mobile APK for arm64.
+- `./gradlew assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2`: reproduce the CI release build.
+- `./gradlew :app:testLeanbackArm64_v8aDebugUnitTest`: run the focused JUnit test variant.
+- `./gradlew :app:lintLeanbackArm64_v8aDebug`: run Android lint for the TV arm64 debug variant.
+
+Release builds require JDK 21, Python 3.10, Android SDK 37, signing values in `local.properties`, and `MEDIA3_SOURCE_DIR` when using the local Media3 composite build. See `LOCAL_BUILD_ENV.md`.
+
+## Coding Style & Naming Conventions
+
+Follow the existing Android Studio style: 4-space indentation for Java/Kotlin/XML, Java package names under `com.fongmi.android.tv`, and descriptive class names such as `VodPlaybackController` or `LiveNavigationPolicy`. Keep shared behavior in `app/src/main/`; place UI-specific code in the matching `leanback` or `mobile` source set. Prefer small, single-purpose classes and avoid adding new abstractions unless they remove real duplication.
+
+## Testing Guidelines
+
+Tests use JUnit4 under `app/src/test/java`. Name test classes `*Test` and test methods with clear behavior statements, e.g. `shouldRejectImageMimeFormat`. Add or update tests when changing parsing, playback guard logic, database policies, or fallback behavior. Run the closest variant test before broader builds.
+
+## Commit & Pull Request Guidelines
+
+Recent commits use short subjects, sometimes imperative (`Enhance...`) and sometimes concise fixes (`bugfix`, `fix ui`). Prefer a clear imperative subject under 72 characters and keep each commit scoped to one logical change. Pull requests should describe the user-visible impact, list tested Gradle commands, link related issues, and include screenshots or recordings for UI changes.
+
+## Security & Configuration Tips
+
+Do not commit `local.properties`, `release.jks`, API keys, or generated APKs. Keep secrets in environment variables or local Gradle properties, and document required configuration changes without exposing credentials.

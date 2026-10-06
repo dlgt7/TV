@@ -1,0 +1,65 @@
+[
+  {
+    "source": "小龙",
+    "applicationCommit": "d89e4072c",
+    "sourceApi": "csp_ManJuAiHuoLongGuard",
+    "jarSha256": "5284ad33611932ec2596075be4a158d7ccfedfcbb6f0c43cfeee112cfcd62982",
+    "ech": true,
+    "doh": "dns.alidns.com",
+    "startedAtEpochMs": 1791259153835,
+    "finishedAtEpochMs": 1791259158076,
+    "status": "results",
+    "resultCount": 9,
+    "unavailableDomainMessage": false,
+    "networkFailures": []
+  },
+  {
+    "source": "次元",
+    "applicationCommit": "d89e4072c",
+    "sourceApi": "csp_AnimeCiYuanChengGuard",
+    "jarSha256": "5284ad33611932ec2596075be4a158d7ccfedfcbb6f0c43cfeee112cfcd62982",
+    "ech": true,
+    "doh": "dns.alidns.com",
+    "startedAtEpochMs": 1791259148479,
+    "finishedAtEpochMs": 1791259151189,
+    "status": "empty",
+    "resultCount": 0,
+    "unavailableDomainMessage": false,
+    "networkFailures": [
+      "java.io.InterruptedIOException",
+      "java.net.UnknownHostException"
+    ]
+  },
+  {
+    "source": "指南",
+    "applicationCommit": "01b8748c1",
+    "sourceApi": "csp_AiNewXiaoPanGuard",
+    "jarSha256": "5284ad33611932ec2596075be4a158d7ccfedfcbb6f0c43cfeee112cfcd62982",
+    "ech": true,
+    "doh": "doh.pub",
+    "startedAtEpochMs": 1791256781534,
+    "finishedAtEpochMs": 1791256845359,
+    "status": "empty",
+    "resultCount": 0,
+    "networkFailures": [
+      "java.io.InterruptedIOException",
+      "java.net.ConnectException"
+    ]
+  },
+  {
+    "source": "师兄新入口",
+    "applicationCommit": "01b8748c1",
+    "sourceApi": "csp_WexAppV7Guard",
+    "jarSha256": "5284ad33611932ec2596075be4a158d7ccfedfcbb6f0c43cfeee112cfcd62982",
+    "ech": true,
+    "doh": "doh.pub",
+    "startedAtEpochMs": 1791257371311,
+    "finishedAtEpochMs": 1791257374672,
+    "status": "results",
+    "resultCount": 1,
+    "unavailableDomainMessage": false,
+    "networkFailures": [
+      "java.io.InterruptedIOException"
+    ]
+  }
+]

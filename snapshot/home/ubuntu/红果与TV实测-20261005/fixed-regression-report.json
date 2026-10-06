@@ -1,0 +1,117 @@
+{
+  "candidate_sha256": "32b77f0931feacaf2d2630c016314c4698762e753fc087900cd864d4ebcb919d",
+  "checks": [
+    {
+      "label": "deferred_parser",
+      "status": "pass",
+      "captured_responses": 2,
+      "invalid_inputs_rejected": 3
+    },
+    {
+      "label": "locked_branch_contract",
+      "status": "pass",
+      "mode": "mock only; DEX not executed",
+      "options": 1
+    },
+    {
+      "label": "detail:real-drama",
+      "status": "pass",
+      "plugin_items": 1,
+      "spider_items": 1,
+      "episodes": 77,
+      "play_lines": 1
+    },
+    {
+      "label": "free_first_episode:real-drama",
+      "status": "pass",
+      "options": 1,
+      "labels": [
+        "默认"
+      ],
+      "unique_streams": 1,
+      "spider_url_scheme": "https"
+    },
+    {
+      "label": "detail:comic-drama",
+      "status": "pass",
+      "plugin_items": 1,
+      "spider_items": 1,
+      "episodes": 209,
+      "play_lines": 1
+    },
+    {
+      "label": "free_first_episode:comic-drama",
+      "status": "pass",
+      "options": 1,
+      "labels": [
+        "默认"
+      ],
+      "unique_streams": 1,
+      "spider_url_scheme": "https"
+    },
+    {
+      "label": "detail:ai-drama",
+      "status": "pass",
+      "plugin_items": 1,
+      "spider_items": 1,
+      "episodes": 100,
+      "play_lines": 1
+    },
+    {
+      "label": "free_first_episode:ai-drama",
+      "status": "pass",
+      "options": 1,
+      "labels": [
+        "默认"
+      ],
+      "unique_streams": 1,
+      "spider_url_scheme": "https"
+    },
+    {
+      "label": "search:总裁",
+      "status": "pass",
+      "first_count": 6,
+      "second_count": 0,
+      "pagecount": 1,
+      "second_page_network_requests": 0,
+      "literal_title_matches": 5
+    },
+    {
+      "label": "search:逆袭",
+      "status": "pass",
+      "first_count": 12,
+      "second_count": 0,
+      "pagecount": 1,
+      "second_page_network_requests": 0,
+      "literal_title_matches": 11
+    },
+    {
+      "label": "search:no_match_token",
+      "status": "pass",
+      "first_count": 7,
+      "second_count": 0,
+      "pagecount": 1,
+      "second_page_network_requests": 0,
+      "literal_title_matches": 0
+    },
+    {
+      "label": "search:empty",
+      "status": "pass",
+      "first_count": 0,
+      "second_count": 0,
+      "pagecount": 1,
+      "second_page_network_requests": 0,
+      "literal_title_matches": 0
+    },
+    {
+      "label": "no_dex_startup",
+      "status": "pass",
+      "attempts": 0
+    },
+    {
+      "label": "original_unchanged",
+      "status": "pass",
+      "sha256": "21f77a8ebce2f348900c721119f70a0e236d5d897386cf4c9b5cd05911739814"
+    }
+  ]
+}

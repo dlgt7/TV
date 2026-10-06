@@ -1,0 +1,67 @@
+{
+  "package": "com.fongmi.android.tv.sourceprobe",
+  "commit": "f220d466c",
+  "status": "PASS",
+  "checks": [
+    {
+      "phase": "first-enable",
+      "status": "PASS",
+      "before": {
+        "danmaku_load": "false",
+        "danmaku_show": "false"
+      },
+      "after": {
+        "danmaku_load": "true",
+        "danmaku_show": "true"
+      },
+      "beforeTimes": [
+        "00:00",
+        "01:32"
+      ],
+      "screenshot": "ui-danmaku-first-enable.png"
+    },
+    {
+      "phase": "disable",
+      "status": "PASS",
+      "before": {
+        "danmaku_load": "true",
+        "danmaku_show": "true"
+      },
+      "after": {
+        "danmaku_load": "true",
+        "danmaku_show": "false"
+      },
+      "beforeTimes": [
+        "00:00",
+        "01:32"
+      ],
+      "screenshot": "ui-danmaku-disable.png"
+    },
+    {
+      "phase": "reenable",
+      "status": "PASS",
+      "before": {
+        "danmaku_load": "true",
+        "danmaku_show": "false"
+      },
+      "after": {
+        "danmaku_load": "true",
+        "danmaku_show": "true"
+      },
+      "beforeTimes": [
+        "00:00",
+        "01:32"
+      ],
+      "screenshot": "ui-danmaku-reenable.png"
+    },
+    {
+      "phase": "restart-persistence",
+      "status": "PASS",
+      "after": {
+        "danmaku_load": "true",
+        "danmaku_show": "true"
+      },
+      "screenshot": "ui-danmaku-persisted.png"
+    }
+  ]
+}

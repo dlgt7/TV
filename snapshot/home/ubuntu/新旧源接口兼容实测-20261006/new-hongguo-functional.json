@@ -1,0 +1,1821 @@
+{
+  "schema": "tv.python-source-functional.v1",
+  "sourceFile": "hongguo_spider_api_20261006.py",
+  "startedAtEpochMs": 1791273770052,
+  "stepDeadlineSeconds": 45,
+  "delayBetweenCallsMs": 250,
+  "steps": [
+    {
+      "step": "source.load",
+      "status": "PASS",
+      "elapsedMs": 5083,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      }
+    },
+    {
+      "step": "home",
+      "status": "PASS",
+      "elapsedMs": 246,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "classCount": 28
+    },
+    {
+      "step": "homeVideo",
+      "status": "PASS",
+      "elapsedMs": 229,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 24
+    },
+    {
+      "step": "category.1.page1",
+      "status": "PASS",
+      "elapsedMs": 9,
+      "errors": [],
+      "network": {
+        "requests": 0,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 4,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 4,
+      "reportedLimit": 4
+    },
+    {
+      "step": "category.1.page2",
+      "status": "PASS",
+      "elapsedMs": 3,
+      "errors": [],
+      "network": {
+        "requests": 0,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 4,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 4,
+      "reportedLimit": 4,
+      "overlapWithFirstPage": 4,
+      "observation": "TERMINAL_PAGE_REPEATS_WHEN_FORCED"
+    },
+    {
+      "step": "category.2.page1",
+      "status": "PASS",
+      "elapsedMs": 242,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.2.page2",
+      "status": "PASS",
+      "elapsedMs": 308,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.3.page1",
+      "status": "PASS",
+      "elapsedMs": 286,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.3.page2",
+      "status": "PASS",
+      "elapsedMs": 194,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.4.page1",
+      "status": "PASS",
+      "elapsedMs": 344,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.4.page2",
+      "status": "PASS",
+      "elapsedMs": 263,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.5.page1",
+      "status": "PASS",
+      "elapsedMs": 484,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.5.page2",
+      "status": "PASS",
+      "elapsedMs": 646,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.6.page1",
+      "status": "PASS",
+      "elapsedMs": 227,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 33,
+      "reportedTotal": 779,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.6.page2",
+      "status": "PASS",
+      "elapsedMs": 421,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 33,
+      "reportedTotal": 779,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.7.page1",
+      "status": "PASS",
+      "elapsedMs": 597,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.7.page2",
+      "status": "PASS",
+      "elapsedMs": 446,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.8.page1",
+      "status": "PASS",
+      "elapsedMs": 222,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 4,
+      "reportedTotal": 90,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.8.page2",
+      "status": "PASS",
+      "elapsedMs": 408,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 4,
+      "reportedTotal": 90,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.9.page1",
+      "status": "PASS",
+      "elapsedMs": 233,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.9.page2",
+      "status": "PASS",
+      "elapsedMs": 805,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.10.page1",
+      "status": "PASS",
+      "elapsedMs": 202,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.10.page2",
+      "status": "PASS",
+      "elapsedMs": 757,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.11.page1",
+      "status": "PASS",
+      "elapsedMs": 302,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 6,
+      "reportedTotal": 133,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.11.page2",
+      "status": "PASS",
+      "elapsedMs": 441,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 6,
+      "reportedTotal": 133,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.12.page1",
+      "status": "PASS",
+      "elapsedMs": 221,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.12.page2",
+      "status": "PASS",
+      "elapsedMs": 948,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.13.page1",
+      "status": "PASS",
+      "elapsedMs": 488,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.13.page2",
+      "status": "PASS",
+      "elapsedMs": 1053,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.14.page1",
+      "status": "PASS",
+      "elapsedMs": 384,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 5,
+      "reportedTotal": 106,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.14.page2",
+      "status": "PASS",
+      "elapsedMs": 535,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 5,
+      "reportedTotal": 106,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.15.page1",
+      "status": "PASS",
+      "elapsedMs": 421,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 3,
+      "reportedTotal": 60,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.15.page2",
+      "status": "PASS",
+      "elapsedMs": 358,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 3,
+      "reportedTotal": 60,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.16.page1",
+      "status": "PASS",
+      "elapsedMs": 418,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 12,
+      "reportedTotal": 283,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.16.page2",
+      "status": "PASS",
+      "elapsedMs": 449,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 12,
+      "reportedTotal": 283,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.17.page1",
+      "status": "PASS",
+      "elapsedMs": 235,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.17.page2",
+      "status": "PASS",
+      "elapsedMs": 1618,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.18.page1",
+      "status": "PASS",
+      "elapsedMs": 521,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 31,
+      "reportedTotal": 726,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.18.page2",
+      "status": "PASS",
+      "elapsedMs": 262,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 31,
+      "reportedTotal": 726,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.19.page1",
+      "status": "PASS",
+      "elapsedMs": 194,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 12,
+      "reportedTotal": 280,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.19.page2",
+      "status": "PASS",
+      "elapsedMs": 218,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 12,
+      "reportedTotal": 280,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.20.page1",
+      "status": "PASS",
+      "elapsedMs": 284,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.20.page2",
+      "status": "PASS",
+      "elapsedMs": 414,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.21.page1",
+      "status": "PASS",
+      "elapsedMs": 361,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 8,
+      "reportedTotal": 189,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.21.page2",
+      "status": "PASS",
+      "elapsedMs": 402,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 8,
+      "reportedTotal": 189,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.22.page1",
+      "status": "PASS",
+      "elapsedMs": 343,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 2,
+      "reportedTotal": 48,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.22.page2",
+      "status": "PASS",
+      "elapsedMs": 419,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 2,
+      "reportedTotal": 48,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.23.page1",
+      "status": "PASS",
+      "elapsedMs": 410,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 2,
+      "reportedTotal": 28,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.23.page2",
+      "status": "PASS",
+      "elapsedMs": 250,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 4,
+      "reportedPage": 2,
+      "reportedPageCount": 2,
+      "reportedTotal": 28,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.24.page1",
+      "status": "PASS",
+      "elapsedMs": 472,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 3,
+      "reportedTotal": 58,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.24.page2",
+      "status": "PASS",
+      "elapsedMs": 496,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 3,
+      "reportedTotal": 58,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.25.page1",
+      "status": "PASS",
+      "elapsedMs": 350,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 4,
+      "reportedTotal": 88,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.25.page2",
+      "status": "PASS",
+      "elapsedMs": 482,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 4,
+      "reportedTotal": 88,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.26.page1",
+      "status": "PASS",
+      "elapsedMs": 257,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 2,
+      "reportedTotal": 48,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.26.page2",
+      "status": "PASS",
+      "elapsedMs": 299,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 2,
+      "reportedTotal": 48,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.27.page1",
+      "status": "PASS",
+      "elapsedMs": 222,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 18,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 18,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.27.page2",
+      "status": "PASS",
+      "elapsedMs": 411,
+      "errors": [],
+      "network": {
+        "requests": 2,
+        "networkErrors": 1,
+        "httpErrors": 0,
+        "pluginErrors": 2,
+        "pluginErrorTypes": [
+          "_HgOfficialNotFound"
+        ],
+        "httpStatusCodes": [
+          404
+        ]
+      },
+      "requestedPage": 2,
+      "count": 0,
+      "observation": "EXPECTED_TERMINAL_404",
+      "reportedPage": 2,
+      "reportedPageCount": 1,
+      "reportedTotal": 18,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "category.28.page1",
+      "status": "PASS",
+      "elapsedMs": 227,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 24,
+      "reportedPage": 1,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24
+    },
+    {
+      "step": "category.28.page2",
+      "status": "PASS",
+      "elapsedMs": 392,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 24,
+      "reportedPage": 2,
+      "reportedPageCount": 34,
+      "reportedTotal": 800,
+      "reportedLimit": 24,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "rank_home.folders",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": [],
+      "count": 4
+    },
+    {
+      "step": "rank.folder.1.page1",
+      "status": "PASS",
+      "elapsedMs": 165,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.folder.1.page2",
+      "status": "PASS",
+      "elapsedMs": 159,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 9,
+      "reportedPage": 2,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20,
+      "overlapWithFirstPage": 9,
+      "observation": "TERMINAL_PAGE_REPEATS_WHEN_FORCED"
+    },
+    {
+      "step": "rank.folder.2.page1",
+      "status": "PASS",
+      "elapsedMs": 161,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.folder.2.page2",
+      "status": "PASS",
+      "elapsedMs": 190,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 9,
+      "reportedPage": 2,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20,
+      "overlapWithFirstPage": 9,
+      "observation": "TERMINAL_PAGE_REPEATS_WHEN_FORCED"
+    },
+    {
+      "step": "rank.folder.3.page1",
+      "status": "PASS",
+      "elapsedMs": 270,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.folder.3.page2",
+      "status": "PASS",
+      "elapsedMs": 200,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 9,
+      "reportedPage": 2,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20,
+      "overlapWithFirstPage": 9,
+      "observation": "TERMINAL_PAGE_REPEATS_WHEN_FORCED"
+    },
+    {
+      "step": "rank.folder.4.page1",
+      "status": "PASS",
+      "elapsedMs": 180,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.folder.4.page2",
+      "status": "PASS",
+      "elapsedMs": 163,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 2,
+      "count": 9,
+      "reportedPage": 2,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20,
+      "overlapWithFirstPage": 9,
+      "observation": "TERMINAL_PAGE_REPEATS_WHEN_FORCED"
+    },
+    {
+      "step": "rank.direct.1",
+      "status": "PASS",
+      "elapsedMs": 162,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.direct.2",
+      "status": "PASS",
+      "elapsedMs": 188,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.direct.3",
+      "status": "PASS",
+      "elapsedMs": 174,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "rank.direct.4",
+      "status": "PASS",
+      "elapsedMs": 167,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "requestedPage": 1,
+      "count": 9,
+      "reportedPage": 1,
+      "reportedPageCount": 1,
+      "reportedTotal": 9,
+      "reportedLimit": 20
+    },
+    {
+      "step": "filters.advertised",
+      "status": "NOT_APPLICABLE",
+      "elapsedMs": 0,
+      "errors": [],
+      "categoryCount": 0,
+      "reason": "SOURCE_ADVERTISES_NO_FILTERS"
+    },
+    {
+      "step": "search.normal.page1",
+      "status": "PASS",
+      "elapsedMs": 711,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 8
+    },
+    {
+      "step": "search.normal.page2",
+      "status": "PASS",
+      "elapsedMs": 1,
+      "errors": [],
+      "network": {
+        "requests": 0,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 0,
+      "overlapWithFirstPage": 0
+    },
+    {
+      "step": "search.quick",
+      "status": "PASS",
+      "elapsedMs": 108,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 8
+    },
+    {
+      "step": "search.empty",
+      "status": "PASS",
+      "elapsedMs": 1,
+      "errors": [],
+      "network": {
+        "requests": 0,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 0
+    },
+    {
+      "step": "search.noMatch",
+      "status": "OBSERVATION",
+      "elapsedMs": 506,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 5,
+      "queryKind": "unmatched_probe",
+      "returnedSuggestions": 5,
+      "exactSearchValidated": false,
+      "observation": "SOURCE_RETURNS_FALLBACK_SUGGESTIONS"
+    },
+    {
+      "step": "search.longQueryBoundary",
+      "status": "FAIL",
+      "elapsedMs": 278,
+      "errors": [
+        "EMPTY_AFTER_NETWORK_OR_PLUGIN_ERROR",
+        "UPSTREAM_REJECTED_LONG_QUERY"
+      ],
+      "network": {
+        "requests": 2,
+        "networkErrors": 2,
+        "httpErrors": 0,
+        "pluginErrors": 9,
+        "pluginErrorTypes": [
+          "_HongguoRetryableRequestError",
+          "HongguoPluginError"
+        ],
+        "httpStatusCodes": [
+          500,
+          500
+        ]
+      },
+      "count": 0,
+      "queryKind": "long_query_boundary",
+      "queryLength": 34,
+      "returnedSuggestions": 0,
+      "exactSearchValidated": false,
+      "returnedStructuredResponse": true,
+      "upstreamRejected": true,
+      "observation": "UPSTREAM_REJECTED_LONG_QUERY"
+    },
+    {
+      "step": "detail.candidates",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": [],
+      "count": 1000
+    },
+    {
+      "step": "detail.single.1",
+      "status": "PASS",
+      "elapsedMs": 401,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 1,
+      "lineCount": 1,
+      "episodeCount": 77
+    },
+    {
+      "step": "detail.single.2",
+      "status": "PASS",
+      "elapsedMs": 1458,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 1,
+      "lineCount": 1,
+      "episodeCount": 63
+    },
+    {
+      "step": "detail.multipleIds",
+      "status": "PASS",
+      "elapsedMs": 778,
+      "errors": [],
+      "network": {
+        "requests": 2,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "count": 2
+    },
+    {
+      "step": "detail.coverage",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": [],
+      "successfulSeries": 2
+    },
+    {
+      "step": "resolve.series1.line89033ea8.episode1",
+      "status": "PASS",
+      "elapsedMs": 435,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "loopback": false,
+      "headerCount": 1,
+      "urlSha256": "6e9210d3129352b2c3f896d1fd7719f375bd339f56caf945475e2ae777edc997",
+      "parse": 0
+    },
+    {
+      "step": "resolve.series1.line89033ea8.episode39",
+      "status": "PASS",
+      "elapsedMs": 614,
+      "errors": [],
+      "network": {
+        "requests": 3,
+        "networkErrors": 1,
+        "httpErrors": 0,
+        "pluginErrors": 2,
+        "pluginErrorTypes": [
+          "_HgOfficialNotFound"
+        ],
+        "httpStatusCodes": [
+          404
+        ]
+      },
+      "loopback": true,
+      "headerCount": 1,
+      "urlSha256": "642d9bb8900a9c58c64a528e4d39f212d31bb5d30060f17c1335bae19a4377df",
+      "parse": 0
+    },
+    {
+      "step": "resolve.series1.line89033ea8.episode77",
+      "status": "PASS",
+      "elapsedMs": 425,
+      "errors": [],
+      "network": {
+        "requests": 3,
+        "networkErrors": 1,
+        "httpErrors": 0,
+        "pluginErrors": 2,
+        "pluginErrorTypes": [
+          "_HgOfficialNotFound"
+        ],
+        "httpStatusCodes": [
+          404
+        ]
+      },
+      "loopback": true,
+      "headerCount": 1,
+      "urlSha256": "eb11f6d0a9367ff7ae75119ba354b5d66f112034b6cca5656bcf46e337489712",
+      "parse": 0
+    },
+    {
+      "step": "resolve.series1.line89033ea8.episode2",
+      "status": "PASS",
+      "elapsedMs": 441,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "loopback": false,
+      "headerCount": 1,
+      "urlSha256": "834e22e1080d6547a43adfecdb4178d67359d74655b30d8c831839755e89d8b2",
+      "parse": 0
+    },
+    {
+      "step": "playback.qualityDistinctness",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": [],
+      "advertisedLines": 1,
+      "distinctResolvedUrls": 1,
+      "sameUrlLineGroups": []
+    },
+    {
+      "step": "resolve.series2.line89033ea8.episode1",
+      "status": "PASS",
+      "elapsedMs": 1694,
+      "errors": [],
+      "network": {
+        "requests": 1,
+        "networkErrors": 0,
+        "httpErrors": 0,
+        "pluginErrors": 0,
+        "pluginErrorTypes": [],
+        "httpStatusCodes": []
+      },
+      "loopback": false,
+      "headerCount": 1,
+      "urlSha256": "ad7fa0bde4b7ed83033a117eb5ff65703e062d5e04bf51d73513bf1df1936196",
+      "parse": 0
+    },
+    {
+      "step": "resolve.series2.line89033ea8.episode32",
+      "status": "PASS",
+      "elapsedMs": 1197,
+      "errors": [],
+      "network": {
+        "requests": 4,
+        "networkErrors": 1,
+        "httpErrors": 0,
+        "pluginErrors": 2,
+        "pluginErrorTypes": [
+          "_HgOfficialNotFound"
+        ],
+        "httpStatusCodes": [
+          404
+        ]
+      },
+      "loopback": true,
+      "headerCount": 1,
+      "urlSha256": "2e8ff831ae2721d0869ea03fcf42982ed98dd6c1a854c79cb6ac949274d37e57",
+      "parse": 0
+    },
+    {
+      "step": "resolve.series2.line89033ea8.episode63",
+      "status": "PASS",
+      "elapsedMs": 450,
+      "errors": [],
+      "network": {
+        "requests": 3,
+        "networkErrors": 1,
+        "httpErrors": 0,
+        "pluginErrors": 2,
+        "pluginErrorTypes": [
+          "_HgOfficialNotFound"
+        ],
+        "httpStatusCodes": [
+          404
+        ]
+      },
+      "loopback": true,
+      "headerCount": 1,
+      "urlSha256": "65b8ea0c0e166f8ad2e2f5e05d9de93b2b40190958aae225126ab1b9e68b4b5f",
+      "parse": 0
+    },
+    {
+      "step": "playback.resolutionCoverage",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": [],
+      "seriesCount": 2,
+      "caseCount": 7
+    },
+    {
+      "step": "source.cleanup",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": []
+    },
+    {
+      "step": "configuration.preserved",
+      "status": "PASS",
+      "elapsedMs": 0,
+      "errors": []
+    }
+  ],
+  "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+  "failureCount": 1,
+  "stepCount": 95,
+  "playbackCaseCount": 7,
+  "status": "FAIL",
+  "finishedAtEpochMs": 1791273833445
+}

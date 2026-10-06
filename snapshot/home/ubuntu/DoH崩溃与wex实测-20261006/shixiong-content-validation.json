@@ -1,0 +1,28 @@
+{
+  "sourceApi": "csp_WexAppV7Guard",
+  "captureBytes": 384,
+  "captureSha256": "9921c1a6cbe4b39ef95413303235dbffa371bc09126fde3388933ca7a6c1faa9",
+  "count": 1,
+  "items": [
+    {
+      "idPresent": true,
+      "idSha256": "eae41850f89f1dbf0e19c5457399210bca3db128f382dd41ee0e14a53b3daac8",
+      "titlePresent": true,
+      "titleContainsSearchedKeyword": true,
+      "looksLikeErrorPlaceholder": false,
+      "imagePresent": true,
+      "fields": [
+        "vod_actor",
+        "vod_area",
+        "vod_content",
+        "vod_director",
+        "vod_id",
+        "vod_name",
+        "vod_pic",
+        "vod_remarks",
+        "vod_year"
+      ]
+    }
+  ],
+  "validSearchItem": true
+}

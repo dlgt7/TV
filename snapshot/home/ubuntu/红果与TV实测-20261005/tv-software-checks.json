@@ -1,0 +1,20 @@
+{
+  "app_unit_tests": {
+    "tests": 267,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": 54
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 312
+  },
+  "gradle": "BUILD SUCCESSFUL in 2m 3s",
+  "software_selection_instrumentation": {
+    "tests": 7,
+    "failures": 0,
+    "seconds": 0.061
+  },
+  "software_source_revision_file_sha256": "3c9eb9b1ca9728ea67064b43d3a840231ea334782ac9c8f4d30976e3dc28d00f"
+}

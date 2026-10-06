@@ -1,0 +1,12 @@
+{
+  "model": "mandarin-zipformer-ctc",
+  "sha256Verified": true,
+  "files": {
+    "model.int8.onnx": "24ffdc19ba9aaed5a6a9beaede1e087745217d82425cf4041bca0c696661801e",
+    "tokens.txt": "6193c7ea1c96d0d9a1e9652789b40d13a8a913b434a5451e93158f5a09fd6652"
+  },
+  "existingFilesOverwritten": false,
+  "preferencesChanged": false,
+  "method": "verified-public-model-copied-locally-on-device",
+  "productionDownloadTest": "FAIL_REMAINS_RECORDED"
+}

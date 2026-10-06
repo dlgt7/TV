@@ -1,0 +1,14 @@
+{
+  "schema": "tv.ech.instrumentation-summary.v1",
+  "direct": {
+    "state": "PASS",
+    "testCount": 2,
+    "result": "OK (2 tests)"
+  },
+  "httpConnectFixture": {
+    "state": "PASS",
+    "testCount": 1,
+    "result": "OK (1 test)"
+  },
+  "rawLogsExcluded": true
+}

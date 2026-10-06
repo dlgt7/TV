@@ -1,0 +1,53 @@
+{
+  "frameChecks": [
+    {
+      "phase": "visible",
+      "settings": {
+        "danmaku_load": "true",
+        "danmaku_show": "true"
+      },
+      "times": [
+        "00:31",
+        "01:32"
+      ],
+      "screenshot": "ui-danmaku-fixed-visible.png"
+    },
+    {
+      "phase": "hidden",
+      "settings": {
+        "danmaku_load": "true",
+        "danmaku_show": "false"
+      },
+      "times": [
+        "00:31",
+        "01:32"
+      ],
+      "screenshot": "ui-danmaku-fixed-hidden.png"
+    },
+    {
+      "phase": "visible-again",
+      "settings": {
+        "danmaku_load": "true",
+        "danmaku_show": "true"
+      },
+      "times": [
+        "00:31",
+        "01:32"
+      ],
+      "screenshot": "ui-danmaku-fixed-visible-again.png"
+    }
+  ],
+  "visualReview": "PASS",
+  "applicationCommit": "67431d56596a31d179a54feddc14a3a3bb9f61ec",
+  "media3BaseCommit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+  "media3PatchSha256": "463eba72b1c56c19e38065a8d1f4476ed7a8e6b0d5bd39f0a8c05ceb47c169d7",
+  "visibleTextBefore": [
+    "开关验证013",
+    "开关验证014",
+    "开关验证015"
+  ],
+  "textAbsentWhileDisabled": true,
+  "visibleTextRestoredAfterReenable": true,
+  "buttonAndFocusUnclipped": true,
+  "sameDisplayedPlaybackPosition": "00:31"
+}

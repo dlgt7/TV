@@ -1,0 +1,234 @@
+{
+  "schema": "tv.python-source-playback.v1",
+  "sourceSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "engine": "exo-hard",
+  "caseCount": 2,
+  "results": [
+    {
+      "caseIndex": 0,
+      "episodeIndex": 0,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "stage": "complete",
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 865,
+        "frame": true,
+        "videoFrameCallbacks": 21,
+        "videoPresentationTimeUs": 917589,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "c2.va.avc.decoder",
+        "audioDecoderName": "c2.android.aac.decoder",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video\/avc",
+            "codecs": "avc1.640032",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio\/mp4a-latm",
+            "codecs": "mp4a.40.2",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 24000,
+            "channels": 2
+          },
+          {
+            "type": 5,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "application\/id3",
+            "width": -1,
+            "height": -1,
+            "sampleRate": -1,
+            "channels": -1
+          }
+        ]
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 0,
+      "videoPixelHash": "71487801",
+      "width": 1920,
+      "height": 1080,
+      "audioTracks": 1,
+      "subtitleTracks": 0,
+      "subtitleCoverage": "NO_SELECTABLE_SUBTITLE_TRACK",
+      "durationMs": 2924324,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 15015678,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 11929,
+        "videoPixelHash": "9e4dc43d"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 2002011,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 527,
+        "videoPixelHash": "a56fe082"
+      },
+      "forwardBackwardSeek": true,
+      "exoDsp": {
+        "installed": true,
+        "active": true,
+        "processedSourcePcm": true,
+        "power": 0.006583640776439199,
+        "filterStateMagnitude": 0.01641999089083641
+      },
+      "exoDspRemovedOnDisable": true,
+      "playbackControls": [
+        {
+          "speed": 1.5,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 6369,
+          "videoPixelHash": "7c34a0a6",
+          "playbackClockAdvanced": true
+        },
+        {
+          "speed": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 2,
+          "videoPixelHash": "8d65b601",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 0,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 2,
+          "videoPixelHash": "8d65b601",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 298,
+          "videoPixelHash": "19dc61fc",
+          "playbackClockAdvanced": true
+        }
+      ],
+      "speedAndVolumeRestored": true,
+      "effectsEnabledDisabledWithPauseAndPosition": true,
+      "elapsedMs": 22331
+    },
+    {
+      "caseIndex": 1,
+      "episodeIndex": 1,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "stage": "complete",
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 825,
+        "frame": true,
+        "videoFrameCallbacks": 20,
+        "videoPresentationTimeUs": 875878,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "c2.va.avc.decoder",
+        "audioDecoderName": "c2.android.aac.decoder",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video\/avc",
+            "codecs": "avc1.640032",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio\/mp4a-latm",
+            "codecs": "mp4a.40.2",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 24000,
+            "channels": 2
+          },
+          {
+            "type": 5,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "application\/id3",
+            "width": -1,
+            "height": -1,
+            "sampleRate": -1,
+            "channels": -1
+          }
+        ]
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 0,
+      "videoPixelHash": "71487801",
+      "width": 1920,
+      "height": 1080,
+      "audioTracks": 1,
+      "subtitleTracks": 0,
+      "subtitleCoverage": "NO_SELECTABLE_SUBTITLE_TRACK",
+      "durationMs": 1516198,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 15015855,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14400,
+        "videoPixelHash": "126f3ed"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 2002011,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 524,
+        "videoPixelHash": "7ac9534e"
+      },
+      "forwardBackwardSeek": true,
+      "switchedFromPreviousEpisode": true,
+      "elapsedMs": 10396
+    }
+  ],
+  "decodeMode": "hard",
+  "caseLimit": 2,
+  "selectedCaseIndex": -1,
+  "refreshRequested": false,
+  "hardwareScope": "ANDROID_NODE_NO_PHYSICAL_HDMI_ASSERTION"
+}
