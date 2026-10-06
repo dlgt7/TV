@@ -87,8 +87,15 @@ jobs:
         run: |
           ./gradlew -I "$RUNNER_TEMP/tv-validation.init.gradle" \
             :catvod:testDebugUnitTest \
+            :quickjs:testDebugUnitTest \
             :app:compileMobileArm64_v8aDebugJavaWithJavac \
             --no-daemon --build-cache --max-workers=2
+
+      - name: Check Python and JavaScript source API compatibility
+        if: matrix.package == 'sourceprobe'
+        run: |
+          python -m unittest discover -s chaquo/src/test/python -v
+          node quickjs/src/test/js/net.test.cjs
 
       - name: Build application and instrumentation APKs
         run: |

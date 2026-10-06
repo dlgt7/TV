@@ -4,7 +4,10 @@ import json
 import time
 import requests
 from lxml import etree
-from com.github.catvod import Proxy
+from com.github.catvod import Proxy, Init
+from urllib.parse import urlencode
+
+_PROXY_DEFAULT = object()
 from com.chaquo.python import Python
 from abc import abstractmethod, ABCMeta
 from importlib.machinery import SourceFileLoader
@@ -111,8 +114,34 @@ class Spider(metaclass=ABCMeta):
     def json2str(str):
         return json.dumps(str, ensure_ascii=False)
     
-    def getProxyUrl(self, local=True):
-        return f'{Proxy.getUrl(local)}?do=py'
+    def getProxyUrl(self, local=_PROXY_DEFAULT):
+        # Preserve the explicit legacy boolean overload (including LAN URLs).
+        if isinstance(local, bool):
+            return f'{Proxy.getUrl(local)}?do=py'
+        params = {} if local is _PROXY_DEFAULT or local is None else dict(local)
+        if "do" in params or "siteKey" in params:
+            raise ValueError("Reserved proxy parameter")
+        query = {"do": "py", "siteKey": getattr(self, "siteKey", "")}
+        query.update(params)
+        return str(Proxy.getUrl(True)) + "?" + urlencode(query)
+
+    def getActivity(self):
+        return Init.activity()
+
+    def page(self, items, pg, limit):
+        pg, limit = int(pg), int(limit)
+        if pg < 1 or limit < 1:
+            raise ValueError("Page and page size must be positive")
+        start = (pg - 1) * limit
+        return {"list": items[start:start + limit], "page": pg,
+                "pagecount": (len(items) + limit - 1) // limit,
+                "limit": limit, "total": len(items)}
+
+    @staticmethod
+    def link(name, target):
+        from java import jclass
+        value = jclass("com.google.gson.JsonParser").parseString(json.dumps(target, ensure_ascii=False))
+        return str(jclass("com.github.catvod.utils.Json").link(name, value.getAsJsonObject()))
 
     def log(self, msg):
         if isinstance(msg, dict) or isinstance(msg, list):

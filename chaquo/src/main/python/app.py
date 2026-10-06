@@ -88,7 +88,7 @@ def playerContent(ru, flag, id, vipFlags):
 
 def liveContent(ru, url):
     result = ru.liveContent(url)
-    return result
+    return result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
 
 
 def localProxy(ru, param):
@@ -112,3 +112,8 @@ def run():
 
 if __name__ == '__main__':
     run()
+
+
+def bind(ru, native_net, native_local):
+    from base.net import bind as bind_api
+    bind_api(ru, native_net, native_local)

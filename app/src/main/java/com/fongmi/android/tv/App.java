@@ -88,6 +88,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
         ToastFilter.install();
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
+        Init.setActivity(App::activity);
+        Init.setToast(text -> App.post(() -> Notify.show(text)));
     }
 
     @Override

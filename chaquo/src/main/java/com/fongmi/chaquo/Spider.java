@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.chaquo.python.PyObject;
 import com.github.catvod.utils.Path;
+import com.github.catvod.crawler.SpiderRuntime;
 import com.github.catvod.utils.UriUtil;
 import com.github.catvod.utils.Util;
 import com.google.gson.Gson;
@@ -29,10 +30,17 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     @Override
     public void init(Context context, String extend) {
-        PyObject dependence = app.callAttr("getDependence", obj);
-        if (dependence != null) for (PyObject item : dependence.asList()) download(item + ".py");
-        obj.put("siteKey", siteKey);
-        app.callAttr("init", obj, extend);
+        try {
+            SpiderRuntime.bind(this, siteKey);
+            obj.put("siteKey", siteKey);
+            app.callAttr("bind", obj, net, local);
+            PyObject dependence = app.callAttr("getDependence", obj);
+            if (dependence != null) for (PyObject item : dependence.asList()) download(item + ".py");
+            app.callAttr("init", obj, extend);
+        } catch (RuntimeException | Error error) {
+            SpiderRuntime.close(this);
+            throw error;
+        }
     }
 
     @Override
@@ -108,6 +116,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
         try {
             app.callAttr("destroy", obj);
         } catch (Exception ignored) {
+        } finally {
+            SpiderRuntime.close(this);
         }
     }
 

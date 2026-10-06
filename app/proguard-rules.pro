@@ -85,3 +85,21 @@
 -keep class com.google.zxing.common.BitMatrix { *; }
 -keep class com.google.zxing.qrcode.QRCodeWriter { *; }
 -keep class com.google.zxing.qrcode.decoder.ErrorCorrectionLevel { *; }
+
+# Public SDK types used by separately compiled source JARs and language bridges.
+-keep class com.github.catvod.Init { *; }
+-keep class com.github.catvod.net.Net { *; }
+-keep class com.github.catvod.net.Net$* { *; }
+-keep class com.github.catvod.net.NetOptions { *; }
+-keep class com.github.catvod.utils.Local { *; }
+-keep class com.github.catvod.utils.Json { *; }
+-keep class com.github.catvod.utils.Crypto { *; }
+-keep class com.github.catvod.bean.Result { *; }
+-keep class com.github.catvod.bean.Vod { *; }
+-keep class com.github.catvod.bean.Vod$* { *; }
+-keep class com.github.catvod.bean.Class { *; }
+-keep class com.github.catvod.bean.Filter { *; }
+-keep class com.github.catvod.bean.Filter$* { *; }
+-keep class com.github.catvod.bean.Sub { *; }
+-keep class com.github.catvod.bean.Danmaku { *; }
+-keep class com.github.catvod.utils.Util { *; }

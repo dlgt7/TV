@@ -6,11 +6,13 @@ import com.fongmi.quickjs.bean.Res;
 import com.fongmi.quickjs.method.Console;
 import com.fongmi.quickjs.method.Global;
 import com.fongmi.quickjs.method.Local;
+import com.fongmi.quickjs.method.NetBridge;
 import com.fongmi.quickjs.utils.Async;
 import com.fongmi.quickjs.utils.JSUtil;
 import com.fongmi.quickjs.utils.Module;
 import com.fongmi.quickjs.utils.QuickLog;
 import com.github.catvod.utils.Asset;
+import com.github.catvod.crawler.SpiderRuntime;
 import com.github.catvod.utils.Json;
 import com.github.catvod.utils.UriUtil;
 import com.github.catvod.utils.Util;
@@ -46,6 +48,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
     private QuickJSContext ctx;
     private JSObject jsObject;
     private Global global;
+    private NetBridge network;
     private boolean cat;
 
     public Spider(String api, DexClassLoader dex) {
@@ -64,9 +67,17 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     private Object call(String func, Object... args) throws Exception {
+        return callResult(func, false, args);
+    }
+
+    private String callJson(String func, Object... args) throws Exception {
+        return (String) callResult(func, true, args);
+    }
+
+    private Object callResult(String func, boolean json, Object... args) throws Exception {
         long start = System.currentTimeMillis();
         try {
-            Object result = submit(() -> Async.run(jsObject, func, args)).get().get();
+            Object result = submit(() -> json ? Async.runJson(jsObject, func, args) : Async.run(jsObject, func, args)).get().get();
             QuickLog.d(TAG, "call success site=%s func=%s elapsed=%sms result=%s", siteKey, func, System.currentTimeMillis() - start, describe(result));
             return result;
         } catch (Exception e) {
@@ -79,51 +90,62 @@ public class Spider extends com.github.catvod.crawler.Spider {
     public void init(Context context, String extend) throws Exception {
         long start = System.currentTimeMillis();
         QuickLog.d(TAG, "init start site=%s api=%s ext=%s", siteKey, api, preview(extend));
-        initializeJS();
-        call("init", submit(() -> getExt(extend)).get());
+        SpiderRuntime.bind(this, siteKey);
+        try {
+            initializeJS();
+            call("init", submit(() -> getExt(extend)).get());
+        } catch (Exception | LinkageError error) {
+            try {
+                releaseJS();
+            } finally {
+                SpiderRuntime.close(this);
+                executor.shutdownNow();
+            }
+            throw error;
+        }
         QuickLog.d(TAG, "init success site=%s elapsed=%sms", siteKey, System.currentTimeMillis() - start);
     }
 
     @Override
     public String homeContent(boolean filter) throws Exception {
-        return (String) call("home", filter);
+        return callJson("home", filter);
     }
 
     @Override
     public String homeVideoContent() throws Exception {
-        return (String) call("homeVod");
+        return callJson("homeVod");
     }
 
     @Override
     public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) throws Exception {
         JSObject obj = submit(() -> JSUtil.toObject(ctx, extend)).get();
-        return (String) call("category", tid, pg, filter, obj);
+        return callJson("category", tid, pg, filter, obj);
     }
 
     @Override
     public String detailContent(List<String> ids) throws Exception {
-        return (String) call("detail", ids.get(0));
+        return callJson("detail", ids.get(0));
     }
 
     @Override
     public String searchContent(String key, boolean quick) throws Exception {
-        return (String) call("search", key, quick);
+        return callJson("search", key, quick);
     }
 
     @Override
     public String searchContent(String key, boolean quick, String pg) throws Exception {
-        return (String) call("search", key, quick, pg);
+        return callJson("search", key, quick, pg);
     }
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) throws Exception {
         JSArray array = submit(() -> JSUtil.toArray(ctx, vipFlags)).get();
-        return (String) call("play", flag, id, array);
+        return callJson("play", flag, id, array);
     }
 
     @Override
     public String liveContent(String url) throws Exception {
-        return (String) call("live", url);
+        return callJson("live", url);
     }
 
     @Override
@@ -143,7 +165,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     @Override
     public String action(String action) throws Exception {
-        return (String) call("action", action);
+        return callJson("action", action);
     }
 
     @Override
@@ -158,12 +180,14 @@ public class Spider extends com.github.catvod.crawler.Spider {
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
+            SpiderRuntime.close(this);
             executor.shutdownNow();
         }
     }
 
     private void releaseJS() throws Exception {
         submit(() -> {
+            if (network != null) network.close();
             if (global != null) global.destroy();
             if (jsObject != null) jsObject.release();
             if (ctx != null) ctx.destroy();
@@ -175,6 +199,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
         submit(() -> {
             createCtx();
             createFun();
+            network = new NetBridge(ctx, executor, net, local, siteKey);
             createObj();
             return null;
         }).get();
@@ -305,6 +330,17 @@ public class Spider extends com.github.catvod.crawler.Spider {
     private ByteArrayInputStream getStream(Object o, boolean base64) {
         if (o instanceof byte[]) {
             return new ByteArrayInputStream((byte[]) o);
+        } else if (o instanceof JSONArray array) {
+            byte[] bytes = new byte[array.length()];
+            for (int i = 0; i < bytes.length; i++) {
+                Object value = array.opt(i);
+                if (!(value instanceof Number number) || !Double.isFinite(number.doubleValue())
+                        || number.doubleValue() != number.intValue() || number.intValue() < -128 || number.intValue() > 255) {
+                    throw new IllegalArgumentException("Proxy body must contain byte values from -128 to 255");
+                }
+                bytes[i] = (byte) number.intValue();
+            }
+            return new ByteArrayInputStream(bytes);
         } else {
             String content = o.toString();
             if (base64 && content.contains("base64,")) content = content.split("base64,")[1];

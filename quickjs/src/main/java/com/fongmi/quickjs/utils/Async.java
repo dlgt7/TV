@@ -9,9 +9,10 @@ import java.util.concurrent.CompletableFuture;
 public class Async {
 
     private CompletableFuture<Object> future;
+    private final boolean json;
 
     private final JSCallFunction success = args -> {
-        future.complete(args != null && args.length > 0 ? args[0] : null);
+        complete(args != null && args.length > 0 ? args[0] : null);
         return null;
     };
 
@@ -21,12 +22,33 @@ public class Async {
         return null;
     };
 
-    private Async() {
+    private Async(boolean json) {
+        this.json = json;
         this.future = new CompletableFuture<>();
     }
 
     public static CompletableFuture<Object> run(JSObject object, String name, Object... args) {
-        return new Async().call(object, name, args);
+        return new Async(false).call(object, name, args);
+    }
+
+    public static CompletableFuture<Object> runJson(JSObject object, String name, Object... args) {
+        return new Async(true).call(object, name, args);
+    }
+
+    private void complete(Object value) {
+        try {
+            if (json && value instanceof JSObject object) {
+                try {
+                    future.complete(object.stringify());
+                } finally {
+                    object.release();
+                }
+            } else {
+                future.complete(value);
+            }
+        } catch (Throwable error) {
+            future.completeExceptionally(error);
+        }
     }
 
     private CompletableFuture<Object> call(JSObject object, String name, Object... args) {
@@ -45,7 +67,7 @@ public class Async {
         try {
             Object result = func.call(args);
             if (result instanceof JSObject) then((JSObject) result);
-            else future.complete(result);
+            else complete(result);
         } catch (Throwable e) {
             future.completeExceptionally(e);
         } finally {
@@ -56,17 +78,21 @@ public class Async {
     private void then(JSObject promise) {
         JSFunction then = promise.getJSFunction("then");
         if (then == null) {
-            future.complete(promise);
+            complete(promise);
         } else {
-            consume(then, success);
-            consume(promise.getJSFunction("catch"), error);
+            try {
+                consume(then, success);
+                consume(promise.getJSFunction("catch"), error);
+            } finally {
+                if (json) promise.release();
+            }
         }
     }
 
     private void consume(JSFunction func, JSCallFunction callback) {
         if (func == null) return;
         try {
-            func.call(callback);
+            func.callVoid(callback);
         } finally {
             func.release();
         }

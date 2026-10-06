@@ -5,6 +5,6 @@ if (!globalThis.__JS_SPIDER__) {
         globalThis.req = http
         globalThis.__JS_SPIDER__ = spider.__jsEvalReturn()
     } else if (spider.default) {
-        globalThis.__JS_SPIDER__ = typeof spider.default === 'function' ? spider.default() : spider.default
+        globalThis.__JS_SPIDER__ = typeof spider.default === 'function' ? spider.default(globalThis.__SPIDER_SITE__) : spider.default
     }
 }

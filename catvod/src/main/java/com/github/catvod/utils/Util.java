@@ -76,6 +76,20 @@ public class Util {
         }
     }
 
+    public static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder result = new StringBuilder(64);
+            for (byte item : digest) {
+                result.append(Character.forDigit((item >>> 4) & 15, 16));
+                result.append(Character.forDigit(item & 15, 16));
+            }
+            return result.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
+    }
+
     public static String md5(File file) {
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");

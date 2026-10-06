@@ -1,0 +1,199 @@
+package com.fongmi.android.tv.test;
+
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
+
+import android.content.Context;
+import android.os.Bundle;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import com.fongmi.quickjs.crawler.Loader;
+import com.fongmi.quickjs.crawler.Spider;
+import com.fongmi.quickjs.utils.QuickLog;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import fi.iki.elonen.NanoHTTPD;
+
+/**
+ * Opt in with quickjs_legacy=true. Stage exact API/rule bytes under private files/quickjs-regression/.
+ * Their configuration addresses and WebDAV credentials are not needed by this test.
+ * Init/home may contact the publisher; quickjs_legacy_live=true adds browsing/search/play resolution.
+ * Reports contain only hashes/counts/error types, never returned IDs, URLs, headers or titles.
+ */
+@RunWith(AndroidJUnit4.class)
+public final class QuickJsLegacySourcesTest {
+
+    private static final String API_SHA = "67f4f6b460db1ec7ef50585953ce826c5263ca91d72958490ef4702b4e154fe1";
+    private static final Map<String, String> RULE_SHA = Map.of(
+            "tencent", "da380ca1d7395f36bae82ce239a6a7e9c6fd2367058860d51ea8c2edf81fa739",
+            "bili", "c7e65d4c19bb45faacc700993a6c585e38484965e968cc31743bfd9459aa8652");
+
+    private final Context target = InstrumentationRegistry.getInstrumentation().getTargetContext();
+    private final Bundle arguments = InstrumentationRegistry.getArguments();
+    private final JSONObject report = new JSONObject();
+    private final JSONArray sources = new JSONArray();
+    private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private String stage;
+
+    @Test
+    public void configuredLegacySourcesUseTheirExactScripts() throws Exception {
+        assumeTrue(Boolean.parseBoolean(arguments.getString("quickjs_legacy", "false")));
+        assertEquals("Use the isolated test application", "com.fongmi.android.tv.sourceprobe", target.getPackageName());
+        String selected = arguments.getString("quickjs_legacy_source", "all");
+        assertTrue(List.of("all", "tencent", "bili").contains(selected));
+        boolean live = Boolean.parseBoolean(arguments.getString("quickjs_legacy_live", "false"));
+        boolean logging = QuickLog.isEnabled();
+        QuickLog.putEnabled(false);
+        ScriptServer server = new ScriptServer(new File(target.getFilesDir(), "quickjs-regression"));
+        int failures = 0;
+        try {
+            server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
+            report.put("sources", sources).put("liveCalls", live).put("status", "RUNNING");
+            for (String name : List.of("tencent", "bili")) {
+                if (!selected.equals("all") && !selected.equals(name)) continue;
+                JSONObject row = new JSONObject().put("source", name);
+                sources.put(row);
+                Spider spider = null;
+                try {
+                    File api = new File(server.directory, name + "-api.js");
+                    File rule = new File(server.directory, name + "-rule.js");
+                    assertTrue("Stage the private API script", api.isFile());
+                    assertTrue("Stage the private rule script", rule.isFile());
+                    String apiSha = hash(api), ruleSha = hash(rule);
+                    assertEquals("API fixture bytes changed", API_SHA, apiSha);
+                    assertEquals("Rule fixture bytes changed", RULE_SHA.get(name), ruleSha);
+                    row.put("apiSha256", apiSha).put("ruleSha256", ruleSha);
+                    String base = "http://127.0.0.1:" + server.getListeningPort() + "/" + name;
+                    spider = new Loader().spider(base + "/api.js", null);
+                    spider.siteKey = "quickjs-legacy-" + name;
+                    Spider current = spider;
+                    step(name + ".init", () -> { current.init(target, base + "/rule.js"); return ""; });
+                    JSONObject home = new JSONObject(step(name + ".home", () -> current.homeContent(true)));
+                    JSONArray classes = home.optJSONArray("class");
+                    assertNotNull("Legacy home must return categories", classes);
+                    assertTrue("Legacy category list is empty", classes.length() > 0);
+                    row.put("categories", classes.length());
+                    row.put("homeVideos", count(home));
+                    if (live) exercise(name, current, home, row);
+                    row.put("status", live ? "PASS_LIVE" : "PASS_INIT_HOME");
+                } catch (Throwable failure) {
+                    failures++;
+                    row.put("status", "FAIL").put("stage", stage);
+                    row.put("failureTypes", types(failure));
+                } finally {
+                    if (spider != null) {
+                        Spider current = spider;
+                        Future<?> cleanup = worker.submit(current::destroy);
+                        try { cleanup.get(10, TimeUnit.SECONDS); } catch (Exception ignored) { cleanup.cancel(true); }
+                    }
+                    write();
+                }
+            }
+            report.put("status", failures == 0 ? "PASS" : "FAIL");
+        } finally {
+            worker.shutdownNow();
+            server.stop();
+            QuickLog.putEnabled(logging);
+            write();
+        }
+        assertEquals("Inspect private quickjs-legacy-result.json for source/stage/error types", 0, failures);
+    }
+
+    private void exercise(String name, Spider spider, JSONObject home, JSONObject row) throws Exception {
+        String category = arguments.getString("quickjs_legacy_category_" + name,
+                home.getJSONArray("class").getJSONObject(0).getString("type_id"));
+        JSONObject first = new JSONObject(step(name + ".category1", () -> spider.categoryContent(category, "1", true, new HashMap<>())));
+        JSONObject second = new JSONObject(step(name + ".category2", () -> spider.categoryContent(category, "2", true, new HashMap<>())));
+        row.put("page1Count", count(first)).put("page2Count", count(second));
+        assertTrue("Known legacy category returned no videos", count(first) > 0);
+        String keyword = arguments.getString("quickjs_legacy_keyword_" + name, name.equals("tencent") ? "三体" : "科学");
+        JSONObject search = new JSONObject(step(name + ".search", () -> spider.searchContent(keyword, false, "1")));
+        row.put("searchCount", count(search));
+        assertTrue("Known legacy search returned no videos", count(search) > 0);
+        String id = first.getJSONArray("list").getJSONObject(0).getString("vod_id");
+        JSONObject detail = new JSONObject(step(name + ".detail", () -> spider.detailContent(List.of(id))));
+        JSONObject vod = detail.getJSONArray("list").getJSONObject(0);
+        String[] lines = vod.getString("vod_play_from").split("\\$\\$\\$");
+        String[] playlists = vod.getString("vod_play_url").split("\\$\\$\\$");
+        String[] episode = playlists[0].split("#")[0].split("\\$", 2);
+        assertEquals("Legacy detail needs a playable episode", 2, episode.length);
+        JSONObject play = new JSONObject(step(name + ".play", () -> spider.playerContent(lines[0], episode[1], List.of())));
+        assertTrue("Legacy player response lacks URL", play.has("url") && !play.isNull("url"));
+        row.put("playResolved", true).put("playParse", play.optInt("parse", 0));
+    }
+
+    private String step(String name, Callable<String> callable) throws Exception {
+        stage = name;
+        report.put("stage", stage);
+        write();
+        Future<String> future = worker.submit(callable);
+        try { return future.get(60, TimeUnit.SECONDS); }
+        finally { if (!future.isDone()) future.cancel(true); }
+    }
+
+    private int count(JSONObject data) {
+        JSONArray list = data.optJSONArray("list");
+        return list == null ? 0 : list.length();
+    }
+
+    private String hash(File file) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file.toPath()));
+        StringBuilder result = new StringBuilder();
+        for (byte item : digest) result.append(String.format(java.util.Locale.ROOT, "%02x", item & 255));
+        return result.toString();
+    }
+
+    private JSONArray types(Throwable failure) {
+        JSONArray values = new JSONArray();
+        for (int depth = 0; failure != null && depth < 8; depth++, failure = failure.getCause()) values.put(failure.getClass().getSimpleName());
+        return values;
+    }
+
+    private void write() throws Exception {
+        try (FileOutputStream output = new FileOutputStream(new File(target.getFilesDir(), "quickjs-legacy-result.json"))) {
+            output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private static final class ScriptServer extends NanoHTTPD {
+        final File directory;
+        ScriptServer(File directory) { super("127.0.0.1", 0); this.directory = directory; }
+        @Override public Response serve(IHTTPSession session) {
+            String[] parts = session.getUri().split("/");
+            if (parts.length != 3 || !RULE_SHA.containsKey(parts[1]) || !List.of("api.js", "rule.js").contains(parts[2])) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "missing");
+            }
+            try {
+                File file = new File(directory, parts[1] + "-" + parts[2]);
+                String script = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                if (parts[2].equals("api.js")) {
+                    // Keep private rule cookies and URLs out of the Android log buffer.
+                    script = "console.log=console.info=console.warn=console.error=console.debug=function(){};\n" + script;
+                }
+                return newFixedLengthResponse(Response.Status.OK, "application/javascript", script);
+            } catch (Exception ignored) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "missing fixture");
+            }
+        }
+    }
+}

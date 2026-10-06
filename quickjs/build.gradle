@@ -24,5 +24,6 @@ dependencies {
     implementation libs.jsoup
     implementation libs.quickjs.android
     implementation libs.quickjs.java
+    testImplementation libs.junit
     coreLibraryDesugaring libs.desugar
 }

@@ -9,6 +9,7 @@ import com.fongmi.android.tv.utils.Download;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.crawler.Spider;
+import com.github.catvod.crawler.SpiderRuntime;
 import com.github.catvod.crawler.SpiderNull;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
@@ -49,7 +50,11 @@ public class JarLoader {
     }
 
     public void clear() {
-        spiders.values().forEach(Spider::destroy);
+        for (Spider spider : spiders.values()) {
+            try { spider.destroy(); }
+            catch (Throwable error) { Log.w("JarLoader", "Source destroy failed", error); }
+            finally { SpiderRuntime.close(spider); }
+        }
         loaders.clear();
         methods.clear();
         spiders.clear();
@@ -79,7 +84,7 @@ public class JarLoader {
         String jarPath = file.getAbsolutePath();
         String optPath = optDir.getAbsolutePath();
         String libPath = Path.jar().getAbsolutePath();
-        DexClassLoader loader = new DexClassLoader(jarPath, optPath, libPath, App.get().getClassLoader());
+        DexClassLoader loader = new SpiderClassLoader(jarPath, optPath, libPath, App.get().getClassLoader());
         invokeInit(loader);
         if (runtime.isCanceled()) return;
         invokeProxy(key, loader);
@@ -166,17 +171,22 @@ public class JarLoader {
         String jaKey = Util.md5(jar);
         String spKey = jaKey + key;
         return spiders.computeIfAbsent(spKey, k -> {
+            Spider spider = null;
             try {
                 parseJar(jaKey, jar);
                 if (runtime.isCanceled()) return null;
                 DexClassLoader loader = loaders.get(jaKey);
                 if (loader == null) return new SpiderNull();
-                Spider spider = (Spider) loader.loadClass("com.github.catvod.spider." + api.split("csp_")[1]).newInstance();
-                spider.siteKey = key;
+                spider = (Spider) loader.loadClass("com.github.catvod.spider." + api.split("csp_")[1]).newInstance();
+                SpiderRuntime.bind(spider, key);
                 spider.init(App.get(), ext);
-                if (runtime.isCanceled()) return null;
+                if (runtime.isCanceled()) {
+                    SpiderRuntime.close(spider);
+                    return null;
+                }
                 return spider;
             } catch (Throwable e) {
+                if (spider != null) SpiderRuntime.close(spider);
                 e.printStackTrace();
                 if (runtime.isCanceled()) return null;
                 return new SpiderNull();
