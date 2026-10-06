@@ -74,6 +74,16 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 - `ech-validation/conscrypt-shared-probe.json`：共享客户端结果。
 - 报告仅保存状态和必要计数，不输出 trace 正文、地址信息或凭据。
 
+## 切换 DoH / ECH 的连接清理回归
+
+设置变更同步清空 ECH 缓存，再由有界单线程任务关闭空闲连接。TLS 关闭可能发送 `close_notify`，不能放在设置页主线程；已有活动请求不调用 `cancelAll()`。缓存代次检查避免并发读取的旧 DoH 快照重新填入缓存。
+
+`IdleConnectionEvictorTest` 覆盖阻塞关闭不阻塞调用者、密集切换合并、单个池异常不影响另一个池，以及真实空闲 socket 关闭时活动响应仍能完成。新增 3 项本地 JUnit 测试通过；完整 CI `37404706669` 的 `:catvod:testDebugUnitTest`、mobile 编译以及两个 TV APK/test APK 构建均通过。
+
+设备回归类为 `com.fongmi.android.tv.test.DohSwitchRegressionTest`，仅允许在独立 `sourceprobe` 包中运行。它建立真实 Conscrypt 空闲 TLS 连接，保留另一个活动响应，在 Android 主线程严格网络策略下分别调用 DoH 和 ECH 设置变更，检查空闲连接关闭、活动响应完成并恢复设置。单独运行该类，不同时启动测试包首页或其他网络测试。结果文件为 external files 下的 `ech-validation/doh-switch-regression.json`。 `01b8748c1` 的完整 CI sourceprobe 包已在 Android 13 / ARM64 设备单独执行该类，3.509 秒完成，instrumentation `OK (1 test)`。
+
+`WexJarNetworkProbeTest` 是按需运行的真实 JAR 搜索诊断，使用独立包私有目录中的 `jar-network-plan.json` 和 `jar-network-source.jar`，校验 JAR SHA-256，再通过宿主 `JarLoader` 调用搜索。它不读取用户的数据库；报告只保留源入口、结果数、主机名、状态码与异常类型。测试输入及单独保存的异常栈可能包含源信息，应留在私有任务目录，不能作为公开 CI artifact。搜索结果和网络可达性分开判断：零条结果不自动等于连接失败，Conscrypt socket 类型也不能单独证明服务端接受了 ECH。
+
 ## 2026-10-06 Cloudflare 共享配置补全
 
 上一版只处理站点自己发布的 ECH，未覆盖“没有发布配置但 CF 边缘能解密”的站点。本次增加自动识别与补全。
