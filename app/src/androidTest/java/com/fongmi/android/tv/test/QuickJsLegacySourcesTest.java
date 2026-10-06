@@ -9,6 +9,7 @@ import android.os.Bundle;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.fongmi.android.tv.api.loader.JarLoader;
 import com.fongmi.quickjs.crawler.Loader;
 import com.fongmi.quickjs.crawler.Spider;
 import com.fongmi.quickjs.utils.QuickLog;
@@ -20,6 +21,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -32,13 +34,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import dalvik.system.DexClassLoader;
 import fi.iki.elonen.NanoHTTPD;
 
 /**
  * Opt in with quickjs_legacy=true. Stage exact API/rule bytes under private files/quickjs-regression/.
  * Their configuration addresses and WebDAV credentials are not needed by this test.
  * Init/home may contact the publisher; quickjs_legacy_live=true adds browsing/search/play resolution.
- * Reports contain only hashes/counts/error types, never returned IDs, URLs, headers or titles.
+ * quickjs_legacy_jar=true loads the configured main JAR from runtime.jar after SHA-256 verification
+ * against private runtime.json. Public reports contain only hashes/counts/error types.
+ * Exception traces stay in separate app-private files and must never be published unredacted.
  */
 @RunWith(AndroidJUnit4.class)
 public final class QuickJsLegacySourcesTest {
@@ -62,19 +67,23 @@ public final class QuickJsLegacySourcesTest {
         String selected = arguments.getString("quickjs_legacy_source", "all");
         assertTrue(List.of("all", "tencent", "bili").contains(selected));
         boolean live = Boolean.parseBoolean(arguments.getString("quickjs_legacy_live", "false"));
+        boolean withJar = Boolean.parseBoolean(arguments.getString("quickjs_legacy_jar", "false"));
         boolean logging = QuickLog.isEnabled();
         QuickLog.putEnabled(false);
         ScriptServer server = new ScriptServer(new File(target.getFilesDir(), "quickjs-regression"));
+        JarLoader jarLoader = withJar ? new JarLoader() : null;
         int failures = 0;
         try {
             server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
             report.put("sources", sources).put("liveCalls", live).put("status", "RUNNING");
+            DexClassLoader dex = withJar ? runtimeJar(jarLoader, server.directory) : null;
             for (String name : List.of("tencent", "bili")) {
                 if (!selected.equals("all") && !selected.equals(name)) continue;
                 JSONObject row = new JSONObject().put("source", name);
                 sources.put(row);
                 Spider spider = null;
                 try {
+                    stage = name + ".fixtures";
                     File api = new File(server.directory, name + "-api.js");
                     File rule = new File(server.directory, name + "-rule.js");
                     assertTrue("Stage the private API script", api.isFile());
@@ -84,7 +93,7 @@ public final class QuickJsLegacySourcesTest {
                     assertEquals("Rule fixture bytes changed", RULE_SHA.get(name), ruleSha);
                     row.put("apiSha256", apiSha).put("ruleSha256", ruleSha);
                     String base = "http://127.0.0.1:" + server.getListeningPort() + "/" + name;
-                    spider = new Loader().spider(base + "/api.js", null);
+                    spider = new Loader().spider(base + "/api.js", dex);
                     spider.siteKey = "quickjs-legacy-" + name;
                     Spider current = spider;
                     step(name + ".init", () -> { current.init(target, base + "/rule.js"); return ""; });
@@ -100,6 +109,7 @@ public final class QuickJsLegacySourcesTest {
                     failures++;
                     row.put("status", "FAIL").put("stage", stage);
                     row.put("failureTypes", types(failure));
+                    privateTrace(name, failure);
                 } finally {
                     if (spider != null) {
                         Spider current = spider;
@@ -110,13 +120,34 @@ public final class QuickJsLegacySourcesTest {
                 }
             }
             report.put("status", failures == 0 ? "PASS" : "FAIL");
+        } catch (Throwable failure) {
+            report.put("status", "FAIL").put("stage", stage).put("failureTypes", types(failure));
+            privateTrace("setup", failure);
+            throw new AssertionError("Inspect the private QuickJS setup failure trace");
         } finally {
             worker.shutdownNow();
             server.stop();
+            if (jarLoader != null) jarLoader.clear();
             QuickLog.putEnabled(logging);
             write();
         }
         assertEquals("Inspect private quickjs-legacy-result.json for source/stage/error types", 0, failures);
+    }
+
+    private DexClassLoader runtimeJar(JarLoader loader, File directory) throws Exception {
+        stage = "runtime.jar";
+        File jar = new File(directory, "runtime.jar");
+        File metadata = new File(directory, "runtime.json");
+        assertTrue("Stage the private runtime JAR", jar.isFile());
+        assertTrue("Stage the private runtime metadata", metadata.isFile());
+        String expected = new JSONObject(Files.readString(metadata.toPath(), StandardCharsets.UTF_8)).getString("sha256");
+        assertTrue("Runtime SHA-256 is invalid", expected.matches("[a-f0-9]{64}"));
+        String actual = hash(jar);
+        assertEquals("Configured runtime JAR bytes changed", expected, actual);
+        report.put("runtimeJarSha256", actual);
+        DexClassLoader dex = step("runtime.jar", () -> loader.dex("file://" + jar.getAbsolutePath()));
+        assertNotNull("Configured runtime JAR did not load", dex);
+        return dex;
     }
 
     private void exercise(String name, Spider spider, JSONObject home, JSONObject row) throws Exception {
@@ -142,11 +173,11 @@ public final class QuickJsLegacySourcesTest {
         row.put("playResolved", true).put("playParse", play.optInt("parse", 0));
     }
 
-    private String step(String name, Callable<String> callable) throws Exception {
+    private <T> T step(String name, Callable<T> callable) throws Exception {
         stage = name;
         report.put("stage", stage);
         write();
-        Future<String> future = worker.submit(callable);
+        Future<T> future = worker.submit(callable);
         try { return future.get(60, TimeUnit.SECONDS); }
         finally { if (!future.isDone()) future.cancel(true); }
     }
@@ -167,6 +198,12 @@ public final class QuickJsLegacySourcesTest {
         JSONArray values = new JSONArray();
         for (int depth = 0; failure != null && depth < 8; depth++, failure = failure.getCause()) values.put(failure.getClass().getSimpleName());
         return values;
+    }
+
+    private void privateTrace(String name, Throwable failure) throws Exception {
+        try (PrintWriter output = new PrintWriter(target.openFileOutput("quickjs-legacy-" + name + "-error.private.txt", Context.MODE_PRIVATE))) {
+            failure.printStackTrace(output);
+        }
     }
 
     private void write() throws Exception {
