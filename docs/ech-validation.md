@@ -82,7 +82,15 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 
 设备回归类为 `com.fongmi.android.tv.test.DohSwitchRegressionTest`，仅允许在独立 `sourceprobe` 包中运行。它建立真实 Conscrypt 空闲 TLS 连接，保留另一个活动响应，在 Android 主线程严格网络策略下分别调用 DoH 和 ECH 设置变更，检查空闲连接关闭、活动响应完成并恢复设置。单独运行该类，不同时启动测试包首页或其他网络测试。结果文件为 external files 下的 `ech-validation/doh-switch-regression.json`。 `01b8748c1` 的完整 CI sourceprobe 包已在 Android 13 / ARM64 设备单独执行该类，3.509 秒完成，instrumentation `OK (1 test)`。
 
-`WexJarNetworkProbeTest` 是按需运行的真实 JAR 搜索诊断，使用独立包私有目录中的 `jar-network-plan.json` 和 `jar-network-source.jar`，校验 JAR SHA-256，再通过宿主 `JarLoader` 调用搜索。它不读取用户的数据库；报告只保留源入口、结果数、主机名、状态码与异常类型。测试输入及单独保存的异常栈可能包含源信息，应留在私有任务目录，不能作为公开 CI artifact。搜索结果和网络可达性分开判断：零条结果不自动等于连接失败，Conscrypt socket 类型也不能单独证明服务端接受了 ECH。
+`WexJarNetworkProbeTest` 是按需运行的真实 JAR 搜索诊断，使用独立包私有目录中的 `jar-network-plan.json` 和 `jar-network-source.jar`，校验 JAR SHA-256，再通过宿主 `JarLoader` 调用搜索。它不读取用户的数据库；报告保留源入口、结果数、主机名、连接地址、状态码、异常类型及动态 DNS 覆盖快照。测试输入及单独保存的异常栈可能包含源信息，应留在私有任务目录，不能作为公开 CI artifact。只有显式设置 `jar_probe_capture_body=true` 才把最多 1 MiB 的搜索正文另存到隔离包私有文件，默认不存；该文件仅供人工核对错误提示卡，不能发布。搜索结果和网络可达性分开判断：零条结果不自动等于连接失败，Conscrypt socket 类型也不能单独证明服务端接受了 ECH。
+
+## 2026-10-06 实际 JAR 源与 DoH GET 负缓存
+
+真实设备查询 `www.cycani.org` 时，阿里节点的 GET A/AAAA 返回 RCODE 3 和异常别名，而同节点 POST A 返回正确 CNAME 和 IPv4；腾讯 GET/POST 均正常。这项有效 wire 对照与早先失败的 curl 抓包分开保存。`OkDns` 改用标准 DoH POST 发送地址查询，与 ECH 配置查询的传输方式一致，减少 GET 响应缓存的影响。修改不是 ECH 自动降级或系统 DNS 回退，也不保证修复 DoH 服务端所有错误响应。完整 CI `37409022443` 的共享网络单测、mobile 编译、两个应用与测试 APK 构建均通过。 最终 `d89e4072c` 完整包的设备 DoH 严格主线程回归再次通过，小龙在阿里 DoH / ECH 开启下返回 9 条正常结果；次元在阿里下仍为 UnknownHostException。随后对阿里两个节点改变 DNS ID、添加 no-cache 的 POST 检查仍多次得到错误别名及 RCODE 3，只有个别响应正确。因此 POST 不是该服务端异常的完整修复，次元的阿里访问仍列为未解决；腾讯此前只验证到 HTTP 200，不能把零条搜索结果写成全功能恢复。
+
+实际 JAR 曾出现 `EchRejectedException`，后续也有同源开启 ECH 返回 9 条正常结果的路由诊断。设备阿里和腾讯提供了不同 ECH 配置 ID，但两份配置均有服务端接受证据；不能仅凭 ID 不同判定某个已过期。路由诊断确认成功时连接 Cloudflare、无宿主 hosts 覆盖；另有纯 TCP 超时，和 ECH 握手拒绝分开记录。Android VPN 的 UID 范围同时覆盖用户预览版与隔离测试包，未发现按应用分流差异。这些结果没有证明所有源持续可用，暂不据此加入自动明文重试或替换密钥。
+
+源入口缺失与网络故障也分开处理。当前 JAR 缺少三个旧入口，其中师兄已有公开的新入口 `csp_WexAppV7Guard` / `AppV7Dsx`，实搜返回匹配搜索词的正常影片，已对用户远端配置执行单项条件更新并回读核验；其余配置保持语义不变。太狗、好盘尚无验证通过的替代入口，不猜测映射。
 
 ## 2026-10-06 Cloudflare 共享配置补全
 
