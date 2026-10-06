@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.syncplay;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -29,7 +30,9 @@ public final class SyncplayClient implements AutoCloseable {
         void onTransport(boolean encrypted);
         void onDisconnected(String reason);
     }
-    private static final Gson JSON = new Gson();
+    // The protocol asks for a room snapshot with {"List":null}. Gson's default
+    // drops that member, leaving {}, so the player would wait for the room forever.
+    private static final Gson JSON = new GsonBuilder().serializeNulls().create();
     private static final ExecutorService CLOSER = Executors.newSingleThreadExecutor(task -> {
         Thread thread = new Thread(task, "SyncplayClose"); thread.setDaemon(true); return thread;
     });

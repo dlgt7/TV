@@ -216,6 +216,11 @@ public final class SyncplayPlaybackIntegrationTest {
             complete = true;
         } finally {
             try {
+                try {
+                    SyncplaySession.Status status = value(() -> SyncplaySession.get().status());
+                    report.put("sessionBeforeCleanup", new JSONObject().put("phase", status.phase.name())
+                            .put("gate", status.gate.name()).put("reason", status.reason).put("members", status.members));
+                } catch (Throwable ignored) { /* Diagnostics must not prevent cleanup. */ }
                 if (peer != null) peer.client.close();
                 main(() -> {
                     try {
