@@ -23,6 +23,8 @@ The tour uses emulator recordings and a demonstration library. The displayed tit
 | Bitmap subtitles | Use SUP/PGS, embedded VobSub, and DVB subtitles on the documented playback paths. |
 | Next episode | Let Exo prepare the next eligible episode with up to 10 seconds of preloaded media. |
 | Audio | Adjust EQ, dialogue emphasis, loudness normalization, and limiting through audio profiles. |
+| Watch together | [Join an official Syncplay server](docs/syncplay.md) to synchronize play, pause, and position while each device opens the same video; TLS is supported. |
+| Multi-device sync | [Sync favorites and viewing progress over WebDAV](docs/webdav-sync.md), with per-record merging, deletion propagation, and concurrent-edit protection; subscriptions and selected danmaku preferences are optional. |
 | Extensions | Connect Python, JavaScript, or Java JAR spiders through external configuration. |
 | Networking | Apply proxy routing rules and authentication, including handling across redirects. |
 
@@ -72,6 +74,11 @@ Start with [the configuration reference](docs/CONFIG.md). For live channels, see
 
 Choose a theme color, open a source, and browse or search for a title. During playback, use the subtitle and audio controls to select tracks and adjust presentation.
 
+| Entry point | What it controls |
+| --- | --- |
+| Player → Options → Watch together | Manually join or leave a Syncplay room. Each device opens its own copy of the same video. |
+| My → Settings → Multi-device sync | WebDAV account, sync scope, manual sync, and optional automatic sync. |
+
 Exo's next-episode feature is controlled in **Settings → Preload**. It applies to eligible HTTP sources; parser-dependent, DRM, and non-HTTP sources are excluded. MPV retains its own current-stream cache.
 
 ## Playback details
@@ -96,6 +103,8 @@ Bring your own lawful sources and choose only the extensions you need.
 | [Spider API](docs/SPIDER.md) | Python, QuickJS JavaScript, and Java JAR integrations. |
 | [Local API](docs/LOCAL.md) | Media push, playback controls, and subtitle or danmaku injection on your local network. |
 | [Live formats](docs/LIVE.md) | M3U, TXT, JSON, channel groups, and live-source configuration. |
+| [Syncplay](docs/syncplay.md) | Server and room setup, TLS, media matching, and playback synchronization. |
+| [WebDAV sync](docs/webdav-sync.md) | Favorites, viewing progress, optional sync scopes, and conflict handling. |
 
 Forward Widget compatibility is limited to the supported adapter behavior; scripts that depend on unavailable host APIs may need changes. Use the configuration and Spider references when integrating a widget or another external script.
 

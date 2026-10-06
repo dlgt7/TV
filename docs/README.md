@@ -11,6 +11,8 @@
 | 本地服务与接口 | [LOCAL](LOCAL.md) |
 | 爬虫接口 | [SPIDER](SPIDER.md) · [新旧接口兼容](spider-api-compatibility.md) |
 | TV 界面 | [UI 改版与验收](ui-redesign/README.md) |
+| 一起看 | [Syncplay 服务端、房间、TLS 与同步行为](syncplay.md) |
+| 多设备同步 | [WebDAV 收藏、观看进度与冲突处理](webdav-sync.md) |
 | 本地构建环境 | [工具链与构建说明](../LOCAL_BUILD_ENV.md) |
 | 宣传素材 | [视频、封面与来源](media/README.md) |
 
