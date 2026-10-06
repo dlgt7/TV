@@ -154,6 +154,10 @@
     <string name="setting_ech_info">ECH 使用说明</string>
     <string name="setting_ech_description">仅对使用应用网络客户端的源和请求生效。\n\n优先使用站点自己的 ECH 配置；未发布配置但 DoH 地址属于 Cloudflare 已知网段时，补用 Cloudflare 共享配置尝试加密握手域名。\n\n识别和配置查询都使用所选 DoH，未选择 DoH 时使用 Cloudflare。无法确认或无法取得配置时使用常规 TLS。\n\nECH 握手失败时请求可能失败，可关闭后重试。\n\n更改对新连接生效。</string>
     <string name="setting_proxy">Proxy</string>
+    <string name="setting_cf_preferred">Cloudflare 优选域名</string>
+    <string name="setting_cf_preferred_hint">域名，例如 example.com</string>
+    <string name="setting_cf_preferred_description">留空关闭。直接连接 Cloudflare 网站的 HTTPS 读取请求时，优先使用此域名的地址，失败自动回退原线路。\n\n原站域名与 ECH 设置保持不变。代理、自定义 hosts、上传等请求仍走原线路。修改对新连接生效。</string>
+    <string name="setting_cf_preferred_invalid">请只填写域名，不含 https://、路径、端口或 IP 地址。</string>
     <string name="setting_cache">缓存</string>
     <string name="setting_backup">备份</string>
     <string name="setting_restore">恢复</string>

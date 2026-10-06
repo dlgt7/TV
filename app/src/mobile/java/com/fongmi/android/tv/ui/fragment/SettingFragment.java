@@ -37,6 +37,7 @@ import com.fongmi.android.tv.source.SourceSelectionMode;
 import com.fongmi.android.tv.ui.activity.HomeActivity;
 import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
+import com.fongmi.android.tv.ui.dialog.CloudflarePreferredDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
 import com.fongmi.android.tv.ui.dialog.RestoreDialog;
@@ -48,6 +49,7 @@ import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.TmdbEndpoint;
 import com.github.catvod.bean.Doh;
+import com.github.catvod.net.CloudflarePreferredSettings;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.net.ech.EchSettings;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -113,6 +115,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.themeColorText.setText(getThemeText());
         mBinding.dohText.setText(getDohList()[getDohIndex()]);
         mBinding.echText.setText(Setting.getSwitch(EchSettings.isEnabled()));
+        mBinding.cfPreferredText.setText(getCloudflarePreferredStatus());
         mBinding.flagFilterText.setText(getFilterStatus(Setting.getFlagFilter()));
         mBinding.detailFilterText.setText(getFilterStatus(Setting.getDetailFilter()));
         mBinding.tmdbProxyText.setText(getTmdbProxyStatus());
@@ -138,6 +141,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.doh.setOnClickListener(this::setDoh);
         mBinding.ech.setOnClickListener(this::setEch);
         mBinding.echInfo.setOnClickListener(this::showEchInfo);
+        mBinding.cfPreferred.setOnClickListener(this::setCloudflarePreferred);
         mBinding.live.setOnClickListener(this::onLive);
         mBinding.wall.setOnClickListener(this::onWall);
         mBinding.size.setOnClickListener(this::setSize);
@@ -430,6 +434,16 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         EchSettings.setEnabled(!EchSettings.isEnabled());
         OkHttp.echConfigurationChanged();
         mBinding.echText.setText(Setting.getSwitch(EchSettings.isEnabled()));
+    }
+
+    private String getCloudflarePreferredStatus() {
+        String domain = CloudflarePreferredSettings.getDomain();
+        return domain.isEmpty() ? getString(R.string.setting_off) : domain;
+    }
+
+    private void setCloudflarePreferred(View view) {
+        CloudflarePreferredDialog.show(requireActivity(), () ->
+                mBinding.cfPreferredText.setText(getCloudflarePreferredStatus()));
     }
 
     private void showEchInfo(View view) {

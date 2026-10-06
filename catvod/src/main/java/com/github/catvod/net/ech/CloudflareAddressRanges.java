@@ -6,7 +6,7 @@ package com.github.catvod.net.ech;
  * Membership permits trying its ECH configuration; it does not guarantee ECH support.
  * Operates only on address bytes and never performs DNS or reverse-DNS lookups.
  */
-final class CloudflareAddressRanges {
+public final class CloudflareAddressRanges {
     private static final Prefix[] RANGES = {
             v4(173, 245, 48, 0, 20), v4(103, 21, 244, 0, 22),
             v4(103, 22, 200, 0, 22), v4(103, 31, 4, 0, 22),
@@ -25,7 +25,7 @@ final class CloudflareAddressRanges {
     private CloudflareAddressRanges() {
     }
 
-    static boolean contains(byte[] address) {
+    public static boolean contains(byte[] address) {
         if (address == null || (address.length != 4 && address.length != 16)) return false;
         int offset = 0;
         if (address.length == 16 && isMappedIpv4(address)) offset = 12;

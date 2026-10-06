@@ -47,6 +47,7 @@ public class OkHttp {
     private volatile OkHttpClient player;
     private final Object echLock = new Object();
     private final OkDns dns = new OkDns();
+    private final CloudflarePreferredInterceptor preferred = new CloudflarePreferredInterceptor(dns);
     private final IdleConnectionEvictor poolEvictor = new IdleConnectionEvictor(
             () -> { if (client != null) client.connectionPool().evictAll(); },
             () -> { if (player != null) player.connectionPool().evictAll(); });
@@ -216,7 +217,7 @@ public class OkHttp {
                         return resolver == null ? null : resolver.resolveWithCloudflareFallback(hostname);
                     }
                 });
-        OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(requestInterceptor()).addInterceptor(authInterceptor()).addInterceptor(new ProxyRedirectInterceptor(selector)).addNetworkInterceptor(responseInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(sockets, trustManager).followRedirects(false);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(requestInterceptor()).addInterceptor(authInterceptor()).addInterceptor(new ProxyRedirectInterceptor(selector)).addInterceptor(get().preferred).addNetworkInterceptor(get().preferred.networkInterceptor()).addNetworkInterceptor(responseInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(sockets, trustManager).followRedirects(false);
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY);
         builder.proxyAuthenticator(authenticator());
         //builder.addNetworkInterceptor(logging);
@@ -259,6 +260,7 @@ public class OkHttp {
     /** Apply to new connections without interrupting an active playback or download. */
     public static void echConfigurationChanged() {
         OkHttp instance = get();
+        instance.preferred.clear();
         synchronized (instance.echLock) {
             instance.echGeneration++;
             instance.echResolver = null;

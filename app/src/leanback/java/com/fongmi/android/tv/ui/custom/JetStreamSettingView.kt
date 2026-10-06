@@ -576,6 +576,7 @@ class JetStreamSettingView @JvmOverloads constructor(
                     RowSpec(KEY_DOH, context.getString(R.string.setting_doh)),
                     RowSpec(KEY_ECH, context.getString(R.string.setting_ech), toggle = true),
                     RowSpec(KEY_ECH_INFO, context.getString(R.string.setting_ech_info)),
+                    RowSpec(KEY_CF_PREFERRED, context.getString(R.string.setting_cf_preferred)),
                     RowSpec(KEY_THEME_COLOR, context.getString(R.string.setting_theme_color), actions = themeActions()),
                     RowSpec(KEY_SIZE, context.getString(R.string.setting_size)),
                     RowSpec(KEY_BACKUP, context.getString(R.string.setting_backup)),
@@ -660,6 +661,7 @@ class JetStreamSettingView @JvmOverloads constructor(
         const val KEY_DOH = "doh"
         const val KEY_ECH = "ech"
         const val KEY_ECH_INFO = "ech_info"
+        const val KEY_CF_PREFERRED = "cf_preferred"
         const val KEY_THEME_COLOR = "theme_color"
         const val KEY_SIZE = "size"
         const val KEY_BACKUP = "backup"

@@ -46,6 +46,7 @@ import com.fongmi.android.tv.ai.subtitle.AiSubtitleSettingsActivity;
 import com.fongmi.android.tv.ai.skip.AiSkipApi;
 import com.fongmi.android.tv.ai.skip.AiSkipSettings;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
+import com.fongmi.android.tv.ui.dialog.CloudflarePreferredDialog;
 import com.fongmi.android.tv.ui.dialog.DohDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
@@ -66,6 +67,7 @@ import com.fongmi.android.tv.utils.TmdbEndpoint;
 import com.fongmi.android.tv.utils.Task;
 import com.fongmi.quickjs.utils.QuickLog;
 import com.github.catvod.bean.Doh;
+import com.github.catvod.net.CloudflarePreferredSettings;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.net.ech.EchSettings;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -232,6 +234,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         setRowVisible(JetStreamSettingView.KEY_TOAST_FILTER_KEYS, Setting.isToastFilter());
         setRowValue(JetStreamSettingView.KEY_DOH, doh.length == 0 ? "" : doh[getDohIndex()]);
         setRowValue(JetStreamSettingView.KEY_ECH, Setting.getSwitch(EchSettings.isEnabled()));
+        setRowValue(JetStreamSettingView.KEY_CF_PREFERRED, getCloudflarePreferredStatus());
         setThemeText();
         mBinding.settingView.refreshThemeSelection();
         setRowValue(JetStreamSettingView.KEY_SIZE, size[PlayerSetting.getSize()]);
@@ -343,6 +346,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_DOH -> setDoh();
             case JetStreamSettingView.KEY_ECH -> setEch();
             case JetStreamSettingView.KEY_ECH_INFO -> showEchInfo();
+            case JetStreamSettingView.KEY_CF_PREFERRED -> setCloudflarePreferred();
             case JetStreamSettingView.KEY_THEME_COLOR -> {
             }
             case JetStreamSettingView.KEY_SIZE -> setSize();
@@ -859,6 +863,16 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         EchSettings.setEnabled(!EchSettings.isEnabled());
         OkHttp.echConfigurationChanged();
         setRowValue(JetStreamSettingView.KEY_ECH, Setting.getSwitch(EchSettings.isEnabled()));
+    }
+
+    private String getCloudflarePreferredStatus() {
+        String domain = CloudflarePreferredSettings.getDomain();
+        return domain.isEmpty() ? getString(R.string.setting_off) : domain;
+    }
+
+    private void setCloudflarePreferred() {
+        JetStreamDialogDecor.tintButtons(CloudflarePreferredDialog.show(this, () ->
+                setRowValue(JetStreamSettingView.KEY_CF_PREFERRED, getCloudflarePreferredStatus())));
     }
 
     private void showEchInfo() {

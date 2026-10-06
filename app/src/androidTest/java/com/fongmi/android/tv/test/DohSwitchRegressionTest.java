@@ -19,6 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.github.catvod.bean.Doh;
+import com.github.catvod.net.CloudflarePreferredSettings;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.net.ech.ConscryptEchSocketFactory;
 import com.github.catvod.net.ech.EchSettings;
@@ -60,8 +61,9 @@ public final class DohSwitchRegressionTest {
     private static final String PACKAGE = "com.fongmi.android.tv.sourceprobe";
     private static final String TRACE = "https://crypto.cloudflare.com/cdn-cgi/trace";
     private static final String ECH_KEY = "ech_enabled";
+    private static final String PREFERRED_KEY = "cloudflare_preferred_domain";
 
-    @Test(timeout = 90_000L)
+    @Test(timeout = 180_000L)
     public void mainThreadDohAndEchChangesCloseIdleTlsWithoutCancelingPlayback() throws Exception {
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         Context context = instrumentation.getTargetContext();
@@ -78,6 +80,11 @@ public final class DohSwitchRegressionTest {
         boolean hadEnabled = preferences.contains(ECH_KEY);
         Object originalEnabled = preferences.getAll().get(ECH_KEY);
         assertTrue("Unexpected ECH preference type", !hadEnabled || originalEnabled instanceof Boolean);
+        boolean hadPreferred = preferences.contains(PREFERRED_KEY);
+        Object originalPreferred = preferences.getAll().get(PREFERRED_KEY);
+        assertTrue("Unexpected preferred-domain preference type", !hadPreferred || originalPreferred instanceof String);
+        String originalDomain = CloudflarePreferredSettings.getDomain();
+        String changedDomain = "speed.cloudflare.com".equals(originalDomain) ? "www.cloudflare.com" : "speed.cloudflare.com";
         Doh originalDoh = OkHttp.dns().getDoh();
         OkHttp host = OkHttp.get();
         Field clientField = field(OkHttp.class, "client");
@@ -106,8 +113,13 @@ public final class DohSwitchRegressionTest {
             assertSame(player, OkHttp.player());
 
             Call playback = null;
-            for (int phase = 0; phase < 2; phase++) {
-                stage = phase == 0 ? "setDoh" : "echConfigurationChanged";
+            String[] stages = {"setDoh", "echConfigurationChanged", "setPreferredDomain", "restorePreferredDomain"};
+            Runnable[] changes = {() -> OkHttp.dns().setDoh(new Doh().url("")),
+                    OkHttp::echConfigurationChanged,
+                    () -> CloudflarePreferredSettings.setDomain(changedDomain),
+                    () -> CloudflarePreferredSettings.setDomain(originalDomain)};
+            for (int phase = 0; phase < changes.length; phase++) {
+                stage = stages[phase];
                 if (phase != 0) {
                     OkHttp.dns().setDoh(tencent());
                     drainEvictions();
@@ -130,9 +142,7 @@ public final class DohSwitchRegressionTest {
                 assertEquals("Active response must not be idle", 0, player.connectionPool().idleConnectionCount());
                 assertNotNull("Warm ECH configuration must exist", field(OkHttp.class, "echResolver").get(host));
 
-                strictMain(instrumentation, phase == 0
-                        ? () -> OkHttp.dns().setDoh(new Doh().url(""))
-                        : OkHttp::echConfigurationChanged);
+                strictMain(instrumentation, changes[phase]);
                 report.put("strictMainCalls", phase + 1);
                 assertNull("Configuration must invalidate synchronously", field(OkHttp.class, "echResolver").get(host));
                 drainEvictions();
@@ -168,7 +178,9 @@ public final class DohSwitchRegressionTest {
                         SharedPreferences.Editor edit = preferences.edit();
                         if (hadEnabled) edit.putBoolean(ECH_KEY, (Boolean) originalEnabled);
                         else edit.remove(ECH_KEY);
-                        assertTrue("ECH preference restore must commit", edit.commit());
+                        if (hadPreferred) edit.putString(PREFERRED_KEY, (String) originalPreferred);
+                        else edit.remove(PREFERRED_KEY);
+                        assertTrue("Network preference restore must commit", edit.commit());
                     } finally {
                         OkHttp.dns().setDoh(originalDoh);
                         drainEvictions();
@@ -177,6 +189,8 @@ public final class DohSwitchRegressionTest {
                 assertEquals(originalDoh.toString(), OkHttp.dns().getDoh().toString());
                 assertEquals(hadEnabled, preferences.contains(ECH_KEY));
                 assertEquals(originalEnabled, preferences.getAll().get(ECH_KEY));
+                assertEquals(hadPreferred, preferences.contains(PREFERRED_KEY));
+                assertEquals(originalPreferred, preferences.getAll().get(PREFERRED_KEY));
                 restored = true;
             } catch (Throwable error) {
                 report.put("status", "FAIL_restore_" + error.getClass().getSimpleName());
@@ -191,7 +205,7 @@ public final class DohSwitchRegressionTest {
             if (passed) report.put("status", "PASS");
             writeReport(context, report);
         }
-        assertTrue("DoH/StrictMode regression failed; see ech-validation/doh-switch-regression.json", passed);
+        assertTrue("DoH/preferred-domain StrictMode regression failed; see ech-validation/doh-switch-regression.json", passed);
     }
 
     private static Doh tencent() {

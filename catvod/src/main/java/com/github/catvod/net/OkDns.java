@@ -60,6 +60,13 @@ public class OkDns implements Dns {
         map.putAll(hosts.stream().filter(Objects::nonNull).map(host -> host.split("=", 2)).filter(splits -> splits.length == 2).collect(Collectors.toMap(s -> s[0].trim(), s -> s[1].trim(), (oldHost, newHost) -> newHost)));
     }
 
+    /** Explicit host mappings take priority over optional Cloudflare routing. */
+    public boolean hasOverride(String hostname) {
+        if (map.containsKey(hostname)) return true;
+        for (String pattern : map.keySet()) if (Util.containOrMatch(hostname, pattern)) return true;
+        return false;
+    }
+
     private String get(String hostname) {
         String target = map.get(hostname);
         if (target != null) return target;
