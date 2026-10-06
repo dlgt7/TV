@@ -231,6 +231,24 @@ public final class WebDavSyncIntegrationTest {
         assertEquals(2, b.db.getConfigDao().findAll().size());
     }
 
+    @Test public void competingFirstUploadsPreserveBothDevicesThroughMoveConflict() throws Exception {
+        Device a = device("a"), b = device("b");
+        Config ac = config(a.db, SUBSCRIPTION, 0), bc = config(b.db, SUBSCRIPTION, 0);
+        keep(a.db, ac, "first"); keep(b.db, bc, "second");
+        WebDavTransport first = remote.transport(), second = remote.transport();
+        SyncCoordinator.Fetched missingA = first.get(), missingB = second.get();
+        assertFalse(missingA.exists); assertFalse(missingB.exists);
+        SyncDocument docA = new SyncDocument(), docB = new SyncDocument();
+        docA.entries.putAll(a.store.snapshot().entries); docB.entries.putAll(b.store.snapshot().entries);
+        assertTrue(first.put(docA, missingA));
+        assertFalse("A stale first upload must not replace the winner", second.put(docB, missingB));
+        assertEquals(docA.encode(), remote.document().encode());
+        sync(b); sync(a);
+        assertEquals(2, remote.document().entries.size());
+        assertNotNull(a.db.getKeepDao().find(ac.getId(), "second"));
+        assertNotNull(b.db.getKeepDao().find(bc.getId(), "first"));
+    }
+
     private Device device(String id) {
         AppDatabase db = Room.inMemoryDatabaseBuilder(context, AppDatabase.class).build();
         databases.add(db); return new Device(id, db, new WebDavSyncStore(db, options, () -> true));
@@ -280,6 +298,8 @@ public final class WebDavSyncIntegrationTest {
         volatile boolean closed;
         private String body;
         private int revision;
+        private final Map<String, String> temporaryBodies = new HashMap<>();
+        private final Map<String, String> temporaryEtags = new HashMap<>();
 
         DavServer() throws IOException {
             socket = new ServerSocket(0, 8, InetAddress.getByName("127.0.0.1"));
@@ -289,7 +309,10 @@ public final class WebDavSyncIntegrationTest {
             return new WebDavTransport(client, "http://127.0.0.1:" + socket.getLocalPort() + "/tv-sync.json", "fixture-user", "fixture-password");
         }
         synchronized SyncDocument document() { assertNotNull(body); return SyncDocument.decode(body); }
-        void assertHealthy() { if (failure.get() != null) throw new AssertionError("Loopback WebDAV server failed", failure.get()); }
+        synchronized void assertHealthy() {
+            if (failure.get() != null) throw new AssertionError("Loopback WebDAV server failed", failure.get());
+            assertTrue("Temporary uploads must be moved or cleaned", temporaryBodies.isEmpty());
+        }
         private void serve() {
             try {
                 while (!closed) try (Socket connection = socket.accept()) {
@@ -310,16 +333,46 @@ public final class WebDavSyncIntegrationTest {
             if (length < 0 || length > SyncDocument.MAX_BYTES) throw new IOException("Invalid fixture body size");
             byte[] bytes = new byte[length];
             for (int offset = 0; offset < length; ) { int count = input.read(bytes, offset, length - offset); if (count < 0) throw new IOException("Truncated request"); offset += count; }
+            String[] requestParts = request.split(" ");
+            if (requestParts.length != 3) throw new IOException("Invalid request line");
+            String method = requestParts[0], path = requestParts[1];
             int status; String response = "", etag = null;
             if (request.equals("GET /tv-sync.json HTTP/1.1")) {
                 Runnable action = beforeNextGet.getAndSet(null); if (action != null) action.run();
                 synchronized (this) { status = body == null ? 404 : 200; if (body != null) { response = body; etag = "\"fixture-" + revision + "\""; } }
             } else if (request.equals("PUT /tv-sync.json HTTP/1.1")) {
                 synchronized (this) {
+                    assertNotNull("Initial creation must use MOVE, never PUT the destination", body);
                     assertTrue("Every write must be conditional", headers.containsKey("if-match") || headers.containsKey("if-none-match"));
                     boolean matches = body == null ? "*".equals(headers.get("if-none-match")) : ("\"fixture-" + revision + "\"").equals(headers.get("if-match"));
                     if (!matches) status = 412;
                     else { body = SyncDocument.decode(new String(bytes, StandardCharsets.UTF_8)).encode(); revision++; status = 204; }
+                }
+            } else if (path.startsWith("/") && path.lastIndexOf('/') == 0 && path.endsWith(".json") && !path.equals("/tv-sync.json")) {
+                synchronized (this) {
+                    String current = temporaryEtags.get(path);
+                    if (method.equals("PUT")) {
+                        assertEquals("*", headers.get("if-none-match"));
+                        if (current != null) status = 412;
+                        else {
+                            temporaryBodies.put(path, SyncDocument.decode(new String(bytes, StandardCharsets.UTF_8)).encode());
+                            etag = "\"fixture-" + ++revision + "\""; temporaryEtags.put(path, etag); status = 201;
+                        }
+                    } else if (method.equals("GET")) {
+                        status = current == null ? 404 : 200;
+                        if (current != null) { response = temporaryBodies.get(path); etag = current; }
+                    } else if (method.equals("MOVE")) {
+                        assertEquals("F", headers.get("overwrite"));
+                        assertEquals("http://127.0.0.1:" + socket.getLocalPort() + "/tv-sync.json", headers.get("destination"));
+                        if (current == null) status = 404;
+                        else if (!current.equals(headers.get("if-match"))) status = 412;
+                        else if (body != null) status = 409; // Jianguoyun uses 409 for an existing destination.
+                        else { body = temporaryBodies.remove(path); temporaryEtags.remove(path); revision++; status = 201; }
+                    } else if (method.equals("DELETE")) {
+                        if (current == null) status = 404;
+                        else if (!current.equals(headers.get("if-match"))) status = 412;
+                        else { temporaryBodies.remove(path); temporaryEtags.remove(path); status = 204; }
+                    } else throw new IOException("Unexpected temporary-file method");
                 }
             } else throw new IOException("Unexpected fixture request");
             byte[] payload = response.getBytes(StandardCharsets.UTF_8);
