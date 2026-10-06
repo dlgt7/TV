@@ -45,6 +45,8 @@ jobs:
 
       - name: Configure SDK 37.0 target
         run: |
+          # setup-java already supplied Java 21; keep the local JBR preference out of CI.
+          printf 'toolchainVersion=21\n' > gradle/gradle-daemon-jvm.properties
           cat > "$RUNNER_TEMP/tv-sdk-compat.init.gradle" <<'GRADLE'
           gradle.beforeProject { p ->
               ['com.android.application', 'com.android.library'].each { pluginId ->

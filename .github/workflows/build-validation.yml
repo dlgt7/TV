@@ -57,6 +57,8 @@ jobs:
 
       - name: Configure isolated debug build
         run: |
+          # setup-java already supplied Java 21; keep the local JBR preference out of CI.
+          printf 'toolchainVersion=21\n' > gradle/gradle-daemon-jvm.properties
           test -d .media3/build-logic
           test -d .media3/build-logic-settings
           test -f .media3/libraries/ui_danmaku/build.gradle.kts
