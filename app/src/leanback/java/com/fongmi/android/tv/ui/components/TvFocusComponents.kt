@@ -1,7 +1,11 @@
 package com.fongmi.android.tv.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
@@ -12,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
@@ -23,6 +29,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Surface
+import com.fongmi.android.tv.ui.theme.JetStreamAnimations
 
 /** Neutral focus treatment shared by TV actions; state never changes measured geometry. */
 object TvFocusStyle {
@@ -37,7 +44,7 @@ object TvFocusStyle {
 
 /**
  * AndroidX TV Button owns D-pad center/Enter, long press, semantics and focus interaction.
- * Keep 4dp of outer space at clipped viewport edges for the focus border. Do not add a
+ * Keep 6dp of outer space at clipped viewport edges for the focus border. Do not add a
  * second clickable/focusable modifier or nest focusable controls inside this button.
  */
 @Composable
@@ -50,31 +57,37 @@ fun TvActionButton(
     shape: Shape = TvFocusStyle.Shape,
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     interactionSource: MutableInteractionSource? = null,
+    focusedScale: Float = JetStreamAnimations.FocusScaleSmall,
     content: @Composable RowScope.() -> Unit
 ) {
+    val active = enabled && LocalTvContentActive.current
+    val interactions = interactionSource ?: remember { MutableInteractionSource() }
+    val background = animatedContainer(interactions, active, selected, TvFocusStyle.Container)
+    val outline = animatedOutline(interactions, active)
     Button(
         onClick = onClick,
         onLongClick = onLongClick,
-        modifier = modifier.heightIn(min = 40.dp).focusProperties { canFocus = enabled },
-        enabled = enabled,
+        modifier = modifier.heightIn(min = 40.dp).focusProperties { canFocus = active },
+        enabled = active,
         shape = ButtonDefaults.shape(shape = shape),
-        scale = ButtonDefaults.scale(focusedScale = 1f),
+        scale = ButtonDefaults.scale(focusedScale = focusedScale),
         colors = ButtonDefaults.colors(
-            containerColor = if (selected) TvFocusStyle.SelectedContainer else TvFocusStyle.Container,
+            containerColor = background,
             contentColor = TvFocusStyle.Content,
-            focusedContainerColor = TvFocusStyle.FocusedContainer,
+            focusedContainerColor = background,
             focusedContentColor = TvFocusStyle.Content,
-            pressedContainerColor = TvFocusStyle.PressedContainer,
+            pressedContainerColor = background,
             pressedContentColor = TvFocusStyle.Content,
             disabledContainerColor = TvFocusStyle.Container.copy(alpha = 0.45f),
             disabledContentColor = TvFocusStyle.Content.copy(alpha = 0.38f)
         ),
         border = ButtonDefaults.border(
-            focusedBorder = Border(BorderStroke(2.dp, TvFocusStyle.FocusOutline), shape = shape),
+            border = Border(BorderStroke(2.dp, outline), shape = shape),
+            focusedBorder = Border(BorderStroke(2.dp, outline), shape = shape),
             focusedDisabledBorder = Border.None
         ),
         contentPadding = contentPadding,
-        interactionSource = interactionSource
+        interactionSource = interactions
     ) {
         // TV Material and Material3 have distinct text-style locals. Children use
         // Material3 Text, so bridge label metrics as well as the content color.
@@ -102,33 +115,74 @@ fun TvFocusableSurface(
     shape: Shape = TvFocusStyle.Shape,
     containerColor: Color = TvFocusStyle.Container,
     interactionSource: MutableInteractionSource? = null,
+    // Full-width rows keep their bounds; compact navigation can opt into scaling.
+    focusedScale: Float = 1f,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val active = enabled && LocalTvContentActive.current
+    val interactions = interactionSource ?: remember { MutableInteractionSource() }
+    val background = animatedContainer(interactions, active, selected, containerColor)
+    val outline = animatedOutline(interactions, active)
     Surface(
         onClick = onClick,
         onLongClick = onLongClick,
-        modifier = modifier.focusProperties { canFocus = enabled },
-        enabled = enabled,
+        modifier = modifier.focusProperties { canFocus = active },
+        enabled = active,
         shape = ClickableSurfaceDefaults.shape(shape = shape),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = focusedScale),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (selected) TvFocusStyle.SelectedContainer else containerColor,
+            containerColor = background,
             contentColor = TvFocusStyle.Content,
-            focusedContainerColor = TvFocusStyle.FocusedContainer,
+            focusedContainerColor = background,
             focusedContentColor = TvFocusStyle.Content,
-            pressedContainerColor = TvFocusStyle.PressedContainer,
+            pressedContainerColor = background,
             pressedContentColor = TvFocusStyle.Content,
             disabledContainerColor = containerColor.copy(alpha = 0.45f),
             disabledContentColor = TvFocusStyle.Content.copy(alpha = 0.38f)
         ),
         border = ClickableSurfaceDefaults.border(
-            focusedBorder = Border(BorderStroke(2.dp, TvFocusStyle.FocusOutline), shape = shape),
+            border = Border(BorderStroke(2.dp, outline), shape = shape),
+            focusedBorder = Border(BorderStroke(2.dp, outline), shape = shape),
             focusedDisabledBorder = Border.None
         ),
-        interactionSource = interactionSource
+        interactionSource = interactions
     ) {
         CompositionLocalProvider(LocalContentColor provides androidx.tv.material3.LocalContentColor.current) {
             content()
         }
     }
+}
+
+@Composable
+private fun animatedContainer(
+    interactionSource: MutableInteractionSource,
+    enabled: Boolean,
+    selected: Boolean,
+    containerColor: Color
+): Color {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val pressed by interactionSource.collectIsPressedAsState()
+    val color by animateColorAsState(
+        targetValue = when {
+            !enabled -> containerColor.copy(alpha = 0.45f)
+            pressed -> TvFocusStyle.PressedContainer
+            focused -> TvFocusStyle.FocusedContainer
+            selected -> TvFocusStyle.SelectedContainer
+            else -> containerColor
+        },
+        animationSpec = tween(JetStreamAnimations.DurationFocus),
+        label = "tvActionContainer"
+    )
+    return color
+}
+
+@Composable
+private fun animatedOutline(interactionSource: MutableInteractionSource, enabled: Boolean): Color {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val color by animateColorAsState(
+        targetValue = if (focused && enabled) TvFocusStyle.FocusOutline else Color.Transparent,
+        animationSpec = tween(JetStreamAnimations.DurationFocus),
+        label = "tvActionOutline"
+    )
+    return color
 }

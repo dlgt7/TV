@@ -385,14 +385,14 @@ class JetStreamVodDetailView @JvmOverloads constructor(
                 modifier = buttonModifier,
                 enabled = spec.enabled,
                 // The full-width View host clips a scaled button at its edges.
-                scale = ButtonDefaults.scale(focusedScale = 1f)
+                scale = ButtonDefaults.scale(focusedScale = 1.02f)
             ) { ActionLabel(spec) }
         } else {
             OutlinedButton(
                 onClick = onClick,
                 modifier = buttonModifier,
                 enabled = spec.enabled,
-                scale = OutlinedButtonDefaults.scale(focusedScale = 1f)
+                scale = OutlinedButtonDefaults.scale(focusedScale = 1.02f)
             ) { ActionLabel(spec) }
         }
     }

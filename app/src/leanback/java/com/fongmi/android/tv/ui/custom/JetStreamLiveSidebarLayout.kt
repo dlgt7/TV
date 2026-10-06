@@ -58,7 +58,7 @@ private fun View.applyJetStreamLiveItemSurface() {
 }
 
 private fun View.jetStreamLiveItemBackground(): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamLiveItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamLiveItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 1))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamLiveItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary_container, 0))

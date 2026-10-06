@@ -33,6 +33,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.CompositionLocalProvider
+import com.fongmi.android.tv.ui.components.LocalTvContentActive
+import com.fongmi.android.tv.ui.theme.JetStreamAnimations
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -182,14 +187,10 @@ class JetStreamSettingView @JvmOverloads constructor(
         val selectedSection = visibleSections.firstOrNull { it.key == selectedSectionKey } ?: visibleSections.firstOrNull()
         val selectedRows = selectedSection?.rows.orEmpty().filter { isRowVisible(it.key) }
         val firstRowFocusRequester = remember(selectedSection?.key, selectedRows.firstOrNull()?.key) { FocusRequester() }
-        val listState = rememberLazyListState()
 
         LaunchedEffect(visibleSections.map { it.key }, selectedSectionKey) {
             if (selectedSection == null) return@LaunchedEffect
             if (selectedSection.key != selectedSectionKey) selectedSectionKey = selectedSection.key
-        }
-        LaunchedEffect(selectedSection?.key) {
-            listState.scrollToItem(0)
         }
         LaunchedEffect(initialFocusRequest, selectedSection?.key, selectedRows.firstOrNull()?.key) {
             if (initialFocusRequest > 0 && selectedRows.isNotEmpty() && hasFocus()) runCatching { firstRowFocusRequester.requestFocus() }
@@ -209,16 +210,26 @@ class JetStreamSettingView @JvmOverloads constructor(
                         .width(200.dp)
                         .fillMaxHeight()
                 )
-                ContentPanel(
-                    section = selectedSection,
-                    rows = selectedRows,
-                    firstRowFocusRequester = firstRowFocusRequester,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                    listState = listState
-                )
+                Crossfade(
+                    targetState = selectedSection?.key,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    animationSpec = tween(JetStreamAnimations.DurationExit),
+                    label = "settingsSection"
+                ) { sectionKey ->
+                    val active = sectionKey == selectedSection?.key
+                    val section = visibleSections.firstOrNull { it.key == sectionKey }
+                    // The outgoing page may still draw, but only the new page can take focus.
+                    CompositionLocalProvider(LocalTvContentActive provides active) {
+                        ContentPanel(
+                            section = section,
+                            rows = section?.rows.orEmpty().filter { isRowVisible(it.key) },
+                            firstRowFocusRequester = if (active) firstRowFocusRequester else null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                            listState = rememberLazyListState()
+                        )
+                    }
+                }
             }
         }
     }
@@ -271,7 +282,7 @@ class JetStreamSettingView @JvmOverloads constructor(
     private fun ContentPanel(
         section: SectionSpec?,
         rows: List<RowSpec>,
-        firstRowFocusRequester: FocusRequester,
+        firstRowFocusRequester: FocusRequester?,
         modifier: Modifier,
         contentPadding: PaddingValues,
         listState: androidx.compose.foundation.lazy.LazyListState
@@ -315,6 +326,7 @@ class JetStreamSettingView @JvmOverloads constructor(
         TvFocusableSurface(
             onClick = onClick,
             modifier = Modifier.fillMaxWidth().height(44.dp),
+            focusedScale = JetStreamAnimations.FocusScaleSmall,
             selected = selected,
             containerColor = Color.Transparent,
             interactionSource = interactionSource

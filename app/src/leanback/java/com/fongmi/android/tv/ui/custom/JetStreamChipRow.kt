@@ -5,6 +5,7 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.View
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,6 +22,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -29,6 +31,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
+import com.fongmi.android.tv.ui.components.TvSelectionIndicator
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.PlatformTextStyle
@@ -181,37 +185,52 @@ class JetStreamChipRow @JvmOverloads constructor(
                     }
                 }
             }
-            LazyRow(
-                state = listState,
-                modifier = Modifier.fillMaxHeight().onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.nativeKeyEvent.keyCode) {
-                        KeyEvent.KEYCODE_DPAD_UP -> moveViewFocus(View.FOCUS_UP)
-                        KeyEvent.KEYCODE_DPAD_DOWN -> moveViewFocus(View.FOCUS_DOWN)
-                        else -> false
+            BoxWithConstraints(Modifier.fillMaxHeight().clipToBounds()) {
+                LazyRow(
+                    state = listState,
+                    modifier = Modifier.fillMaxHeight().onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.nativeKeyEvent.keyCode) {
+                            KeyEvent.KEYCODE_DPAD_UP -> moveViewFocus(View.FOCUS_UP)
+                            KeyEvent.KEYCODE_DPAD_DOWN -> moveViewFocus(View.FOCUS_DOWN)
+                            else -> false
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    itemsIndexed(snapshot) { index, text ->
+                        TvActionButton(
+                            onClick = { clickChip(index) },
+                            onLongClick = longClickListener?.let { { longClickChip(index) } },
+                            selected = index == selectedIndex,
+                            modifier = Modifier.widthIn(max = 280.dp).focusRequester(requesters[index])
+                                .onFocusChanged { if (it.isFocused) focusedIndex = index },
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = text,
+                                fontSize = 14.sp,
+                                fontWeight = if (index == selectedIndex) FontWeight.SemiBold else FontWeight.Medium,
+                                lineHeight = 18.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                        }
                     }
-                },
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                itemsIndexed(snapshot) { index, text ->
-                    TvActionButton(
-                        onClick = { clickChip(index) },
-                        onLongClick = longClickListener?.let { { longClickChip(index) } },
-                        selected = index == selectedIndex,
-                        modifier = Modifier.widthIn(max = 280.dp).focusRequester(requesters[index])
-                            .onFocusChanged { if (it.isFocused) focusedIndex = index },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = text,
-                            fontSize = 14.sp,
-                            fontWeight = if (index == selectedIndex) FontWeight.SemiBold else FontWeight.Medium,
-                            lineHeight = 18.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                }
+                val selectedItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == selectedIndex }
+                if (selectedItem != null) {
+                    val density = LocalDensity.current
+                    // LazyRow offsets include its content padding; clamp to the viewport so
+                    // the mark cannot paint over neighbouring controls during scrolling.
+                    val center = selectedItem.offset + selectedItem.size / 2f
+                    if (center >= 0 && center <= listState.layoutInfo.viewportEndOffset) {
+                        TvSelectionIndicator(
+                            left = with(density) { center.toDp() } - 8.dp,
+                            top = maxHeight / 2 + 14.dp
                         )
                     }
                 }

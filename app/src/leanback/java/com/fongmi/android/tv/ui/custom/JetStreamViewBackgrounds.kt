@@ -3,6 +3,9 @@ package com.fongmi.android.tv.ui.custom
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
+import android.animation.ValueAnimator
+import android.os.Build
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.ColorRes
@@ -69,6 +72,14 @@ internal fun View.jetStreamDp(value: Int): Float {
 
 internal fun View.jetStreamDpInt(value: Int): Int {
     return jetStreamDp(value).toInt()
+}
+
+/** Platform drawable transitions retain the existing focus states and rounded outline. */
+internal fun StateListDrawable.withJetStreamFocusMotion(): StateListDrawable = apply {
+    val enabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.O || ValueAnimator.areAnimatorsEnabled()
+    val duration = if (enabled) JetStreamAnimator.FOCUS_DURATION.toInt() else 0
+    setEnterFadeDuration(duration)
+    setExitFadeDuration(duration)
 }
 
 private var jetStreamTypefaceCache: Typeface? = null

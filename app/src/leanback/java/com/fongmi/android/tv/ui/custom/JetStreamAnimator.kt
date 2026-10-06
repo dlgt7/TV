@@ -47,11 +47,11 @@ object JetStreamAnimator {
         }
         val targetScale = if (focused) scale else 1f
         val targetElevation = if (focused) dp(view, elevationDp) else 0f
-        view.translationZ = targetElevation
         val animation = AnimatorSet().apply {
             playTogether(
                 ObjectAnimator.ofFloat(view, View.SCALE_X, targetScale),
-                ObjectAnimator.ofFloat(view, View.SCALE_Y, targetScale)
+                ObjectAnimator.ofFloat(view, View.SCALE_Y, targetScale),
+                ObjectAnimator.ofFloat(view, View.TRANSLATION_Z, targetElevation)
             )
             interpolator = enterInterpolator
             this.duration = duration
@@ -68,6 +68,8 @@ object JetStreamAnimator {
     @JvmStatic
     fun reset(view: View) {
         focusAnimations.remove(view)?.cancel()
+        view.background?.jumpToCurrentState()
+        view.foreground?.jumpToCurrentState()
         view.alpha = 1f
         view.scaleX = 1f
         view.scaleY = 1f
@@ -84,11 +86,10 @@ object JetStreamAnimator {
     @JvmStatic
     @JvmOverloads
     fun show(view: View, fromXDp: Int = 0, fromYDp: Int = 12, duration: Long = PANEL_DURATION) {
-        // cancel() alone can still run a previous withEndAction and force GONE after show.
-        view.animate().cancel()
+        // Clear the old completion before cancelling: a reversed exit must not set GONE.
         view.animate().setListener(null)
         view.animate().withEndAction(null)
-        // 必须在 cancel() 之后采样：上一次 hide 的 withEndAction 会被 cancel 同步触发（置 GONE、alpha=1、位移归零），先采样会误判早退致视图停在 GONE
+        view.animate().cancel()
         val alreadyVisible = view.visibility == View.VISIBLE
         if (alreadyVisible && view.alpha >= 0.99f && view.translationX == 0f && view.translationY == 0f) return
         if (!alreadyVisible) {
@@ -114,9 +115,9 @@ object JetStreamAnimator {
             view.visibility = finalVisibility
             return
         }
-        view.animate().cancel()
         view.animate().setListener(null)
         view.animate().withEndAction(null)
+        view.animate().cancel()
         view.animate()
             .alpha(0f)
             .translationX(dp(view, toXDp))
@@ -130,6 +131,16 @@ object JetStreamAnimator {
                 view.translationY = 0f
             }
             .start()
+    }
+
+    /** The page is already selected; this only softens its first frames, never its input. */
+    @JvmStatic
+    fun contentChanged(view: View) {
+        view.animate().setListener(null)
+        view.animate().withEndAction(null)
+        view.animate().cancel()
+        view.alpha = 0.65f
+        view.animate().alpha(1f).setDuration(EXIT_DURATION).setInterpolator(enterInterpolator).start()
     }
 
     private fun dp(view: View, value: Int): Float {

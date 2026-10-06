@@ -172,6 +172,18 @@ class JetStreamPageViewPager @JvmOverloads constructor(
         clipChildren = true
         clipToPadding = true
     }
+
+    override fun setCurrentItem(item: Int, smoothScroll: Boolean) {
+        val previous = currentItem
+        super.setCurrentItem(item, smoothScroll)
+        if (previous != currentItem && isLaidOut) JetStreamAnimator.contentChanged(this)
+    }
+
+    override fun onDetachedFromWindow() {
+        animate().cancel()
+        alpha = 1f
+        super.onDetachedFromWindow()
+    }
 }
 
 class JetStreamPagePanelScrollView @JvmOverloads constructor(
@@ -1487,7 +1499,7 @@ private fun View.hasNoPadding(): Boolean {
 }
 
 private fun View.jetStreamMediaItemBackground(): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamMediaItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamMediaItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamMediaItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
@@ -1506,7 +1518,7 @@ private fun View.jetStreamMediaItemDrawable(colorRes: Int, strokeColorRes: Int, 
 }
 
 private fun View.jetStreamRoundItemBackground(): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamRoundItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamRoundItemDrawable(R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamRoundItemDrawable(R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
@@ -1525,7 +1537,7 @@ private fun View.jetStreamRoundItemDrawable(colorRes: Int, strokeColorRes: Int, 
 }
 
 private fun View.jetStreamChipBackground(cornerRadiusDp: Int): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_selected), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 1))
@@ -1544,7 +1556,7 @@ private fun View.jetStreamChipDrawable(cornerRadiusDp: Int, colorRes: Int, strok
 }
 
 private fun View.jetStreamButtonBackground(): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(10, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(10, R.color.jetstream_secondary_container, R.color.jetstream_secondary, 2))
         addState(intArrayOf(), jetStreamChipDrawable(10, R.color.jetstream_surface_container, R.color.jetstream_outline_variant, 0))
@@ -1552,7 +1564,7 @@ private fun View.jetStreamButtonBackground(): StateListDrawable {
 }
 
 private fun View.jetStreamSearchBackground(cornerRadiusDp: Int): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_primary_container, R.color.jetstream_primary, 2))
         addState(intArrayOf(), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_surface_container, R.color.jetstream_outline_variant, 0))
@@ -1560,7 +1572,7 @@ private fun View.jetStreamSearchBackground(cornerRadiusDp: Int): StateListDrawab
 }
 
 private fun View.jetStreamInputBackground(cornerRadiusDp: Int): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_surface_container_high, R.color.jetstream_primary, 2))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_surface_container_high, R.color.jetstream_primary, 2))
         addState(intArrayOf(), jetStreamChipDrawable(cornerRadiusDp, R.color.jetstream_surface_container, R.color.jetstream_outline_variant, 1))
@@ -1568,7 +1580,7 @@ private fun View.jetStreamInputBackground(cornerRadiusDp: Int): StateListDrawabl
 }
 
 internal fun View.jetStreamFocusForeground(cornerRadiusDp: Int, strokeWidthDp: Int): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamFocusDrawable(cornerRadiusDp, strokeWidthDp))
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamFocusDrawable(cornerRadiusDp, strokeWidthDp))
     }
@@ -1594,7 +1606,7 @@ object JetStreamVideoDecor {
 
     @JvmStatic
     fun windowForeground(view: View): StateListDrawable {
-        return StateListDrawable().apply {
+        return StateListDrawable().withJetStreamFocusMotion().apply {
             addState(intArrayOf(android.R.attr.state_focused), view.jetStreamVideoWindowFocusDrawable())
         }
     }
@@ -1638,7 +1650,7 @@ private fun View.jetStreamHomeLogoForeground(): GradientDrawable {
 }
 
 private fun View.jetStreamOvalFocusBackground(): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_focused), jetStreamOvalFocusDrawable())
         addState(intArrayOf(android.R.attr.state_pressed), jetStreamOvalFocusDrawable())
     }
@@ -1678,7 +1690,7 @@ private fun View.jetStreamVodTitleTextColor(): ColorStateList {
 }
 
 private fun View.jetStreamIndicatorDotBackground(): StateListDrawable {
-    return StateListDrawable().apply {
+    return StateListDrawable().withJetStreamFocusMotion().apply {
         addState(intArrayOf(android.R.attr.state_selected), jetStreamIndicatorDotDrawable(R.color.jetstream_primary))
         addState(intArrayOf(), jetStreamIndicatorDotDrawable(R.color.jetstream_outline))
     }

@@ -44,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +89,7 @@ import com.fongmi.android.tv.ui.components.JetStreamControlScrim
 import com.fongmi.android.tv.ui.components.JetStreamInfoScrim
 import com.fongmi.android.tv.ui.components.MaterialSettingsButton
 import com.fongmi.android.tv.ui.components.MaterialSettingsButtonStyle
+import com.fongmi.android.tv.ui.components.tvContentFade
 import com.fongmi.android.tv.ui.components.TvActionButton
 import com.fongmi.android.tv.ui.components.TvFocusableSurface
 import com.fongmi.android.tv.ui.theme.JetStreamAnimations
@@ -650,21 +652,33 @@ class JetStreamVodControlView @JvmOverloads constructor(
         }.orEmpty()
         val open = group != null && visibleCommands.isNotEmpty()
         var focusedIndex by remember(group) { mutableStateOf(0) }
+        // Keep the last content for the exit transition. Clearing activeGroup used to
+        // remove the title/actions immediately and slide out an empty drawer.
+        var lastGroupState by remember { mutableStateOf(groupState) }
+        var lastCommands by remember { mutableStateOf(visibleCommands) }
+        SideEffect {
+            if (open) {
+                lastGroupState = groupState
+                lastCommands = visibleCommands
+            }
+        }
+        val displayedGroup = if (open) groupState else lastGroupState
+        val displayedCommands = if (open) visibleCommands else lastCommands
 
         AnimatedVisibility(
             visible = open,
             enter = fadeIn(tween(JetStreamAnimations.DurationPanel)) + slideInHorizontally(
                 animationSpec = tween(JetStreamAnimations.DurationPanel),
-                initialOffsetX = { it }
+                initialOffsetX = { it / 4 }
             ),
             exit = fadeOut(tween(JetStreamAnimations.DurationExit)) + slideOutHorizontally(
                 animationSpec = tween(JetStreamAnimations.DurationExit),
-                targetOffsetX = { it }
+                targetOffsetX = { it / 5 }
             ),
             modifier = Modifier.align(Alignment.CenterEnd)
         ) {
             val colorScheme = MaterialTheme.colorScheme
-            val keys = visibleCommands.map { it.first }
+            val keys = displayedCommands.map { it.first }
             val requesters = remember(keys) { List(keys.size) { FocusRequester() } }
             val listState = rememberLazyListState()
             LaunchedEffect(group, keys) {
@@ -689,6 +703,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                     .clip(RoundedCornerShape(28.dp))
                     .background(colorScheme.surface.copy(alpha = 0.96f))
                     .onPreviewKeyEvent { event ->
+                        if (!open) return@onPreviewKeyEvent false
                         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                         when (event.key) {
                             Key.DirectionLeft, Key.Back -> { closeSettingsDrawer(); true }
@@ -701,7 +716,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                     .padding(vertical = 18.dp)
             ) {
                 Text(
-                    text = groupState?.let { groupLabel(it) }.orEmpty(),
+                    text = displayedGroup?.let { groupLabel(it) }.orEmpty(),
                     color = colorScheme.onSurface,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -712,11 +727,13 @@ class JetStreamVodControlView @JvmOverloads constructor(
                 Spacer(Modifier.height(6.dp))
                 LazyColumn(
                     state = listState,
+                    modifier = Modifier.tvContentFade(displayedGroup?.key),
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(visibleCommands, key = { _, item -> item.first }) { index, item ->
+                    itemsIndexed(displayedCommands, key = { _, item -> item.first }) { index, item ->
                         MaterialSettingsButton(
+                            enabled = open,
                             onClick = { triggerCommand(item.first, false) },
                             onLongClick = { triggerCommand(item.first, true) },
                             selected = item.second.selected,
@@ -840,7 +857,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                     onClick = { listener?.onShowControls(); onClick() },
                     modifier = focusModifier.size(44.dp).semantics { this.selected = selected },
                     enabled = enabled,
-                    scale = IconButtonDefaults.scale(focusedScale = 1f),
+                    scale = IconButtonDefaults.scale(focusedScale = JetStreamAnimations.FocusScaleMedium),
                     interactionSource = interactionSource
                 ) {
                     TvIcon(

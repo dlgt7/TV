@@ -10,15 +10,19 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Cache;
 import com.fongmi.android.tv.bean.Class;
 import com.fongmi.android.tv.databinding.AdapterTypeBinding;
+import com.fongmi.android.tv.ui.custom.JetStreamTypeTabIndicator;
 import com.fongmi.android.tv.utils.ResUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
 
     private final OnClickListener mListener;
     private final List<Class> mItems;
+    private final Map<RecyclerView, JetStreamTypeTabIndicator> mIndicators = new WeakHashMap<>();
 
     public TypeAdapter(OnClickListener listener) {
         mListener = listener;
@@ -80,6 +84,24 @@ public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
         void onItemClick(Class item);
 
         void onRefresh(Class item);
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        JetStreamTypeTabIndicator indicator = new JetStreamTypeTabIndicator();
+        mIndicators.put(recyclerView, indicator);
+        recyclerView.addItemDecoration(indicator);
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        JetStreamTypeTabIndicator indicator = mIndicators.remove(recyclerView);
+        if (indicator != null) {
+            indicator.dispose();
+            recyclerView.removeItemDecoration(indicator);
+        }
+        super.onDetachedFromRecyclerView(recyclerView);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

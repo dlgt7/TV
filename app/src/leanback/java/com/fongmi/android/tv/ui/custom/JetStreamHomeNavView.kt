@@ -3,7 +3,6 @@ package com.fongmi.android.tv.ui.custom
 import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,14 +10,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,6 +26,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Rect as ComposeRect
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import com.fongmi.android.tv.ui.components.TvSelectionIndicator
+import com.fongmi.android.tv.ui.theme.JetStreamAnimations
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
@@ -91,48 +96,52 @@ class JetStreamHomeNavView @JvmOverloads constructor(
     @Composable
     override fun Content() {
         JetStreamTheme {
-            Row(
-                modifier = Modifier.fillMaxHeight().padding(horizontal = 2.dp).focusGroup(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items.forEach { item ->
-                    val selected = item.key == currentSelectedKey
-                    TvFocusableSurface(
-                        onClick = { listener?.onNavClick(item.key) },
-                        onLongClick = { listener?.onNavLongClick(item.key) },
-                        selected = selected,
-                        containerColor = Color.Transparent,
-                        shape = RoundedCornerShape(21.dp),
-                        modifier = Modifier
-                            .height(42.dp)
-                            .focusRequester(requesters.getValue(item.key))
-                            .onFocusChanged { if (it.isFocused) focusedKey = item.key }
-                    ) {
-                        // The surface lays its content out from the start, so a minimum width on
-                        // the surface left the label off-centre inside the selected pill. Keep the
-                        // minimum on the label box instead: the pill hugs it and the text centres.
-                        Box(
-                            Modifier.fillMaxHeight().widthIn(min = 62.dp).padding(horizontal = 14.dp),
-                            contentAlignment = Alignment.Center
+            val positions = remember { mutableStateMapOf<String, ComposeRect>() }
+            val density = LocalDensity.current
+            Box(Modifier.fillMaxHeight().padding(horizontal = 4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxHeight().focusGroup(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items.forEach { item ->
+                        val selected = item.key == currentSelectedKey
+                        TvFocusableSurface(
+                            onClick = { listener?.onNavClick(item.key) },
+                            onLongClick = { listener?.onNavLongClick(item.key) },
+                            selected = selected,
+                            focusedScale = JetStreamAnimations.FocusScaleSmall,
+                            containerColor = Color.Transparent,
+                            shape = RoundedCornerShape(21.dp),
+                            modifier = Modifier
+                                .height(42.dp)
+                                .onGloballyPositioned { positions[item.key] = it.boundsInParent() }
+                                .focusRequester(requesters.getValue(item.key))
+                                .onFocusChanged { if (it.isFocused) focusedKey = item.key }
                         ) {
-                            Text(
-                                text = item.text,
-                                fontSize = 15.sp,
-                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            // The selected mark is an overlay, not extra height
-                            // under the text: logo and labels share a centre line.
-                            if (selected) Box(
-                                Modifier.align(Alignment.BottomCenter)
-                                    .padding(bottom = 4.dp)
-                                    .width(16.dp).height(2.dp)
-                                    .background(MaterialTheme.colorScheme.onSurface, RoundedCornerShape(1.dp))
-                            )
+                            // The surface lays its content out from the start, so a minimum width on
+                            // the surface left the label off-centre inside the selected pill. Keep the
+                            // minimum on the label box instead: the pill hugs it and the text centres.
+                            Box(
+                                Modifier.fillMaxHeight().widthIn(min = 62.dp).padding(horizontal = 14.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = item.text,
+                                    fontSize = 15.sp,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
+                }
+                positions[currentSelectedKey]?.let { bounds ->
+                    TvSelectionIndicator(
+                        left = with(density) { bounds.center.x.toDp() } - 8.dp,
+                        top = with(density) { bounds.bottom.toDp() } - 6.dp
+                    )
                 }
             }
         }
