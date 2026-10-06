@@ -4,6 +4,7 @@
 
 | 日期 | 报告 | 主要范围与限制 |
 | --- | --- | --- |
+| 2026-10-06 | [同步、Kazumi 与最终安装](reports/2026-10-06-sync-kazumi/README.md) | Syncplay 实际 Exo、WebDAV Room 与坚果云并发、希番双引擎双集、WEX 和最终发布；保留双真机及外站限制 |
 | 2026-10-05 | [ECH 初版](reports/2026-10-05-ech/README.md) | 发布自身 ECH 配置的目标、共享客户端及认证代理；不包含后来的 CF 配置补全 |
 | 2026-10-05 | [红果与 TV 播放](reports/2026-10-05-hongguo/README.md) | 源功能、Exo/MPV、字幕、预加载、暂停弹幕；长查询和模型下载失败仍明确保留 |
 | 2026-10-06 | [Cloudflare ECH 补全](reports/2026-10-06-cloudflare-ech/README.md) | 目标没有自身 ECH 配置时的生产路径；区分 DNS 配置获取和真实加密握手 |

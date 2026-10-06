@@ -1,0 +1,33 @@
+{
+  "scope": "SOURCEPROBE_REAL_EXO_OFFICIAL_LOOPBACK_SERVER",
+  "mediaSha256": "b4a1a5f41dcb8db24d101c56104ada5b1507b710e20012d2b1ab619545151b39",
+  "tls": false,
+  "remoteServer": "127.0.0.1",
+  "checks": [
+    "real_exo_ready_with_selected_audio",
+    "production_session_and_peer_join_same_media",
+    "remote_play_advances_actual_exo_clock",
+    "remote_pause_stops_actual_exo_clock",
+    "remote_seek_reaches_real_exo",
+    "nearby_user_seek_is_broadcast_inside_echo_window",
+    "leave_restores_previous_speed",
+    "leave_ignores_peer_and_keeps_local_play_seek",
+    "main_thread_strictmode_network_clean"
+  ],
+  "passed": true,
+  "durationMs": 30000,
+  "playingClockAdvanceMs": 502,
+  "pausedClockDriftMs": 0,
+  "userSeekAfterRemoteObservedMs": 1,
+  "sessionBeforeCleanup": {
+    "phase": "OFFLINE",
+    "gate": "READY",
+    "reason": "",
+    "members": 0
+  },
+  "preferencesRestored": true,
+  "playerAndSessionClosed": true,
+  "lastStage": "leave-restores-speed-and-local-control",
+  "mainThreadNetworkViolations": 0,
+  "elapsedMs": 7203
+}

@@ -1,0 +1,215 @@
+{
+  "schema": "tv.kazumi-live-playback.v2",
+  "state": "PASS",
+  "source": "xfdmnext",
+  "engine": "exo",
+  "sourceSha256": "e49765f62ac867b76f45108f36f10077a2b26c39c66cd3082ae03fe71cf08462",
+  "priorPlaybackUrlsReused": false,
+  "sourceCaseRefreshUsed": false,
+  "verification": "Existing PythonSourcePlaybackTest real engines, frames, clock, PixelCopy, seek and audio\/control checks",
+  "processStopRecommendedAfterRun": true,
+  "episodes": [
+    {
+      "episodeIndex": 1,
+      "status": "PASS",
+      "stage": "complete",
+      "sourceParse": 0,
+      "specCreatedFromProductionResult": true,
+      "sourceDeclaredFormat": true,
+      "formatPreserved": true,
+      "mediaMimeType": "MP4",
+      "localAppProxy": true,
+      "urlResolvedInThisProcess": true,
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 720,
+        "frame": true,
+        "videoFrameCallbacks": 19,
+        "videoPresentationTimeUs": 750750,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "c2.va.avc.decoder",
+        "audioDecoderName": "c2.android.aac.decoder",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video\/avc",
+            "codecs": "avc1.640033",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio\/mp4a-latm",
+            "codecs": "mp4a.40.2",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 48000,
+            "channels": 2
+          }
+        ]
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 10345,
+      "videoPixelHash": "9ab091e",
+      "actualVideoDecoded": true,
+      "durationMs": 1485110,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 15015015,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14395,
+        "videoPixelHash": "fc0a4cd"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 2002002,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14146,
+        "videoPixelHash": "a93faf66"
+      },
+      "exoDsp": {
+        "installed": true,
+        "active": true,
+        "processedSourcePcm": true,
+        "power": 0.006398786949459456,
+        "filterStateMagnitude": 0.017475734532769266
+      },
+      "exoDspRemovedOnDisable": true,
+      "playbackControls": [
+        {
+          "speed": 1.5,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14376,
+          "videoPixelHash": "f2cdd379",
+          "playbackClockAdvanced": true
+        },
+        {
+          "speed": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14388,
+          "videoPixelHash": "7db00da9",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 0,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14388,
+          "videoPixelHash": "7be05325",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14393,
+          "videoPixelHash": "846ecbf2",
+          "playbackClockAdvanced": true
+        }
+      ],
+      "speedAndVolumeRestored": true,
+      "milliseconds": 25225
+    },
+    {
+      "episodeIndex": 2,
+      "status": "PASS",
+      "stage": "complete",
+      "sourceParse": 0,
+      "specCreatedFromProductionResult": true,
+      "sourceDeclaredFormat": true,
+      "formatPreserved": true,
+      "mediaMimeType": "MP4",
+      "localAppProxy": true,
+      "urlResolvedInThisProcess": true,
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 774,
+        "frame": true,
+        "videoFrameCallbacks": 21,
+        "videoPresentationTimeUs": 834167,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "c2.va.avc.decoder",
+        "audioDecoderName": "c2.android.aac.decoder",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video\/avc",
+            "codecs": "avc1.640033",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio\/mp4a-latm",
+            "codecs": "mp4a.40.2",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 48000,
+            "channels": 2
+          }
+        ]
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 14141,
+      "videoPixelHash": "77bb5923",
+      "actualVideoDecoded": true,
+      "durationMs": 1483943,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 15015015,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14374,
+        "videoPixelHash": "73ecb033"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 2002002,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14346,
+        "videoPixelHash": "62b8efbe"
+      },
+      "switchedFromPreviousEpisode": true,
+      "milliseconds": 10318
+    }
+  ],
+  "sameRegisteredSpider": true,
+  "decodedAndVerifiedEpisodes": 2,
+  "playerReleasedBeforeSpiderDestroy": true,
+  "siteRegistryRestored": true,
+  "previousManifestRestored": true,
+  "cleanupPassed": true
+}

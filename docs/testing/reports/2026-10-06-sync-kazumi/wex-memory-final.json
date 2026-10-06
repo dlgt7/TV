@@ -1,0 +1,20 @@
+{
+  "schema": "tv.wex-memory-readonly.v1",
+  "status": "PASS",
+  "probeSettingsWrites": false,
+  "probeSourceSwitches": false,
+  "expectedPublishedConfigurationRows": 90,
+  "expectedDistinctSiteCount": 86,
+  "expectedTargetCount": 14,
+  "loadTaskCompleted": true,
+  "siteCount": 86,
+  "targetCount": 14,
+  "matchingTargetJarMd5Count": 14,
+  "allTargetJarMd5Match": true,
+  "keyPreferencesUnchanged": true,
+  "keyPreferencesCheckedCount": 8,
+  "subscriptionSelectionUnchanged": true,
+  "selectedHomeUnchanged": true,
+  "selectedParseUnchanged": true,
+  "elapsedMs": 1385
+}

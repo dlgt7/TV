@@ -1,0 +1,207 @@
+{
+  "schema": "tv.kazumi-live-playback.v2",
+  "state": "PASS",
+  "source": "xfdmnext",
+  "engine": "mpv",
+  "sourceSha256": "e49765f62ac867b76f45108f36f10077a2b26c39c66cd3082ae03fe71cf08462",
+  "priorPlaybackUrlsReused": false,
+  "sourceCaseRefreshUsed": false,
+  "verification": "Existing PythonSourcePlaybackTest real engines, frames, clock, PixelCopy, seek and audio\/control checks",
+  "processStopRecommendedAfterRun": true,
+  "episodes": [
+    {
+      "episodeIndex": 1,
+      "status": "PASS",
+      "stage": "complete",
+      "sourceParse": 0,
+      "specCreatedFromProductionResult": true,
+      "sourceDeclaredFormat": true,
+      "formatPreserved": true,
+      "mediaMimeType": "MP4",
+      "localAppProxy": true,
+      "urlResolvedInThisProcess": true,
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 826,
+        "frame": true,
+        "videoFrameCallbacks": 0,
+        "videoPresentationTimeUs": -9223372036854775807,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "",
+        "audioDecoderName": "",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video\/avc",
+            "codecs": "h264",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio\/mp4a-latm",
+            "codecs": "aac",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 48000,
+            "channels": 2
+          }
+        ],
+        "nativeDecoder": "mediacodec",
+        "videoCodec": "H.264 \/ AVC \/ MPEG-4 AVC \/ MPEG-4 part 10"
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 10297,
+      "videoPixelHash": "3249183",
+      "actualVideoDecoded": true,
+      "durationMs": 1485110,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14397,
+        "videoPixelHash": "1bd52c14"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14167,
+        "videoPixelHash": "86a38eaa"
+      },
+      "playbackControls": [
+        {
+          "speed": 1.5,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14352,
+          "videoPixelHash": "281750d0",
+          "playbackClockAdvanced": true
+        },
+        {
+          "speed": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14350,
+          "videoPixelHash": "573c241f",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 0,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14350,
+          "videoPixelHash": "573c241f",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14353,
+          "videoPixelHash": "814ebc8c",
+          "playbackClockAdvanced": true
+        }
+      ],
+      "speedAndVolumeRestored": true,
+      "milliseconds": 12528
+    },
+    {
+      "episodeIndex": 2,
+      "status": "PASS",
+      "stage": "complete",
+      "sourceParse": 0,
+      "specCreatedFromProductionResult": true,
+      "sourceDeclaredFormat": true,
+      "formatPreserved": true,
+      "mediaMimeType": "MP4",
+      "localAppProxy": true,
+      "urlResolvedInThisProcess": true,
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 721,
+        "frame": true,
+        "videoFrameCallbacks": 0,
+        "videoPresentationTimeUs": -9223372036854775807,
+        "width": 1920,
+        "height": 1080,
+        "videoDecoderName": "",
+        "audioDecoderName": "",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video\/avc",
+            "codecs": "h264",
+            "width": 1920,
+            "height": 1080,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio\/mp4a-latm",
+            "codecs": "aac",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 48000,
+            "channels": 2
+          }
+        ],
+        "nativeDecoder": "mediacodec",
+        "videoCodec": "H.264 \/ AVC \/ MPEG-4 AVC \/ MPEG-4 part 10"
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 14375,
+      "videoPixelHash": "fc8366c5",
+      "actualVideoDecoded": true,
+      "durationMs": 1483943,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14391,
+        "videoPixelHash": "87061ba4"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "nativeRestartEvents": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14349,
+        "videoPixelHash": "4533e7b8"
+      },
+      "switchedFromPreviousEpisode": true,
+      "milliseconds": 6998
+    }
+  ],
+  "sameRegisteredSpider": true,
+  "decodedAndVerifiedEpisodes": 2,
+  "playerReleasedBeforeSpiderDestroy": true,
+  "siteRegistryRestored": true,
+  "previousManifestRestored": true,
+  "cleanupPassed": true
+}

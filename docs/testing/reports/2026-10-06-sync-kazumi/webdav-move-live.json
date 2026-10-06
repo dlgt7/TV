@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "statuses": {
+    "create_source": 201,
+    "create_target": 201,
+    "moveToExistingOverwriteF": 409,
+    "deleteTemporaryTarget": 204,
+    "moveToMissingOverwriteF": 201,
+    "sourceAfterMove": 404,
+    "cleanup_source": 404,
+    "cleanup_target": 404
+  },
+  "etagForms": [
+    {
+      "quoted": false,
+      "weak": false,
+      "length": 22,
+      "bareAlphanumeric": true,
+      "safeBareToken": true
+    },
+    {
+      "quoted": false,
+      "weak": false,
+      "length": 22,
+      "bareAlphanumeric": true,
+      "safeBareToken": true
+    },
+    {
+      "quoted": false,
+      "weak": false,
+      "length": 22,
+      "bareAlphanumeric": true,
+      "safeBareToken": true
+    }
+  ],
+  "wexWritten": false,
+  "temporaryObjectsDeleted": true,
+  "endpointSha256": "48c6c18c4cd6679c996100450cd549699e6fad80d1ae0fa8a269f1dbe82a755b",
+  "checkedAtEpoch": 1791324258
+}

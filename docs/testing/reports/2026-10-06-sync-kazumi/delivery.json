@@ -1,0 +1,17 @@
+{
+  "package": "com.fongmi.android.tv.preview",
+  "sourceCommit": "1249ec448a0dd29c4038e6ef3b413f490545dba7",
+  "validationRun": "37541890756",
+  "afterApkSha256": "a639f7c5f34ca49c628d5304199bca3284908192ace182570ab995181c570d05",
+  "dataFilesCompared": 11,
+  "preLaunchPreferencesDatabasesIdentical": true,
+  "homeLaunchOk": true,
+  "processAlive": true,
+  "androidRuntimeFatal": false,
+  "webdavRoomTestsPassed": 8,
+  "release": "https://github.com/wobuhui666/TV/releases/tag/build-37541816195",
+  "releaseAbisVerified": [
+    "arm64-v8a",
+    "armeabi-v7a"
+  ]
+}
