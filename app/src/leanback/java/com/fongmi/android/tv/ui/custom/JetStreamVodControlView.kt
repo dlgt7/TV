@@ -791,6 +791,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
             "ending" -> R.string.playback_command_ending
             "edition" -> R.string.play_edition
             "chapter" -> R.string.play_chapter
+            "syncplay" -> R.string.setting_syncplay
             "text" -> R.string.play_track_text
             "audio" -> R.string.play_track_audio
             "video" -> R.string.play_track_video
@@ -1056,6 +1057,6 @@ class JetStreamVodControlView @JvmOverloads constructor(
 
         private val PLAYLIST_COMMANDS = listOf("prev", "next", "change", "parse", "replay", "reset")
         private val CAPTION_COMMANDS = listOf("subtitle", "text", "audio", "video", "ai", "ai_language", "danmaku")
-        private val SETTINGS_COMMANDS = listOf("speed", "scale", "player", "decode", "opening", "ending", "edition", "chapter")
+        private val SETTINGS_COMMANDS = listOf("speed", "scale", "player", "decode", "opening", "ending", "edition", "chapter", "syncplay")
     }
 }

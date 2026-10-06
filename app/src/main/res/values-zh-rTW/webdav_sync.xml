@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="webdav_sync_title">WebDAV 多裝置同步</string>
+    <string name="webdav_sync_url">HTTPS 資料夾或同步檔案位址</string>
+    <string name="webdav_sync_username">使用者名稱</string>
+    <string name="webdav_sync_password">密碼／應用程式密碼</string>
+    <string name="webdav_sync_keeps">收藏</string>
+    <string name="webdav_sync_history">播放進度</string>
+    <string name="webdav_sync_subscriptions">訂閱位址（只新增與更新）</string>
+    <string name="webdav_sync_preferences">彈幕顯示、字級和透明度</string>
+    <string name="webdav_sync_automatic">使用應用程式時自動同步</string>
+    <string name="webdav_sync_description">收藏與進度按訂閱和來源 ID 合併，同步期間的本機修改會保留。訂閱憑據、來源快取和裝置播放設定留在本機。填寫資料夾位址時使用 tv-sync-v1.json。</string>
+    <string name="webdav_sync_now">立即同步</string>
+    <string name="webdav_sync_save">儲存</string>
+    <string name="webdav_sync_running">正在同步…</string>
+    <string name="webdav_sync_finished">已更新 %1$d 項、刪除 %2$d 項，暫緩 %3$d 項。</string>
+    <string name="webdav_sync_invalid_settings">請填寫不含帳號密碼的 HTTPS 位址，並至少選擇一類資料。帳號填寫至下方獨立欄位。</string>
+    <string name="webdav_sync_auth_error">認證或存取失敗，請檢查帳號、應用程式密碼及檔案權限。</string>
+    <string name="webdav_sync_etag_error">伺服器未提供強 ETag，無法安全執行多裝置並行寫入。</string>
+    <string name="webdav_sync_document_error">此檔案不是 TV 同步資料，請換一個新檔名；原檔案未被覆寫。</string>
+    <string name="webdav_sync_conflict_error">其他裝置持續修改了檔案，請稍後重試。</string>
+    <string name="webdav_sync_busy">已有同步工作正在執行。</string>
+    <string name="webdav_sync_error">同步失敗，請檢查網路與 WebDAV 路徑後重試。</string>
+</resources>

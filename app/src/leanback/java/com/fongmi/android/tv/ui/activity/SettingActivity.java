@@ -47,6 +47,11 @@ import com.fongmi.android.tv.ai.skip.AiSkipApi;
 import com.fongmi.android.tv.ai.skip.AiSkipSettings;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
 import com.fongmi.android.tv.ui.dialog.CloudflarePreferredDialog;
+import com.fongmi.android.tv.ui.dialog.SyncplayDialog;
+import com.fongmi.android.tv.ui.dialog.WebDavSyncDialog;
+import com.fongmi.android.tv.sync.WebDavSyncManager;
+import com.fongmi.android.tv.sync.WebDavSyncSettings;
+import com.fongmi.android.tv.syncplay.SyncplaySession;
 import com.fongmi.android.tv.ui.dialog.DohDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
@@ -235,6 +240,13 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         setRowValue(JetStreamSettingView.KEY_DOH, doh.length == 0 ? "" : doh[getDohIndex()]);
         setRowValue(JetStreamSettingView.KEY_ECH, Setting.getSwitch(EchSettings.isEnabled()));
         setRowValue(JetStreamSettingView.KEY_CF_PREFERRED, getCloudflarePreferredStatus());
+        SyncplaySession.Status syncplay = SyncplaySession.get().status();
+        setRowValue(JetStreamSettingView.KEY_SYNCPLAY, getString(switch (syncplay.phase) {
+            case OFFLINE -> R.string.syncplay_offline;
+            case CONNECTING -> R.string.syncplay_connecting;
+            case JOINED -> R.string.syncplay_synchronizing;
+        }));
+        setRowValue(JetStreamSettingView.KEY_WEBDAV, getWebDavStatus());
         setThemeText();
         mBinding.settingView.refreshThemeSelection();
         setRowValue(JetStreamSettingView.KEY_SIZE, size[PlayerSetting.getSize()]);
@@ -249,6 +261,15 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         setRowValue(JetStreamSettingView.KEY_SOURCE_MODE, getString(label));
         setRowValue(JetStreamSettingView.KEY_SOURCE_CROSS_SITE, Setting.getSwitch(SourceSelectionSetting.isCrossSiteEnabled()));
         setRowVisible(JetStreamSettingView.KEY_SOURCE_CROSS_SITE, mode == SourceSelectionMode.SMART);
+    }
+
+    private String getWebDavStatus() {
+        if (WebDavSyncManager.get().isRunning()) return getString(R.string.webdav_sync_running);
+        if (!WebDavSyncSettings.get().configured()) return getString(R.string.setting_sync_not_configured);
+        long last = WebDavSyncSettings.lastSuccess();
+        if (last == 0) return getString(R.string.setting_sync_configured);
+        return getString(R.string.setting_sync_last_success,
+                android.text.format.DateFormat.format("MM-dd HH:mm", last));
     }
 
     private void setRowValue(String key, CharSequence value) {
@@ -352,6 +373,8 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_SIZE -> setSize();
             case JetStreamSettingView.KEY_BACKUP -> onBackup();
             case JetStreamSettingView.KEY_RESTORE -> onRestore();
+            case JetStreamSettingView.KEY_SYNCPLAY -> JetStreamDialogDecor.tintButtons(SyncplayDialog.show(this));
+            case JetStreamSettingView.KEY_WEBDAV -> JetStreamDialogDecor.tintButtons(WebDavSyncDialog.show(this, this::refreshAppRows));
             case JetStreamSettingView.KEY_CACHE -> onCache();
             case JetStreamSettingView.KEY_MPV_LOG -> setMpvLog();
             case JetStreamSettingView.KEY_MPV_LOG_EXPORT -> onMpvLog();

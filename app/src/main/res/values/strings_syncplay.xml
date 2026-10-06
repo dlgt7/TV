@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="syncplay_description">Open the same video on both devices, then join the same server and room. Play, pause and seeking are synchronized. Joining uses normal speed; leaving restores your previous speed.</string>
+    <string name="syncplay_server">Server hostname or IP</string>
+    <string name="syncplay_port">Port (default 8999)</string>
+    <string name="syncplay_username">Username</string>
+    <string name="syncplay_room">Room name</string>
+    <string name="syncplay_password">Server password (this connection only)</string>
+    <string name="syncplay_require_tls">Require TLS encryption</string>
+    <string name="syncplay_join">Save and join</string>
+    <string name="syncplay_leave">Leave room</string>
+    <string name="syncplay_confirm_media">These are the same video — synchronize</string>
+    <string name="syncplay_invalid">Check the server, port, username and room. Enter a hostname, not a URL.</string>
+    <string name="syncplay_controlled_room">Controlled rooms are not supported. Choose a regular room.</string>
+    <string name="syncplay_no_video">Open a seekable video before joining.</string>
+    <string name="syncplay_offline">Not in a room. Joining is always manual.</string>
+    <string name="syncplay_connecting">Connecting…</string>
+    <string name="syncplay_connected">Room %1$s · %2$d member(s)</string>
+    <string name="syncplay_synchronizing">Synchronizing</string>
+    <string name="syncplay_waiting">Waiting for room media information</string>
+    <string name="syncplay_not_ready">Synchronization is paused while the player loads</string>
+    <string name="syncplay_different_media">Different video or duration in the room. Synchronization is paused.</string>
+    <string name="syncplay_encrypted">TLS encrypted</string>
+    <string name="syncplay_plain">Unencrypted connection</string>
+    <string name="syncplay_tls_unavailable">The server does not support TLS. Disable TLS only for a server you intend to use without encryption.</string>
+    <string name="syncplay_tls_failed">TLS certificate verification or negotiation failed.</string>
+    <string name="syncplay_server_error">The server rejected the connection. Check the room and server password.</string>
+    <string name="syncplay_disconnected">Disconnected. Playback is local again; join manually to reconnect.</string>
+    <string name="syncplay_speed_changed">Left the room to keep your manually selected speed.</string>
+    <string name="syncplay_close">Close</string>
+</resources>

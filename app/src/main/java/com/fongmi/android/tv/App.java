@@ -14,6 +14,7 @@ import androidx.core.os.HandlerCompat;
 
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ToastFilter;
+import com.fongmi.android.tv.sync.WebDavSyncManager;
 import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
 import com.google.gson.Gson;
@@ -28,6 +29,17 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     private Activity activity;
     private Hook hook;
+    private int startedActivities;
+    private final Runnable automaticSync = new Runnable() {
+        @Override public void run() {
+            if (startedActivities == 0) return;
+            WebDavSyncManager.get().maybeAutoSync();
+            handler.postDelayed(this, 15 * 60_000L);
+        }
+    };
+    private final Runnable backgroundSync = () -> {
+        if (startedActivities == 0) WebDavSyncManager.get().maybeAutoSyncOnBackground();
+    };
 
     public App() {
         instance = this;
@@ -126,9 +138,20 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
+        handler.removeCallbacks(backgroundSync);
+        if (startedActivities++ == 0) {
+            handler.removeCallbacks(automaticSync);
+            handler.post(automaticSync);
+        }
     }
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
+        startedActivities = Math.max(0, startedActivities - 1);
+        if (startedActivities == 0) {
+            handler.removeCallbacks(automaticSync);
+            // Activity changes and rotations may briefly have no started Activity.
+            handler.postDelayed(backgroundSync, 2_000L);
+        }
     }
 }

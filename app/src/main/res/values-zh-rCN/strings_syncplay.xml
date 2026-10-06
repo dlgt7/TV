@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="syncplay_description">双方先打开同一影片，再加入同一服务器和房间。播放、暂停和拖动进度会同步。加入时使用 1 倍速，离开后恢复原倍速。</string>
+    <string name="syncplay_server">服务器域名或 IP</string>
+    <string name="syncplay_port">端口（默认 8999）</string>
+    <string name="syncplay_username">用户名</string>
+    <string name="syncplay_room">房间名称</string>
+    <string name="syncplay_password">服务器密码（可空，仅本次连接）</string>
+    <string name="syncplay_require_tls">要求 TLS 加密连接</string>
+    <string name="syncplay_join">保存并加入</string>
+    <string name="syncplay_leave">离开房间</string>
+    <string name="syncplay_confirm_media">确认是同一影片，继续同步</string>
+    <string name="syncplay_invalid">请检查服务器、端口、用户名和房间。服务器只填域名或 IP，不填网址。</string>
+    <string name="syncplay_controlled_room">暂不支持受控房间，请使用普通房间。</string>
+    <string name="syncplay_no_video">请先打开可以拖动进度的影片，再加入房间。</string>
+    <string name="syncplay_offline">未加入房间，不会自动连接。</string>
+    <string name="syncplay_connecting">正在连接…</string>
+    <string name="syncplay_connected">房间 %1$s · %2$d 人</string>
+    <string name="syncplay_synchronizing">同步中</string>
+    <string name="syncplay_waiting">等待房间影片信息</string>
+    <string name="syncplay_not_ready">播放器尚未就绪，暂不同步</string>
+    <string name="syncplay_different_media">房间内影片或时长不同，已暂停同步。</string>
+    <string name="syncplay_encrypted">TLS 加密</string>
+    <string name="syncplay_plain">明文连接</string>
+    <string name="syncplay_tls_unavailable">服务器未启用 TLS。若自建服务器使用明文连接，可取消 TLS 选项后重试。</string>
+    <string name="syncplay_tls_failed">TLS 证书校验或协商失败，未建立连接。</string>
+    <string name="syncplay_server_error">服务器拒绝连接，请检查房间和服务器密码。</string>
+    <string name="syncplay_disconnected">连接已断开，已恢复本地播放。可手动重新加入。</string>
+    <string name="syncplay_speed_changed">已退出一起看，保留你手动选择的倍速。</string>
+    <string name="syncplay_close">关闭</string>
+</resources>

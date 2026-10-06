@@ -593,6 +593,8 @@ class JetStreamSettingView @JvmOverloads constructor(
                     RowSpec(KEY_SIZE, context.getString(R.string.setting_size)),
                     RowSpec(KEY_BACKUP, context.getString(R.string.setting_backup)),
                     RowSpec(KEY_RESTORE, context.getString(R.string.setting_restore)),
+                    RowSpec(KEY_SYNCPLAY, context.getString(R.string.setting_syncplay)),
+                    RowSpec(KEY_WEBDAV, context.getString(R.string.setting_webdav)),
                     RowSpec(KEY_CACHE, context.getString(R.string.setting_cache), actions = listOf(ActionSpec(KEY_CACHE, context.getString(R.string.setting_clear), R.drawable.msr_storage))),
                     RowSpec(KEY_MPV_LOG, "MPV播放日志", actions = listOf(ActionSpec(KEY_MPV_LOG_EXPORT, "导出日志", R.drawable.msr_storage))),
                     RowSpec(KEY_QUICKJS_LOG, "JS调试日志", actions = listOf(ActionSpec(KEY_QUICKJS_LOG_EXPORT, "导出日志", R.drawable.msr_storage))),
@@ -678,6 +680,8 @@ class JetStreamSettingView @JvmOverloads constructor(
         const val KEY_SIZE = "size"
         const val KEY_BACKUP = "backup"
         const val KEY_RESTORE = "restore"
+        const val KEY_SYNCPLAY = "syncplay"
+        const val KEY_WEBDAV = "webdav"
         const val KEY_CACHE = "cache"
         const val KEY_MPV_LOG = "mpv_log"
         const val KEY_MPV_LOG_EXPORT = "mpv_log_export"

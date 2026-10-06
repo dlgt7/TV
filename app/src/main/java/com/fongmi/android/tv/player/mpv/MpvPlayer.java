@@ -75,6 +75,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     private final Context context;
     private final Player.Commands commands;
     private final Map<String, Integer> trackIdsByGroupId;
+    private final MpvSeekPreroll seekPreroll = new MpvSeekPreroll();
 
     private PlaybackParameters playbackParameters;
     private TrackSelectionParameters trackSelectionParameters;
@@ -408,7 +409,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         long targetMs = positionMs == C.TIME_UNSET ? 0 : Math.max(0, positionMs);
         if (durationMs > 0) targetMs = Math.min(targetMs, durationMs);
         this.positionMs = targetMs;
-        command("set", "time-pos", seconds(targetMs));
+        command("seek", seconds(targetMs), "absolute+exact");
         if (playbackState == Player.STATE_ENDED) playbackState = Player.STATE_READY;
         return Futures.immediateVoidFuture();
     }
@@ -713,6 +714,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     private void clearPlaylist() {
         command("stop");
+        restoreSeekPreroll();
         mediaItem = null;
         spec = null;
         positionMs = 0;
@@ -755,6 +757,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         // ASS override changes rebuild native subtitle tracks. Apply them before
         // demuxing: doing this at FILE_LOADED can discard an already decoded long
         // dialogue when a later, shorter event has the same starting timestamp.
+        restoreSeekPreroll();
+        applySeekPreroll(false);
         applySubtitleStyle();
         if (startPositionMs > 0 && shouldDeferInitialSeek(url)) {
             pendingSeekAfterLoadMs = startPositionMs;
@@ -784,6 +788,9 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 loading = false;
                 playbackState = Player.STATE_READY;
                 MpvLogCollector.log("MpvPlayer", "文件加载成功");
+                // The demuxer also identifies extension-less HLS URLs here, before
+                // a deferred resume seek is issued.
+                applySeekPreroll(true);
                 seekAfterLoadIfNeeded();
                 readRuntimeState();
                 if (applyDolbyPolicy()) return;
@@ -885,7 +892,25 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         pendingSeekAfterLoadMs = C.TIME_UNSET;
         positionMs = seekMs;
         MpvLogCollector.log("MpvPlayer", "加载后定位: " + seekMs + "ms");
-        command("set", "time-pos", seconds(seekMs));
+        command("seek", seconds(seekMs), "absolute+exact");
+    }
+
+    private void applySeekPreroll(boolean demuxerKnown) {
+        MediaItem.LocalConfiguration local = mediaItem == null ? null : mediaItem.localConfiguration;
+        if (!MpvSeekPreroll.isHls(local == null ? null : local.mimeType,
+                local == null ? null : local.uri.getPath(),
+                demuxerKnown ? propString("file-format", "") : null)) return;
+        Double current = MPVLib.INSTANCE.getPropertyDouble("hr-seek-demuxer-offset");
+        if (current == null) return;
+        double target = seekPreroll.apply(current);
+        if (Double.compare(current, target) != 0) command("set", "hr-seek-demuxer-offset", Double.toString(target));
+    }
+
+    private void restoreSeekPreroll() {
+        Double current = MPVLib.INSTANCE.getPropertyDouble("hr-seek-demuxer-offset");
+        if (current == null) return;
+        double target = seekPreroll.restore(current);
+        if (Double.compare(current, target) != 0) command("set", "hr-seek-demuxer-offset", Double.toString(target));
     }
 
     private void readRuntimeState() {

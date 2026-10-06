@@ -352,4 +352,9 @@
         <item>Select subtitle track</item>
     </string-array>
 
+    <string name="setting_syncplay">一起看 · Syncplay</string>
+    <string name="setting_webdav">多设备同步 · WebDAV</string>
+    <string name="setting_sync_not_configured">未配置</string>
+    <string name="setting_sync_configured">已配置</string>
+    <string name="setting_sync_last_success">上次同步 %1$s</string>
 </resources>

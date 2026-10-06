@@ -317,6 +317,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     protected void onServiceConnected() {
+        com.fongmi.android.tv.syncplay.SyncplaySession.get().attach(this, this::player);
         checkId();
     }
 
@@ -1447,7 +1448,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void onJetStreamCommand(String key) {
         switch (key) {
-            case "parse", "subtitle", "text", "audio", "video", "danmaku", "player", "edition", "chapter" -> playbackPanelCommand = key;
+            case "parse", "subtitle", "text", "audio", "video", "danmaku", "player", "edition", "chapter", "syncplay" -> playbackPanelCommand = key;
         }
         switch (key) {
             case "prev" -> checkPrev();
@@ -1470,6 +1471,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
             case "ending" -> onEnding();
             case "edition" -> onEdition();
             case "chapter" -> onChapter();
+            case "syncplay" -> com.fongmi.android.tv.ui.custom.JetStreamDialogDecor.tintButtons(
+                    com.fongmi.android.tv.ui.dialog.SyncplayDialog.show(this));
         }
         syncJetStreamControl();
     }
@@ -1545,6 +1548,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         setJetStreamCommand("ending", mBinding.control.action.ending, true);
         setJetStreamCommand("edition", mBinding.control.action.edition, isVisible(mBinding.control.action.edition));
         setJetStreamCommand("chapter", mBinding.control.action.chapter, isVisible(mBinding.control.action.chapter));
+        setJetStreamCommand("syncplay", getString(R.string.setting_syncplay), true, false);
     }
 
     private void setJetStreamCommand(String key, TextView view, boolean visible) {
@@ -2135,6 +2139,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     protected void onDestroy() {
+        com.fongmi.android.tv.syncplay.SyncplaySession.get().detach(this);
         if (mVod != null) mVod.clearPreload();
         if (mKeyDown != null) mKeyDown.reset();
         AiSkipRuntime.get().stopSession();

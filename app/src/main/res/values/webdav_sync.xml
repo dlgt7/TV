@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="webdav_sync_title">WebDAV device sync</string>
+    <string name="webdav_sync_url">HTTPS folder or sync-file URL</string>
+    <string name="webdav_sync_username">Username</string>
+    <string name="webdav_sync_password">Password / app password</string>
+    <string name="webdav_sync_keeps">Favorites</string>
+    <string name="webdav_sync_history">Playback progress</string>
+    <string name="webdav_sync_subscriptions">Subscription URLs (add and update only)</string>
+    <string name="webdav_sync_preferences">Danmaku visibility, text size and transparency</string>
+    <string name="webdav_sync_automatic">Sync automatically while using the app</string>
+    <string name="webdav_sync_description">Favorites and progress merge by subscription and source ID. Local edits made during sync are kept. Subscription credentials, cached source files and device playback settings stay local. A folder URL uses tv-sync-v1.json.</string>
+    <string name="webdav_sync_now">Sync now</string>
+    <string name="webdav_sync_save">Save</string>
+    <string name="webdav_sync_running">Syncing…</string>
+    <string name="webdav_sync_finished">Updated %1$d, deleted %2$d, deferred %3$d records.</string>
+    <string name="webdav_sync_invalid_settings">Enter an HTTPS address without embedded credentials and select at least one data type. Enter the account in the separate fields.</string>
+    <string name="webdav_sync_auth_error">Authentication or access failed. Check the account, app password and file permissions.</string>
+    <string name="webdav_sync_etag_error">This server does not provide a strong ETag; safe multi-device writes are unavailable.</string>
+    <string name="webdav_sync_document_error">This file is not TV sync data. Choose a new filename; the existing file was not overwritten.</string>
+    <string name="webdav_sync_conflict_error">Another device changed the file repeatedly. Retry in a moment.</string>
+    <string name="webdav_sync_busy">A sync is already running.</string>
+    <string name="webdav_sync_error">Sync failed. Check the network and WebDAV path, then retry.</string>
+</resources>
