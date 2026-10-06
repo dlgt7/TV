@@ -1,0 +1,19 @@
+{
+  "installedCommit": "67431d56596a31d179a54feddc14a3a3bb9f61ec",
+  "installedApkHashesVerified": true,
+  "isolatedAppAndTestRemoved": true,
+  "taskOwnedDeviceTempsRemoved": true,
+  "userOriginalPackageUnchanged": true,
+  "previewPreferencesAndDatabasesBeforeLaunch": "11/11 SHA256 match",
+  "ordinaryMandarinModelAvailableInPreview": true,
+  "taskForwardMappingsRemoved": true,
+  "previewHomeLaunched": true,
+  "hostTestPortsClosed": {
+    "8767": true,
+    "8768": true,
+    "8769": true
+  },
+  "hostTestServersStopped": true,
+  "codespaceState": "Shutdown",
+  "releaseCiSuccessful": true
+}

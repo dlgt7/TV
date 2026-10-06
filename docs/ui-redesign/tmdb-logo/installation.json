@@ -1,0 +1,14 @@
+{
+  "package": "com.fongmi.android.tv.preview",
+  "beforeApkSha256": "118bf002138858ea0c5fb93b101e964a390f4f35132a34b294fae0767c845106",
+  "afterApkSha256": "2d7034436d2ccc1d70bd32e2843db9b97c14e7681b0e05a6b8cd55844d30ec3d",
+  "backupSha256": "3808769c9bf73c18e971926f026ff3f2b9e8f98da0f3392d60f72aa32c9736a9",
+  "afterBackupSha256": "3808769c9bf73c18e971926f026ff3f2b9e8f98da0f3392d60f72aa32c9736a9",
+  "dataFilesCompared": 11,
+  "preLaunchDataFilesIdentical": true,
+  "homeLaunchOk": true,
+  "processAlive": true,
+  "androidRuntimeFatal": false,
+  "runtimeLogScope": "Current preview process only",
+  "temporaryTestPackagesRemoved": true
+}

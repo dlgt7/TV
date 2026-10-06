@@ -1,0 +1,22 @@
+{
+  "sourceRepository": "wobuhui666/CatVodSpider",
+  "sourceCommit": "0cfe42a0cb1a42081da51a682a5110afa4ed23ad",
+  "jarUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/wobuhui666/CatVodSpider/0cfe42a0cb1a42081da51a682a5110afa4ed23ad/jar/custom_spider.jar",
+  "jarSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "beforeCount": 76,
+  "afterCount": 78,
+  "addedKeys": [
+    "ciallo_girigiri",
+    "ciallo_sorani"
+  ],
+  "existingSitesPreserved": true,
+  "globalJarPreserved": true,
+  "otherTopLevelFieldsPreserved": true,
+  "beforeSha256": "80bb231369e920da0927d5b6b2fa05260e5d88898e438049b45d312008067bbb",
+  "candidateSha256": "2e9b806aef0c1c04f82c57027d4ee85c5a6001a4332507e49832498f6593df0e",
+  "putStatus": 204,
+  "readBackStatus": 200,
+  "readBackVerified": true,
+  "conditionalUpdate": true,
+  "afterSha256": "2e9b806aef0c1c04f82c57027d4ee85c5a6001a4332507e49832498f6593df0e"
+}

@@ -1,0 +1,22 @@
+{
+  "completed": false,
+  "cacheExpected": true,
+  "cacheThresholdMs": 500,
+  "calls": [
+    {
+      "step": "home_first",
+      "status": "FAIL",
+      "milliseconds": 5869,
+      "errorType": "IllegalStateException"
+    }
+  ],
+  "jarHashVerified": true,
+  "loaded": true,
+  "status": "FAIL",
+  "failedStep": "home_first",
+  "errorType": "AssertionError",
+  "cleanup": "PASS",
+  "jarSha256": "e046e60b5842932a4b9d764e26a28ebeefdf6cdac11a2aec50e9c8f047157e5c",
+  "applicationSha256": "0c18eff7da3a77867ca2fb2334c3e2fa78dd9405e89cc1b38f6ec7e341b7f3f6",
+  "testApkSha256": "b739e7902969d8a5487afd331f61db28c57ac9c0000bcc894b8964405f93792b"
+}

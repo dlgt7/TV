@@ -1,0 +1,62 @@
+[
+  {
+    "category": "2",
+    "curlExit": 0,
+    "httpMetrics": "200 101414 10.499039",
+    "bytes": 101414,
+    "title": "日番0 - 第1页 - girigiri愛動漫｜高清动漫線上觀看｜彈幕番劇平台",
+    "filterItems": 71,
+    "cards": 48,
+    "captchaElements": 0
+  },
+  {
+    "category": "3",
+    "curlExit": 0,
+    "httpMetrics": "200 72397 9.119369",
+    "bytes": 72397,
+    "title": "美番0 - 第1页 - girigiri愛動漫｜高清动漫線上觀看｜彈幕番劇平台",
+    "filterItems": 50,
+    "cards": 38,
+    "captchaElements": 0
+  },
+  {
+    "category": "21",
+    "curlExit": 0,
+    "httpMetrics": "200 93209 7.868436",
+    "bytes": 93209,
+    "title": "劇場版0 - 第1页 - girigiri愛動漫｜高清动漫線上觀看｜彈幕番劇平台",
+    "filterItems": 59,
+    "cards": 48,
+    "captchaElements": 0
+  },
+  {
+    "category": "20",
+    "curlExit": 0,
+    "httpMetrics": "200 97821 9.551476",
+    "bytes": 97821,
+    "title": "真人番劇0 - 第1页 - girigiri愛動漫｜高清动漫線上觀看｜彈幕番劇平台",
+    "filterItems": 63,
+    "cards": 48,
+    "captchaElements": 0
+  },
+  {
+    "category": "24",
+    "curlExit": 0,
+    "httpMetrics": "200 55046 7.998582",
+    "bytes": 55046,
+    "title": "BD副音軌0 - 第1页 - girigiri愛動漫｜高清动漫線上觀看｜彈幕番劇平台",
+    "filterItems": 53,
+    "cards": 25,
+    "captchaElements": 0
+  },
+  {
+    "category": "26",
+    "curlExit": 0,
+    "httpMetrics": "200 42440 7.943673",
+    "bytes": 42440,
+    "title": "演唱會&周邊活動&其他0 - 第1页 - girigiri愛動漫｜高清动漫線上觀看｜彈幕番劇平台",
+    "filterItems": 34,
+    "cards": 18,
+    "captchaElements": 0
+  }
+]

@@ -1,0 +1,46 @@
+[
+  {
+    "applicationCommit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "abi": "arm64-v8a",
+    "buildType": "debug",
+    "instrumentationExecuted": false,
+    "artifact": "tv-validation-preview-arm64-37395642484",
+    "files": [
+      {
+        "file": "preview-app-debug.apk",
+        "applicationId": "com.fongmi.android.tv.preview",
+        "sha256": "7542b23638c30b829fb2a8afc553082efc7e966c82ba873df90476a89b17bb6b",
+        "downloadedFileHashMatches": true
+      },
+      {
+        "file": "preview-test-debug.apk",
+        "applicationId": "com.fongmi.android.tv.preview.test",
+        "sha256": "fae128045ee5875d4bfc5f667f87609d35b8f878d33a3a68200014cd617a6f74",
+        "downloadedFileHashMatches": true
+      }
+    ]
+  },
+  {
+    "applicationCommit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "abi": "arm64-v8a",
+    "buildType": "debug",
+    "instrumentationExecuted": false,
+    "artifact": "tv-validation-sourceprobe-arm64-37395642484",
+    "files": [
+      {
+        "file": "sourceprobe-app-debug.apk",
+        "applicationId": "com.fongmi.android.tv.sourceprobe",
+        "sha256": "4780663ffbfad0dc35d34b1a3a1b47047cb33e8d99228c73ec9c1ba04f68e65a",
+        "downloadedFileHashMatches": true
+      },
+      {
+        "file": "sourceprobe-test-debug.apk",
+        "applicationId": "com.fongmi.android.tv.sourceprobe.test",
+        "sha256": "172a503a434c9ccc049ad3f5ec02cab8ea4d15ecbce06acb89e3f5c1ca1658d7",
+        "downloadedFileHashMatches": true
+      }
+    ]
+  }
+]

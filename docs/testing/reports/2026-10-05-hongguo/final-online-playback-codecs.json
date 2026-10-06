@@ -1,0 +1,205 @@
+{
+  "schema": "tv.python-source-playback.v1",
+  "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+  "engine": "codecs",
+  "caseCount": 10,
+  "results": [
+    {
+      "name": "c2.va.avc.decoder",
+      "mime": "video/avc",
+      "softwareOnly": false,
+      "hardwareAccelerated": true,
+      "vendor": true,
+      "profiles": [
+        {
+          "profile": 65536,
+          "level": 524288
+        },
+        {
+          "profile": 1,
+          "level": 524288
+        },
+        {
+          "profile": 2,
+          "level": 524288
+        },
+        {
+          "profile": 524288,
+          "level": 524288
+        },
+        {
+          "profile": 8,
+          "level": 524288
+        }
+      ]
+    },
+    {
+      "name": "OMX.va.h264.decoder",
+      "mime": "video/avc",
+      "softwareOnly": false,
+      "hardwareAccelerated": true,
+      "vendor": true,
+      "profiles": [
+        {
+          "profile": 65536,
+          "level": 524288
+        },
+        {
+          "profile": 1,
+          "level": 524288
+        },
+        {
+          "profile": 2,
+          "level": 524288
+        },
+        {
+          "profile": 524288,
+          "level": 524288
+        },
+        {
+          "profile": 8,
+          "level": 524288
+        }
+      ]
+    },
+    {
+      "name": "c2.va.hevc.decoder",
+      "mime": "video/hevc",
+      "softwareOnly": false,
+      "hardwareAccelerated": true,
+      "vendor": true,
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 33554432
+        },
+        {
+          "profile": 2,
+          "level": 33554432
+        },
+        {
+          "profile": 4,
+          "level": 33554432
+        }
+      ]
+    },
+    {
+      "name": "OMX.va.hevc.decoder",
+      "mime": "video/hevc",
+      "softwareOnly": false,
+      "hardwareAccelerated": true,
+      "vendor": true,
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 33554432
+        },
+        {
+          "profile": 2,
+          "level": 33554432
+        },
+        {
+          "profile": 4,
+          "level": 33554432
+        }
+      ]
+    },
+    {
+      "name": "c2.android.avc.decoder",
+      "mime": "video/avc",
+      "softwareOnly": true,
+      "hardwareAccelerated": false,
+      "vendor": false,
+      "profiles": [
+        {
+          "profile": 65536,
+          "level": 65536
+        },
+        {
+          "profile": 1,
+          "level": 65536
+        },
+        {
+          "profile": 2,
+          "level": 65536
+        },
+        {
+          "profile": 524288,
+          "level": 65536
+        },
+        {
+          "profile": 8,
+          "level": 65536
+        }
+      ]
+    },
+    {
+      "name": "OMX.google.h264.decoder",
+      "mime": "video/avc",
+      "softwareOnly": true,
+      "hardwareAccelerated": false,
+      "vendor": false,
+      "profiles": [
+        {
+          "profile": 65536,
+          "level": 65536
+        },
+        {
+          "profile": 1,
+          "level": 65536
+        },
+        {
+          "profile": 2,
+          "level": 65536
+        },
+        {
+          "profile": 524288,
+          "level": 65536
+        },
+        {
+          "profile": 8,
+          "level": 65536
+        }
+      ]
+    },
+    {
+      "name": "c2.android.hevc.decoder",
+      "mime": "video/hevc",
+      "softwareOnly": true,
+      "hardwareAccelerated": false,
+      "vendor": false,
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 524288
+        },
+        {
+          "profile": 4,
+          "level": 524288
+        }
+      ]
+    },
+    {
+      "name": "OMX.google.hevc.decoder",
+      "mime": "video/hevc",
+      "softwareOnly": true,
+      "hardwareAccelerated": false,
+      "vendor": false,
+      "profiles": [
+        {
+          "profile": 1,
+          "level": 524288
+        },
+        {
+          "profile": 4,
+          "level": 524288
+        }
+      ]
+    }
+  ],
+  "decodeMode": "hard",
+  "caseLimit": 0,
+  "selectedCaseIndex": -1,
+  "refreshRequested": false,
+  "hardwareScope": "ANDROID_NODE_NO_PHYSICAL_HDMI_ASSERTION"
+}

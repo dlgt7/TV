@@ -1,0 +1,14 @@
+{
+  "installed": true,
+  "applicationId": "com.fongmi.android.tv.preview",
+  "sourceCommit": "d89e4072cca72464536e715d830284ca3972420e",
+  "buildRun": "37409022443",
+  "fullCiBuild": true,
+  "delivery": "EXACT_CI_APK_RECONSTRUCTED_FROM_VERIFIED_DELTA",
+  "apkSha256": "9ba8fa167fa5b30a4a8120ec130361a5baec05bd002ed4f909db342bba0585ca",
+  "dataFilesPreserved": 11,
+  "dataHashesUnchangedBeforeLaunch": true,
+  "userPreferencesChanged": false,
+  "launched": true,
+  "homeActivityResumed": true
+}

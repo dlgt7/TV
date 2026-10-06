@@ -1,0 +1,54 @@
+{
+  "device": "Samsung SM-F900F Android13",
+  "finalStatus": "PASS",
+  "oldJarSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "newJarSha256": "018ebddcc1da3692c1013bbd0f2a6c775f3ed2bbdeeb62c5a6558fbd32720b95",
+  "cacheTtlSeconds": 60,
+  "coldCatalogRequestsBefore": 6,
+  "coldCatalogRequestsAfter": 1,
+  "homeAndRecommendationsBeforeMs": 18117,
+  "homeAndRecommendationsAfterMs": 7906,
+  "comparisons": [
+    {
+      "step": "home_first",
+      "beforeMs": 14875,
+      "afterMs": 4559
+    },
+    {
+      "step": "home_repeat",
+      "beforeMs": 11247,
+      "afterMs": 9
+    },
+    {
+      "step": "home_videos",
+      "beforeMs": 3242,
+      "afterMs": 3347
+    },
+    {
+      "step": "category_page1_first",
+      "beforeMs": 2351,
+      "afterMs": 23
+    },
+    {
+      "step": "category_page1_repeat",
+      "beforeMs": 2955,
+      "afterMs": 23
+    },
+    {
+      "step": "category_page2_first",
+      "beforeMs": 3608,
+      "afterMs": 1600
+    }
+  ],
+  "baselineLimitation": "Old baseline stopped at category_page2_repeat due IllegalStateException; only successfully completed steps are compared. This is a single same-device timing sample, not a controlled performance benchmark.",
+  "finalDeviceCoverage": [
+    "6 complete category filters",
+    "distinct page1/page2",
+    "filter cache isolation",
+    "JOJO search: 7 results",
+    "empty search",
+    "detail",
+    "2 episode URL resolutions"
+  ],
+  "noNewDecodeTest": true
+}

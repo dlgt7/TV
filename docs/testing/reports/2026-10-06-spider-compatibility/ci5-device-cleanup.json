@@ -1,0 +1,8 @@
+{
+  "com.fongmi.android.tv.sourceprobe.test": "removed",
+  "com.fongmi.android.tv.sourceprobe": "removed",
+  "preview": "preserved and HomeActivity resumed",
+  "previewProcessRunning": true,
+  "device": "Samsung SM-F900F Android13",
+  "temporaryRecoveryFiles": "removed"
+}

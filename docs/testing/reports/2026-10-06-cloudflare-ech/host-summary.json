@@ -1,0 +1,206 @@
+{
+  "scope": "HOST_OPENJDK_ONLY",
+  "sourceCommit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+  "productionSourcesMatchCommit": true,
+  "doh": "https://dns.alidns.com/dns-query",
+  "normalSystemTrust": true,
+  "defaultHostnameVerification": true,
+  "globalProvidersUnchanged": true,
+  "acceptanceEvidence": "SERVER_TRACE_SAME_TLS_RESPONSE",
+  "dns": [
+    {
+      "owner": "crypto.cloudflare.com",
+      "freshAutomaticResolver": true,
+      "nativeConfigBytes": 71,
+      "automaticReason": "ech_config_available",
+      "nativeReason": "ech_config_available",
+      "automaticConfigBytes": 71
+    },
+    {
+      "owner": "www.cloudflare.com",
+      "freshAutomaticResolver": true,
+      "nativeConfigBytes": 0,
+      "automaticReason": "cloudflare_ech_fallback",
+      "nativeReason": "no_ech",
+      "automaticConfigBytes": 71
+    },
+    {
+      "owner": "cloudflare.com",
+      "freshAutomaticResolver": true,
+      "nativeConfigBytes": 0,
+      "automaticReason": "cloudflare_ech_fallback",
+      "nativeReason": "no_ech",
+      "automaticConfigBytes": 71
+    },
+    {
+      "owner": "example.com",
+      "freshAutomaticResolver": true,
+      "nativeConfigBytes": 0,
+      "automaticReason": "cloudflare_ech_fallback",
+      "nativeReason": "no_ech",
+      "automaticConfigBytes": 71
+    }
+  ],
+  "phases": [
+    {
+      "enabled": false,
+      "target": "www.cloudflare.com",
+      "requestUrlHost": "www.cloudflare.com",
+      "requestHttpHost": "www.cloudflare.com",
+      "httpCode": 200,
+      "tlsVersion": "TLS_1_3",
+      "protocol": "HTTP_2",
+      "alpn": "h2",
+      "traceSni": "plaintext",
+      "traceHost": "www.cloudflare.com",
+      "acceptedEvidence": false,
+      "passed": true,
+      "certificateHostnameValidatedByDefaultOkHttp": true,
+      "connectedIpInCloudflareOfficialRanges": true,
+      "echConfigBytes": 0,
+      "configResolveCalls": 0,
+      "freshAutomaticResolver": true
+    },
+    {
+      "enabled": true,
+      "target": "www.cloudflare.com",
+      "requestUrlHost": "www.cloudflare.com",
+      "requestHttpHost": "www.cloudflare.com",
+      "tlsInnerHostname": "www.cloudflare.com",
+      "httpCode": 200,
+      "tlsVersion": "TLS_1_3",
+      "protocol": "HTTP_2",
+      "alpn": "h2",
+      "traceSni": "encrypted",
+      "traceHost": "www.cloudflare.com",
+      "acceptedEvidence": true,
+      "passed": true,
+      "certificateHostnameValidatedByDefaultOkHttp": true,
+      "connectedIpInCloudflareOfficialRanges": true,
+      "echConfigBytes": 71,
+      "configDnsReason": "cloudflare_ech_fallback",
+      "configResolveCalls": 1,
+      "freshAutomaticResolver": true
+    },
+    {
+      "enabled": false,
+      "target": "cloudflare.com",
+      "requestUrlHost": "cloudflare.com",
+      "requestHttpHost": "cloudflare.com",
+      "httpCode": 200,
+      "tlsVersion": "TLS_1_3",
+      "protocol": "HTTP_2",
+      "alpn": "h2",
+      "traceSni": "plaintext",
+      "traceHost": "cloudflare.com",
+      "acceptedEvidence": false,
+      "passed": true,
+      "certificateHostnameValidatedByDefaultOkHttp": true,
+      "connectedIpInCloudflareOfficialRanges": true,
+      "echConfigBytes": 0,
+      "configResolveCalls": 0,
+      "freshAutomaticResolver": true
+    },
+    {
+      "enabled": true,
+      "target": "cloudflare.com",
+      "requestUrlHost": "cloudflare.com",
+      "requestHttpHost": "cloudflare.com",
+      "tlsInnerHostname": "cloudflare.com",
+      "httpCode": 200,
+      "tlsVersion": "TLS_1_3",
+      "protocol": "HTTP_2",
+      "alpn": "h2",
+      "traceSni": "encrypted",
+      "traceHost": "cloudflare.com",
+      "acceptedEvidence": true,
+      "passed": true,
+      "certificateHostnameValidatedByDefaultOkHttp": true,
+      "connectedIpInCloudflareOfficialRanges": true,
+      "echConfigBytes": 71,
+      "configDnsReason": "cloudflare_ech_fallback",
+      "configResolveCalls": 1,
+      "freshAutomaticResolver": true
+    },
+    {
+      "enabled": false,
+      "target": "crypto.cloudflare.com",
+      "requestUrlHost": "crypto.cloudflare.com",
+      "requestHttpHost": "crypto.cloudflare.com",
+      "httpCode": 200,
+      "tlsVersion": "TLS_1_3",
+      "protocol": "HTTP_2",
+      "alpn": "h2",
+      "traceSni": "plaintext",
+      "traceHost": "crypto.cloudflare.com",
+      "acceptedEvidence": false,
+      "passed": true,
+      "certificateHostnameValidatedByDefaultOkHttp": true,
+      "connectedIpInCloudflareOfficialRanges": true,
+      "echConfigBytes": 0,
+      "configResolveCalls": 0,
+      "freshAutomaticResolver": true
+    },
+    {
+      "enabled": true,
+      "target": "crypto.cloudflare.com",
+      "requestUrlHost": "crypto.cloudflare.com",
+      "requestHttpHost": "crypto.cloudflare.com",
+      "tlsInnerHostname": "crypto.cloudflare.com",
+      "httpCode": 200,
+      "tlsVersion": "TLS_1_3",
+      "protocol": "HTTP_2",
+      "alpn": "h2",
+      "traceSni": "encrypted",
+      "traceHost": "crypto.cloudflare.com",
+      "acceptedEvidence": true,
+      "passed": true,
+      "certificateHostnameValidatedByDefaultOkHttp": true,
+      "connectedIpInCloudflareOfficialRanges": true,
+      "echConfigBytes": 71,
+      "configDnsReason": "ech_config_available",
+      "configResolveCalls": 1,
+      "freshAutomaticResolver": true
+    }
+  ],
+  "addressControls": [
+    {
+      "automaticReason": "cloudflare_ech_fallback",
+      "host": "example.com",
+      "addressFamilies": [
+        {
+          "reason": null,
+          "allInLiveOfficialCloudflareRanges": true,
+          "type": 1,
+          "addressCount": 2
+        },
+        {
+          "reason": null,
+          "allInLiveOfficialCloudflareRanges": true,
+          "type": 28,
+          "addressCount": 2
+        }
+      ],
+      "configBytes": 71
+    },
+    {
+      "automaticReason": "cloudflare_non_cf_address",
+      "host": "www.google.com",
+      "addressFamilies": [
+        {
+          "reason": null,
+          "allInLiveOfficialCloudflareRanges": false,
+          "type": 1,
+          "addressCount": 8
+        },
+        {
+          "reason": null,
+          "allInLiveOfficialCloudflareRanges": false,
+          "type": 28,
+          "addressCount": 8
+        }
+      ],
+      "configBytes": 0
+    }
+  ]
+}

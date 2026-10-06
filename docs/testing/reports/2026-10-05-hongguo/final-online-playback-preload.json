@@ -1,0 +1,24 @@
+{
+  "schema": "tv.python-source-playback.v1",
+  "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+  "engine": "preload",
+  "caseCount": 10,
+  "results": [
+    {
+      "caseIndex": 0,
+      "episodeIndex": 1,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+      "nextCaseIndex": 3,
+      "completedPreload": true,
+      "consumedSamePreparedSource": true,
+      "disableClearsPreload": true
+    }
+  ],
+  "decodeMode": "hard",
+  "caseLimit": 0,
+  "selectedCaseIndex": -1,
+  "refreshRequested": false,
+  "hardwareScope": "ANDROID_NODE_NO_PHYSICAL_HDMI_ASSERTION"
+}

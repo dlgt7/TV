@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-10-06T09:51:35.922239+00:00",
+  "tvCommit": "c616c0aa3613e87529791587a9f71b78c278c991",
+  "tvCommitDate": "2026-09-28T12:20:09Z",
+  "sdkRepoCommit": "3d7a0fa1a6737603231f78fb7cbaea6539d9d6e3",
+  "sdkRepoDate": "2026-10-05T12:37:16Z",
+  "publicTvSpiderHasOldClient": true,
+  "publicTvSpiderHasNewNet": false,
+  "scope": "Public repository source only; does not establish unpublished app builds."
+}

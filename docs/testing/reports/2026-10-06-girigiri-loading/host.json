@@ -1,0 +1,104 @@
+{
+  "checked_at_utc": "2026-10-06T13:19:22.598380+00:00",
+  "test": "host real HTTP GET with Girigiri source headers and complete-list algorithm",
+  "host": "https://gl.ciallo0d000721.cc.cd",
+  "results": [
+    {
+      "query": "斗罗",
+      "requests": [
+        {
+          "query": "斗罗",
+          "requested_limit": 100,
+          "http_status": 200,
+          "code": 1,
+          "declared_total": 0,
+          "list_count": 0,
+          "valid_items": 0,
+          "unique_ids": 0,
+          "seconds": 0.917
+        }
+      ],
+      "complete": true
+    },
+    {
+      "query": "海贼",
+      "requests": [
+        {
+          "query": "海贼",
+          "requested_limit": 100,
+          "http_status": 200,
+          "code": 1,
+          "declared_total": 3,
+          "list_count": 3,
+          "valid_items": 3,
+          "unique_ids": 3,
+          "seconds": 0.836
+        }
+      ],
+      "complete": true
+    },
+    {
+      "query": "葬送",
+      "requests": [
+        {
+          "query": "葬送",
+          "requested_limit": 100,
+          "http_status": 200,
+          "code": 1,
+          "declared_total": 2,
+          "list_count": 2,
+          "valid_items": 2,
+          "unique_ids": 2,
+          "seconds": 1.016
+        }
+      ],
+      "complete": true
+    },
+    {
+      "query": "不存在的作品abc987654321",
+      "requests": [
+        {
+          "query": "不存在的作品abc987654321",
+          "requested_limit": 100,
+          "http_status": 200,
+          "code": 1,
+          "declared_total": 0,
+          "list_count": 0,
+          "valid_items": 0,
+          "unique_ids": 0,
+          "seconds": 0.792
+        }
+      ],
+      "complete": true
+    },
+    {
+      "query": "的",
+      "requests": [
+        {
+          "query": "的",
+          "requested_limit": 100,
+          "http_status": 200,
+          "code": 1,
+          "declared_total": 929,
+          "list_count": 100,
+          "valid_items": 100,
+          "unique_ids": 100,
+          "seconds": 0.587
+        },
+        {
+          "query": "的",
+          "requested_limit": 929,
+          "http_status": 200,
+          "code": 1,
+          "declared_total": 929,
+          "list_count": 929,
+          "valid_items": 929,
+          "unique_ids": 929,
+          "seconds": 0.549
+        }
+      ],
+      "complete": true
+    }
+  ],
+  "scope": "suggest API only; standard search page is captcha-gated; no device calls or production changes"
+}

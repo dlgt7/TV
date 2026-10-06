@@ -1,0 +1,131 @@
+{
+  "scope": "Host JVM with real OkHttp legacy Spider.client and intercepted saved public HTML; does not prove Android native playback or actual TCP cancellation.",
+  "results": [
+    {
+      "name": "cold/warm/category caches and all original filters",
+      "detail": {
+        "coldHomeMilliseconds": 238,
+        "coldHomeMaxConcurrency": 1,
+        "warmHomeRequests": 0,
+        "allSixClassAndFilterMapsEqualToOriginal": true,
+        "coldHomeRequests": 1,
+        "defaultPage1Requests": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "DOM cloning, expiration, 12-page bound and uncached detail/player",
+      "detail": {
+        "maxCachePages": 12,
+        "expiredRefetches": 1,
+        "detailAndPlayerRequests": 4
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "captcha is not cached",
+      "detail": {
+        "recoveryRequests": 1,
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "login is not cached",
+      "detail": {
+        "recoveryRequests": 1,
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "empty is not cached",
+      "detail": {
+        "recoveryRequests": 1,
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "error is not cached",
+      "detail": {
+        "recoveryRequests": 1,
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "broken_cards is not cached",
+      "detail": {
+        "recoveryRequests": 1,
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "missing_pagination is not cached",
+      "detail": {
+        "recoveryRequests": 1,
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "empty homepage is not cached",
+      "detail": {
+        "failingRequests": 2
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "home failure leaves independent search intact",
+      "detail": {
+        "remainingActiveCalls": 0,
+        "primaryStatus": 503,
+        "searchResults": 7
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "unknown category fallback, live filter refresh and init reset",
+      "detail": {
+        "maxCatalogConcurrency": 1,
+        "newYearVisibleAfterVisit": 2030,
+        "coldHomeWithOneUnknownRequests": 2,
+        "nondefaultRepeatRequests": 0,
+        "nondefaultFirstRequests": 1
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "destroy/init clear both caches and reject old responses",
+      "detail": {
+        "blockedOldResponseCases": 2,
+        "staleCacheEntries": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "original saved-page end-to-end parser regression",
+      "detail": {
+        "categoryPages": [
+          1,
+          2,
+          66
+        ],
+        "searchTotal": 929,
+        "searchPages": [
+          1,
+          2,
+          20
+        ],
+        "sourceLines": 2
+      },
+      "status": "PASS"
+    }
+  ],
+  "checked_at_utc": "2026-10-06T14:03:34.512165+00:00",
+  "sourceSha256": "ba046c41472ecf3c6a8ad7e5e605dbb755bf9e99ac1c89ab531301574dd0dc5a",
+  "allPassed": true,
+  "sourceMode": "seeded known filters; sequential unknown categories; validated document cache"
+}

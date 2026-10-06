@@ -1,0 +1,170 @@
+[
+  {
+    "provider": "alidns",
+    "target": "www.cloudflare.com",
+    "type": 1,
+    "parserReason": null,
+    "addressCount": 1,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 1
+  },
+  {
+    "provider": "alidns",
+    "target": "www.cloudflare.com",
+    "type": 28,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "alidns",
+    "target": "www.cloudflare.com",
+    "type": 65,
+    "parserReason": "no_ech",
+    "addressCount": 0,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 0,
+    "configBytes": 0
+  },
+  {
+    "provider": "alidns",
+    "target": "cloudflare.com",
+    "type": 1,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "alidns",
+    "target": "cloudflare.com",
+    "type": 28,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "alidns",
+    "target": "cloudflare.com",
+    "type": 65,
+    "parserReason": "no_ech",
+    "addressCount": 0,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 0,
+    "configBytes": 0
+  },
+  {
+    "provider": "tencent",
+    "target": "www.cloudflare.com",
+    "type": 1,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "tencent",
+    "target": "www.cloudflare.com",
+    "type": 28,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "tencent",
+    "target": "www.cloudflare.com",
+    "type": 65,
+    "parserReason": "no_ech",
+    "addressCount": 0,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 0,
+    "configBytes": 0
+  },
+  {
+    "provider": "tencent",
+    "target": "cloudflare.com",
+    "type": 1,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "tencent",
+    "target": "cloudflare.com",
+    "type": 28,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "tencent",
+    "target": "cloudflare.com",
+    "type": 65,
+    "parserReason": "no_ech",
+    "addressCount": 0,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 0,
+    "configBytes": 0
+  },
+  {
+    "provider": "360",
+    "target": "www.cloudflare.com",
+    "type": 1,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "360",
+    "target": "www.cloudflare.com",
+    "type": 28,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "360",
+    "target": "www.cloudflare.com",
+    "type": 65,
+    "parserReason": "no_ech",
+    "addressCount": 0,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 0,
+    "configBytes": 0
+  },
+  {
+    "provider": "360",
+    "target": "cloudflare.com",
+    "type": 1,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "360",
+    "target": "cloudflare.com",
+    "type": 28,
+    "parserReason": null,
+    "addressCount": 2,
+    "cloudflareCount": 2,
+    "nonCloudflareCount": 0
+  },
+  {
+    "provider": "360",
+    "target": "cloudflare.com",
+    "type": 65,
+    "parserReason": "no_ech",
+    "addressCount": 0,
+    "cloudflareCount": 0,
+    "nonCloudflareCount": 0,
+    "configBytes": 0
+  }
+]

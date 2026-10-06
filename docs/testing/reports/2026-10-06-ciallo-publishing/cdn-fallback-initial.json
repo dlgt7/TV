@@ -1,0 +1,41 @@
+{
+  "expected_sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "results": [
+    {
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 200,
+      "final_url": "https://gh-proxy.com/https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "bytes": 150485,
+      "sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "matches": true,
+      "elapsed_ms": 328
+    },
+    {
+      "url": "https://ghfast.top/https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 200,
+      "final_url": "https://ghfast.top/https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "bytes": 150485,
+      "sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "matches": true,
+      "elapsed_ms": 1682
+    },
+    {
+      "url": "https://ghproxy.net/https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 200,
+      "final_url": "https://ghproxy.net/https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "bytes": 150485,
+      "sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "matches": true,
+      "elapsed_ms": 21066
+    },
+    {
+      "url": "https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "status": 200,
+      "final_url": "https://raw.githubusercontent.com/wobuhui666/TV/7506be6cbe414a6b53605c21e0cb15556b3193ac/jar/custom_spider.jar",
+      "bytes": 150485,
+      "sha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+      "matches": true,
+      "elapsed_ms": 346
+    }
+  ]
+}

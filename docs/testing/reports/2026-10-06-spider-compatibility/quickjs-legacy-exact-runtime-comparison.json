@@ -1,0 +1,70 @@
+{
+  "status": "PASS_WITH_CATEGORY_OBSERVATION",
+  "instrumentationStatus": "PASS",
+  "application": {
+    "ciRun": 37428214817,
+    "commit": "e4cc2003d",
+    "apkSha256": "0c18eff7da3a77867ca2fb2334c3e2fa78dd9405e89cc1b38f6ec7e341b7f3f6"
+  },
+  "test": {
+    "ciRun": 37446014814,
+    "commit": "29d3449f2486473122372ca41451d008df7efd2f",
+    "apkSha256": "e65d44c22feae1cf5828a1dc2f594b13041380dbc7bc67e92e58bd7784703590"
+  },
+  "configuredJarSha256": "5284ad33611932ec2596075be4a158d7ccfedfcbb6f0c43cfeee112cfcd62982",
+  "originalModuleUrls": true,
+  "fixtureVerification": "Exact API/rule SHA-256 and configured JAR SHA-256 checked on device; original API/rule URLs preserved while replacing only their exact staged response bodies. Dependencies use original module URLs.",
+  "selection": "Exclude no_data, missing/empty IDs and folder rows. Select the first valid search result for detail.",
+  "playerValidation": "Require at least one non-empty valid HTTP(S) URL in an application-supported URL structure. This is resolver validation, not media decoding/playback.",
+  "sources": {
+    "tencent": {
+      "source": "tencent",
+      "status": "PASS_SEARCH_PLAY_CATEGORY_EMPTY",
+      "categories": 7,
+      "homeVideos": 0,
+      "page1Count": 1,
+      "page2Count": 1,
+      "page1ValidVods": 0,
+      "page2ValidVods": 0,
+      "page1ExcludedRows": 1,
+      "page2ExcludedRows": 1,
+      "categoryHasValidVods": false,
+      "searchCount": 9,
+      "searchValidVods": 9,
+      "detailInput": "search",
+      "playResolved": true,
+      "playParse": 0,
+      "playUrlCount": 1,
+      "apiSha256": "67f4f6b460db1ec7ef50585953ce826c5263ca91d72958490ef4702b4e154fe1",
+      "ruleSha256": "da380ca1d7395f36bae82ce239a6a7e9c6fd2367058860d51ea8c2edf81fa739"
+    },
+    "bili": {
+      "source": "bili",
+      "status": "PASS_LIVE",
+      "categories": 10,
+      "homeVideos": 0,
+      "page1Count": 99,
+      "page2Count": 99,
+      "page1ValidVods": 99,
+      "page2ValidVods": 99,
+      "page1ExcludedRows": 0,
+      "page2ExcludedRows": 0,
+      "categoryHasValidVods": true,
+      "searchCount": 35,
+      "searchValidVods": 35,
+      "detailInput": "search",
+      "playResolved": true,
+      "playParse": 0,
+      "playUrlCount": 1,
+      "apiSha256": "67f4f6b460db1ec7ef50585953ce826c5263ca91d72958490ef4702b4e154fe1",
+      "ruleSha256": "c7e65d4c19bb45faacc700993a6c585e38484965e968cc31743bfd9459aa8652"
+    }
+  },
+  "observations": [
+    "Tencent category calls returned one excluded placeholder row on each page, with zero valid VODs; this is recorded separately from successful search/detail/player validation.",
+    "Tencent has nine valid search results and successfully resolves detail and a non-empty HTTP(S) player URL from a real result."
+  ],
+  "correction": "Earlier category-first detail failures came from a harness which did not exclude drpy no_data placeholder entries. They are not evidence of broken Tencent real-VOD detail handling. The corrected real-search path passes without any production change.",
+  "earlierBaselineScope": "Earlier old/new runs are retained as historical evidence, but their Tencent category-first detail failures are superseded. No old-app rerun was needed after the corrected new-app path passed.",
+  "deviceState": "CI2 new sourceprobe App retained; no instrumentation running; device returned to root."
+}

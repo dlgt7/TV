@@ -1,0 +1,80 @@
+[
+  {
+    "runId": "37395642484",
+    "sourceSha": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+    "variant": "preview",
+    "scope": "FULL_CI_APKS_RESIGNED_ONLY",
+    "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+    "files": [
+      {
+        "role": "app",
+        "package": "com.fongmi.android.tv.preview",
+        "sourceSha256": "7542b23638c30b829fb2a8afc553082efc7e966c82ba873df90476a89b17bb6b",
+        "sourceCertificateSha256": "f6e71b8daa42a08c982531db662f74bb74b3abdc8da5b5fb5c9bf35babe79d6a",
+        "sha256": "c64106b75cd7febc17fa77548d64d6f3698484001ea49072c75cc156a91857ee",
+        "bytes": 98968674,
+        "unchangedNonSignatureEntries": 1833,
+        "file": "cf-preview-r1.apk",
+        "fileHashVerified": true
+      },
+      {
+        "role": "test",
+        "package": "com.fongmi.android.tv.preview.test",
+        "sourceSha256": "fae128045ee5875d4bfc5f667f87609d35b8f878d33a3a68200014cd617a6f74",
+        "sourceCertificateSha256": "f6e71b8daa42a08c982531db662f74bb74b3abdc8da5b5fb5c9bf35babe79d6a",
+        "sha256": "a36fc803560d46c4d021048ac8599ab30a389250cb08e203972d5f380d37dae3",
+        "bytes": 537471,
+        "unchangedNonSignatureEntries": 11,
+        "file": "cf-preview-r1-tests.apk",
+        "fileHashVerified": true
+      }
+    ]
+  },
+  {
+    "runId": "37395642484",
+    "sourceSha": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+    "variant": "sourceprobe",
+    "scope": "FULL_CI_APKS_RESIGNED_ONLY",
+    "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+    "files": [
+      {
+        "role": "app",
+        "package": "com.fongmi.android.tv.sourceprobe",
+        "sourceSha256": "4780663ffbfad0dc35d34b1a3a1b47047cb33e8d99228c73ec9c1ba04f68e65a",
+        "sourceCertificateSha256": "b8ec5f1281eed23a871f468660890d4ede1561e3a9dc39365be3044efc4838ca",
+        "sha256": "475adfd831bcb1702846f7e198348205a3720b676e76b462fae60d2b6964e65a",
+        "bytes": 98968674,
+        "unchangedNonSignatureEntries": 1833,
+        "file": "cf-sourceprobe-r1.apk",
+        "fileHashVerified": true
+      },
+      {
+        "role": "test",
+        "package": "com.fongmi.android.tv.sourceprobe.test",
+        "sourceSha256": "172a503a434c9ccc049ad3f5ec02cab8ea4d15ecbce06acb89e3f5c1ca1658d7",
+        "sourceCertificateSha256": "b8ec5f1281eed23a871f468660890d4ede1561e3a9dc39365be3044efc4838ca",
+        "sha256": "7e7e433fd42e208b28cef97f2d05227ae73318e39df5a76b1894991517769981",
+        "bytes": 537471,
+        "unchangedNonSignatureEntries": 11,
+        "file": "cf-sourceprobe-r1-tests.apk",
+        "fileHashVerified": true
+      }
+    ]
+  },
+  {
+    "scope": "CI_INSTRUMENTATION_APK_ONLY_RESIGNED",
+    "runId": "37398331981",
+    "sourceSha": "ed85d19abca4f4e4c84be0332df7b307bcd7a805",
+    "artifactZipDigestVerified": true,
+    "artifactZipCrcVerified": true,
+    "testPackage": "com.fongmi.android.tv.sourceprobe.test",
+    "targetPackage": "com.fongmi.android.tv.sourceprobe",
+    "sourceSha256": "5222cb0077f7bb24bb14d993866e8e48137a9f256aa89a6a6eb1b7c406dfea6d",
+    "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+    "unchangedNonSignatureEntries": 11,
+    "sha256": "57614c00599c2dd637112fdb69872bd61d569a5b17d677cd81e0b3b6f59d21f2",
+    "bytes": 541567,
+    "file": "cf-sourceprobe-r2-tests.apk",
+    "fileHashVerified": true
+  }
+]

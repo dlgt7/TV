@@ -1,0 +1,25 @@
+{
+  "runId": "37364398536",
+  "runAttempt": 2,
+  "sourceSha": "ae072fb82fbc862073b6a5050ee665114875851c",
+  "jobId": 111952028140,
+  "jobConclusion": "success",
+  "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+  "files": [
+    {
+      "role": "app",
+      "package": "com.fongmi.android.tv.sourceprobe",
+      "sourceSha256": "e97b8fa58fba221be6d34d72ea2c92e5eca573986d2ad66fd597633b36595e4e",
+      "sha256": "5e6d950c8c8eb73db9c8cd7785f9f4feefcea007a2e6741037b356940a5a2911",
+      "bytes": 98960482
+    },
+    {
+      "role": "test",
+      "package": "com.fongmi.android.tv.sourceprobe.test",
+      "sourceSha256": "61e560100dcd62de89066a1a64beb520f657c92334fc43b49cfbcea36ef478ce",
+      "sha256": "bcd85894688fb0c136b0828f0f8b06e58aff814d6183fa4bff7e83a8cb9c3989",
+      "bytes": 537471
+    }
+  ],
+  "scope": "FULL_CI_SOURCEPROBE_BUILD_RESIGNED_FOR_ISOLATED_DEVICE_VALIDATION"
+}

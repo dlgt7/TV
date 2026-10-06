@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "siteCount": 76,
+  "hasEtag": true,
+  "existingPerSiteJars": 0,
+  "newSourceKeysPresent": [],
+  "globalJarPresent": true,
+  "beforeSha256": "80bb231369e920da0927d5b6b2fa05260e5d88898e438049b45d312008067bbb"
+}

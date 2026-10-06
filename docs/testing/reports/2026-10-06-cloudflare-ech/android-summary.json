@@ -1,0 +1,584 @@
+{
+  "scope": "ANDROID_REAL_DEVICE_EVIDENCE_REVIEW",
+  "status": "PASS",
+  "results": [
+    {
+      "name": "borrowed_direct",
+      "sourceFile": "final-borrowed-direct-conscrypt-probe.json",
+      "sha256": "511fc2abb1189fc304f48775fb17477ccb5a4e612927cec0e85f2038e6d4fbed",
+      "report": {
+        "state": "PASS",
+        "accepted": true,
+        "targetHost": "www.cloudflare.com",
+        "cloudflareFallbackRequired": true,
+        "targetPublishedConfigBytes": 0,
+        "targetPublishedDnsReason": "no_ech",
+        "fallbackConfigOwner": "crypto.cloudflare.com",
+        "dohMode": "tencent",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "customHostnameVerifier": false,
+        "customTrustAcceptance": false,
+        "offOnControlPassed": true,
+        "proxyFixture": false,
+        "fixtureAuthenticationReplies": 0,
+        "trustRejectionPropagation": {
+          "scope": "OFFLINE_DELEGATION_ONLY",
+          "basic": true,
+          "socket": true,
+          "engine": true
+        }
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 0,
+          "configResolveCalls": 0,
+          "dnsReason": "NOT_QUERIED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "enabled": true,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "h2",
+          "traceSni": "encrypted",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": true,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 71,
+          "configResolveCalls": 1,
+          "dnsReason": "cloudflare_ech_fallback",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": true,
+        "offOn": true,
+        "phaseEvidence": true,
+        "target": true,
+        "publishedPrecondition": true,
+        "tlsAndAlpn": true,
+        "normalTrust": true,
+        "configPath": true,
+        "instrumentation": true
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-borrowed-direct-instrumentation.txt",
+          "sha256": "aed08afd101a882a8ad7c90bd50b714a75b7885e1a34da1df99373026f9265ea",
+          "okTestCounts": [
+            2
+          ],
+          "failureMarker": false
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "borrowed_shared",
+      "sourceFile": "final-borrowed-direct-conscrypt-shared-probe.json",
+      "sha256": "f90bbe9f73b1cf4abb504abbf310d17fc6f0931e9821dc8fa64faa9665e6840b",
+      "report": {
+        "state": "PASS",
+        "accepted": true,
+        "targetHost": "www.cloudflare.com",
+        "cloudflareFallbackRequired": true,
+        "targetPublishedConfigBytes": 0,
+        "targetPublishedDnsReason": "no_ech",
+        "fallbackConfigOwner": "crypto.cloudflare.com",
+        "dohMode": "tencent",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "settingsRestored": true,
+        "dohRestored": true,
+        "certificateValidationScope": "EXISTING_SHARED_POLICY_NOT_A_SECURITY_VALIDATION",
+        "offOnControlPassed": true
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": null,
+          "configResolveCalls": null,
+          "dnsReason": "SHARED_RESOLVER_NOT_INSTRUMENTED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": true,
+          "sharedDnsPreserved": true,
+          "sharedApplicationInterceptorsPreserved": true,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "enabled": true,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "h2",
+          "traceSni": "encrypted",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": true,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": null,
+          "configResolveCalls": null,
+          "dnsReason": "SHARED_RESOLVER_NOT_INSTRUMENTED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": true,
+          "sharedDnsPreserved": true,
+          "sharedApplicationInterceptorsPreserved": true,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": true,
+        "offOn": true,
+        "phaseEvidence": true,
+        "target": true,
+        "publishedPrecondition": true,
+        "tlsAndAlpn": true,
+        "settingsRestored": true,
+        "instrumentation": true
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-borrowed-direct-instrumentation.txt",
+          "sha256": "aed08afd101a882a8ad7c90bd50b714a75b7885e1a34da1df99373026f9265ea",
+          "okTestCounts": [
+            2
+          ],
+          "failureMarker": false
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "published_direct",
+      "sourceFile": "final-published-direct-conscrypt-probe.json",
+      "sha256": "b5933703bcf40ef90e8ba8647175312514cbf6b73d8195fe320064f62f0ff8ed",
+      "report": {
+        "state": "PASS",
+        "accepted": true,
+        "targetHost": "crypto.cloudflare.com",
+        "cloudflareFallbackRequired": false,
+        "targetPublishedConfigBytes": 71,
+        "targetPublishedDnsReason": "ech_config_available",
+        "fallbackConfigOwner": null,
+        "dohMode": "alidns",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "customHostnameVerifier": false,
+        "customTrustAcceptance": false,
+        "offOnControlPassed": true,
+        "proxyFixture": false,
+        "fixtureAuthenticationReplies": 0,
+        "trustRejectionPropagation": {
+          "scope": "OFFLINE_DELEGATION_ONLY",
+          "basic": true,
+          "socket": true,
+          "engine": true
+        }
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 0,
+          "configResolveCalls": 0,
+          "dnsReason": "NOT_QUERIED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "enabled": true,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "h2",
+          "traceSni": "encrypted",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": true,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 71,
+          "configResolveCalls": 1,
+          "dnsReason": "ech_config_available",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": true,
+        "offOn": true,
+        "phaseEvidence": true,
+        "target": true,
+        "publishedPrecondition": true,
+        "tlsAndAlpn": true,
+        "normalTrust": true,
+        "configPath": true,
+        "instrumentation": true
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-published-direct-instrumentation.txt",
+          "sha256": "8179b0868055ab3dda08b56698a5d5ccef3dc0b119022411709ac9f8b5a04b14",
+          "okTestCounts": [
+            2
+          ],
+          "failureMarker": false
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "published_shared",
+      "sourceFile": "final-published-direct-conscrypt-shared-probe.json",
+      "sha256": "82e163fca80e0477607dbf4d30d88038d462c2a9f7d61a7db5baaf0ed28f78ee",
+      "report": {
+        "state": "PASS",
+        "accepted": true,
+        "targetHost": "crypto.cloudflare.com",
+        "cloudflareFallbackRequired": false,
+        "targetPublishedConfigBytes": 71,
+        "targetPublishedDnsReason": "ech_config_available",
+        "fallbackConfigOwner": null,
+        "dohMode": "alidns",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "settingsRestored": true,
+        "dohRestored": true,
+        "certificateValidationScope": "EXISTING_SHARED_POLICY_NOT_A_SECURITY_VALIDATION",
+        "offOnControlPassed": true
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": null,
+          "configResolveCalls": null,
+          "dnsReason": "SHARED_RESOLVER_NOT_INSTRUMENTED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": true,
+          "sharedDnsPreserved": true,
+          "sharedApplicationInterceptorsPreserved": true,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "enabled": true,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "h2",
+          "traceSni": "encrypted",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": true,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": null,
+          "configResolveCalls": null,
+          "dnsReason": "SHARED_RESOLVER_NOT_INSTRUMENTED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": true,
+          "sharedDnsPreserved": true,
+          "sharedApplicationInterceptorsPreserved": true,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": true,
+        "offOn": true,
+        "phaseEvidence": true,
+        "target": true,
+        "publishedPrecondition": true,
+        "tlsAndAlpn": true,
+        "settingsRestored": true,
+        "instrumentation": true
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-published-direct-instrumentation.txt",
+          "sha256": "8179b0868055ab3dda08b56698a5d5ccef3dc0b119022411709ac9f8b5a04b14",
+          "okTestCounts": [
+            2
+          ],
+          "failureMarker": false
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "borrowed_proxy",
+      "sourceFile": "final-borrowed-proxy-conscrypt-probe.json",
+      "sha256": "b3e80e0eb75a016ad0b14bb6fa8308113c6cd5446dc21a340a89e3fca1b8bad5",
+      "report": {
+        "state": "PASS",
+        "accepted": true,
+        "targetHost": "www.cloudflare.com",
+        "cloudflareFallbackRequired": true,
+        "targetPublishedConfigBytes": 0,
+        "targetPublishedDnsReason": "no_ech",
+        "fallbackConfigOwner": "crypto.cloudflare.com",
+        "dohMode": "default",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "customHostnameVerifier": false,
+        "customTrustAcceptance": false,
+        "offOnControlPassed": true,
+        "proxyFixture": true,
+        "fixtureAuthenticationReplies": 3,
+        "trustRejectionPropagation": {
+          "scope": "OFFLINE_DELEGATION_ONLY",
+          "basic": true,
+          "socket": true,
+          "engine": true
+        }
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "HTTP",
+          "echConfigBytes": 0,
+          "configResolveCalls": 0,
+          "dnsReason": "NOT_QUERIED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 1
+        },
+        {
+          "enabled": true,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "h2",
+          "traceSni": "encrypted",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": true,
+          "expectedRouteVerified": true,
+          "proxyType": "HTTP",
+          "echConfigBytes": 71,
+          "configResolveCalls": 1,
+          "dnsReason": "cloudflare_ech_fallback",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 1
+        }
+      ],
+      "checks": {
+        "reportAccepted": true,
+        "offOn": true,
+        "phaseEvidence": true,
+        "target": true,
+        "publishedPrecondition": true,
+        "tlsAndAlpn": true,
+        "normalTrust": true,
+        "configPath": true,
+        "instrumentation": true
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-borrowed-proxy-instrumentation.txt",
+          "sha256": "6a712309adb685052bf8386ea6cef26f1ec3cc5f0df0563c8354702594d4e09d",
+          "okTestCounts": [
+            1
+          ],
+          "failureMarker": false
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "apex_borrowed_direct",
+      "sourceFile": "final-apex-borrowed-conscrypt-probe.json",
+      "sha256": "a02a5c4d49911e3c96b5bc4c5a875dbaf3fdbe802754cba5a5f6c03fa508d97b",
+      "report": {
+        "state": "PASS",
+        "accepted": true,
+        "targetHost": "cloudflare.com",
+        "cloudflareFallbackRequired": true,
+        "targetPublishedConfigBytes": 0,
+        "targetPublishedDnsReason": "no_ech",
+        "fallbackConfigOwner": "crypto.cloudflare.com",
+        "dohMode": "alidns",
+        "evidenceBasis": "SERVER_TRACE_SAME_TLS_RESPONSE",
+        "customHostnameVerifier": false,
+        "customTrustAcceptance": false,
+        "offOnControlPassed": true,
+        "proxyFixture": false,
+        "fixtureAuthenticationReplies": 0,
+        "trustRejectionPropagation": {
+          "scope": "OFFLINE_DELEGATION_ONLY",
+          "basic": true,
+          "socket": true,
+          "engine": true
+        }
+      },
+      "phases": [
+        {
+          "enabled": false,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "unavailable",
+          "traceSni": "plaintext",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": false,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 0,
+          "configResolveCalls": 0,
+          "dnsReason": "NOT_QUERIED",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        },
+        {
+          "enabled": true,
+          "passed": true,
+          "state": "PASS",
+          "httpStatus": 200,
+          "protocol": "h2",
+          "tlsVersion": "TLSv1.3",
+          "alpn": "h2",
+          "traceSni": "encrypted",
+          "traceHostMatches": true,
+          "sameTargetResponse": true,
+          "conscryptSocket": true,
+          "expectedRouteVerified": true,
+          "proxyType": "DIRECT",
+          "echConfigBytes": 71,
+          "configResolveCalls": 1,
+          "dnsReason": "cloudflare_ech_fallback",
+          "hostnameVerifierRetained": true,
+          "originalTrustManagerRetained": true,
+          "sharedFactoryPreserved": false,
+          "sharedDnsPreserved": false,
+          "sharedApplicationInterceptorsPreserved": false,
+          "fixtureAuthenticationReplies": 0
+        }
+      ],
+      "checks": {
+        "reportAccepted": true,
+        "offOn": true,
+        "phaseEvidence": true,
+        "target": true,
+        "publishedPrecondition": true,
+        "tlsAndAlpn": true,
+        "normalTrust": true,
+        "configPath": true,
+        "instrumentation": true
+      },
+      "instrumentation": [
+        {
+          "file": "android-final-apex-borrowed-instrumentation.txt",
+          "sha256": "d57728dc8cab6947cf8ce99a1626aec72024b299b0327b10c339891ab63f7e5f",
+          "okTestCounts": [
+            1
+          ],
+          "failureMarker": false
+        }
+      ],
+      "status": "PASS"
+    }
+  ]
+}

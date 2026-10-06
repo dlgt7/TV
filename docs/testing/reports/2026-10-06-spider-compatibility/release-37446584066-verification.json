@@ -1,0 +1,39 @@
+{
+  "ciRun": 37446584066,
+  "status": "SUCCESS",
+  "headSha": "29d3449f2486473122372ca41451d008df7efd2f",
+  "branch": "ui/apple-tv-redesign",
+  "url": "https://github.com/wobuhui666/TV/actions/runs/37446584066",
+  "releaseUrl": "https://github.com/wobuhui666/TV/releases/tag/build-37446584066",
+  "releasePublishedAt": "2026-10-06T10:01:31Z",
+  "verifiedAt": "2026-10-06T10:01:45.263890+00:00",
+  "verification": "Read-only GitHub Actions job/step status, release asset state and GitHub-published SHA-256 digests; no release APK installed by this monitor.",
+  "steps": {
+    "Build release APKs": "success",
+    "Verify APKs exist": "success",
+    "Upload APK artifacts": "success",
+    "Create Release": "success"
+  },
+  "assets": [
+    {
+      "name": "leanback-arm64_v8a.apk",
+      "bytes": 87910413,
+      "sha256": "fb3a1014a09c095c1b860b29f4f5468baeef0dd56abf4474fa1c41dfda034e44",
+      "state": "uploaded",
+      "url": "https://github.com/wobuhui666/TV/releases/download/build-37446584066/leanback-arm64_v8a.apk"
+    },
+    {
+      "name": "leanback-armeabi_v7a.apk",
+      "bytes": 84756375,
+      "sha256": "11786d496c1d3d1003fc6af44df33fb2c7dceed959a57e2e16d8a3f2a283875f",
+      "state": "uploaded",
+      "url": "https://github.com/wobuhui666/TV/releases/download/build-37446584066/leanback-armeabi_v7a.apk"
+    }
+  ],
+  "artifact": {
+    "name": "release-apks",
+    "bytes": 166955527,
+    "expired": false,
+    "sha256": "419b6f68521f7ba19613cc43e8180c6310f41676dae52654ff4792cf89804912"
+  }
+}

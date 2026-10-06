@@ -1,0 +1,212 @@
+{
+  "schema": "tv.python-source-playback.v1",
+  "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+  "engine": "exo-hard",
+  "caseCount": 2,
+  "results": [
+    {
+      "caseIndex": 0,
+      "episodeIndex": 1,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+      "stage": "complete",
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 771,
+        "frame": true,
+        "videoFrameCallbacks": 26,
+        "videoPresentationTimeUs": 833333,
+        "width": 720,
+        "height": 1280,
+        "videoDecoderName": "c2.va.avc.decoder",
+        "audioDecoderName": "c2.android.aac.decoder",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video/avc",
+            "codecs": "avc1.64001F",
+            "width": 720,
+            "height": 1280,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio/mp4a-latm",
+            "codecs": "mp4a.40.2",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 44100,
+            "channels": 2
+          }
+        ]
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 14400,
+      "videoPixelHash": "ef4fa392",
+      "width": 720,
+      "height": 1280,
+      "audioTracks": 1,
+      "subtitleTracks": 0,
+      "subtitleCoverage": "NO_SELECTABLE_SUBTITLE_TRACK",
+      "durationMs": 177367,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 15000000,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14400,
+        "videoPixelHash": "da7bc9ea"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 2000000,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14400,
+        "videoPixelHash": "a769bf33"
+      },
+      "forwardBackwardSeek": true,
+      "exoDsp": {
+        "installed": true,
+        "active": true,
+        "processedSourcePcm": true,
+        "power": 0.04247809185321015,
+        "filterStateMagnitude": 0.0324991631301759
+      },
+      "exoDspRemovedOnDisable": true,
+      "playbackControls": [
+        {
+          "speed": 1.5,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14400,
+          "videoPixelHash": "ad601661",
+          "playbackClockAdvanced": true
+        },
+        {
+          "speed": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14400,
+          "videoPixelHash": "a36cd3de",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 0,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14400,
+          "videoPixelHash": "d1f528a8",
+          "playbackClockAdvanced": true
+        },
+        {
+          "volume": 1,
+          "videoSurfaceCaptured": true,
+          "nonblackVideoPixels": 14400,
+          "videoPixelHash": "b7f01813",
+          "playbackClockAdvanced": true
+        }
+      ],
+      "speedAndVolumeRestored": true,
+      "effectsEnabledDisabledWithPauseAndPosition": true,
+      "elapsedMs": 18597
+    },
+    {
+      "caseIndex": 1,
+      "episodeIndex": 2,
+      "requestedQuality": "",
+      "status": "PASS",
+      "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+      "stage": "complete",
+      "diagnostic": {
+        "decodeMode": "hard",
+        "state": 3,
+        "playWhenReady": true,
+        "isPlaying": true,
+        "positionMs": 769,
+        "frame": true,
+        "videoFrameCallbacks": 26,
+        "videoPresentationTimeUs": 833333,
+        "width": 720,
+        "height": 1280,
+        "videoDecoderName": "c2.va.avc.decoder",
+        "audioDecoderName": "c2.android.aac.decoder",
+        "expectedUriMatches": true,
+        "currentMediaIdMatches": true,
+        "tracks": [
+          {
+            "type": 2,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "video/avc",
+            "codecs": "avc1.64001F",
+            "width": 720,
+            "height": 1280,
+            "sampleRate": -1,
+            "channels": -1
+          },
+          {
+            "type": 1,
+            "supported": true,
+            "supportCode": 4,
+            "selected": true,
+            "mime": "audio/mp4a-latm",
+            "codecs": "mp4a.40.2",
+            "width": -1,
+            "height": -1,
+            "sampleRate": 44100,
+            "channels": 2
+          }
+        ]
+      },
+      "videoSurfaceCaptured": true,
+      "nonblackVideoPixels": 14400,
+      "videoPixelHash": "4b85e3da",
+      "width": 720,
+      "height": 1280,
+      "audioTracks": 1,
+      "subtitleTracks": 0,
+      "subtitleCoverage": "NO_SELECTABLE_SUBTITLE_TRACK",
+      "durationMs": 78100,
+      "forwardSeek": {
+        "requestedPositionMs": 15000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 15000000,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14400,
+        "videoPixelHash": "783a6af"
+      },
+      "backwardSeek": {
+        "requestedPositionMs": 2000,
+        "newFrameAtTarget": true,
+        "presentationTimeUs": 2000000,
+        "newFrameCallbacks": 1,
+        "videoSurfaceCaptured": true,
+        "nonblackVideoPixels": 14400,
+        "videoPixelHash": "7f66199e"
+      },
+      "forwardBackwardSeek": true,
+      "switchedFromPreviousEpisode": true,
+      "elapsedMs": 3739
+    }
+  ],
+  "decodeMode": "hard",
+  "caseLimit": 2,
+  "selectedCaseIndex": -1,
+  "refreshRequested": true,
+  "hardwareScope": "ANDROID_NODE_NO_PHYSICAL_HDMI_ASSERTION"
+}

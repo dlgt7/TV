@@ -1,0 +1,47 @@
+{
+  "runId": 37395642484,
+  "sourceCommit": "c39e7772bab5cb7cda727ca95a0b17f415b7cc48",
+  "status": "completed",
+  "conclusion": "success",
+  "verifiedUtc": "2026-10-06T00:57:12.237529+00:00",
+  "jobs": [
+    {
+      "name": "build (preview)",
+      "status": "completed",
+      "conclusion": "success",
+      "checks": [
+        {
+          "name": "Check shared network tests and mobile settings compilation",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build application and instrumentation APKs",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify packages and collect APKs",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "build (sourceprobe)",
+      "status": "completed",
+      "conclusion": "success",
+      "checks": [
+        {
+          "name": "Check shared network tests and mobile settings compilation",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build application and instrumentation APKs",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify packages and collect APKs",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

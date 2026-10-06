@@ -1,0 +1,222 @@
+{
+  "completed": false,
+  "cacheExpected": false,
+  "cacheThresholdMs": 500,
+  "calls": [
+    {
+      "step": "home_first",
+      "status": "PASS",
+      "milliseconds": 14875
+    },
+    {
+      "step": "home_repeat",
+      "status": "PASS",
+      "milliseconds": 11247
+    },
+    {
+      "step": "home_videos",
+      "status": "PASS",
+      "milliseconds": 3242,
+      "listCount": 96
+    },
+    {
+      "step": "category_page1_first",
+      "status": "PASS",
+      "milliseconds": 2351,
+      "listCount": 48,
+      "page": 1,
+      "total": 3146
+    },
+    {
+      "step": "category_page1_repeat",
+      "status": "PASS",
+      "milliseconds": 2955,
+      "listCount": 48,
+      "page": 1,
+      "total": 3146
+    },
+    {
+      "step": "category_page2_first",
+      "status": "PASS",
+      "milliseconds": 3608,
+      "listCount": 48,
+      "page": 2,
+      "total": 3146
+    },
+    {
+      "step": "category_page2_repeat",
+      "status": "FAIL",
+      "milliseconds": 1259,
+      "errorType": "IllegalStateException"
+    }
+  ],
+  "jarHashVerified": true,
+  "loaded": true,
+  "categories": 6,
+  "filterCounts": [
+    {
+      "categoryId": 2,
+      "filterCount": 7,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 25
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 28
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 5,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 6,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 3,
+      "filterCount": 5,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 15
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 27
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 21,
+      "filterCount": 5,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 23
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 27
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 4
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 20,
+      "filterCount": 5,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 26
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 28
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 4
+        },
+        {
+          "dimensionIndex": 4,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 24,
+      "filterCount": 4,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 23
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 25
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        }
+      ]
+    },
+    {
+      "categoryId": 26,
+      "filterCount": 4,
+      "dimensions": [
+        {
+          "dimensionIndex": 0,
+          "valueCount": 4
+        },
+        {
+          "dimensionIndex": 1,
+          "valueCount": 5
+        },
+        {
+          "dimensionIndex": 2,
+          "valueCount": 25
+        },
+        {
+          "dimensionIndex": 3,
+          "valueCount": 3
+        }
+      ]
+    }
+  ],
+  "homeRepeatSame": true,
+  "status": "FAIL",
+  "failedStep": "category_page2_repeat",
+  "errorType": "AssertionError",
+  "cleanup": "PASS",
+  "jarSha256": "dc0e5fcd5f95308a0a169fa31383e75bc213c38b5d9378138e13dacdd3f20ab4",
+  "applicationSha256": "0c18eff7da3a77867ca2fb2334c3e2fa78dd9405e89cc1b38f6ec7e341b7f3f6",
+  "testApkSha256": "1a457490f0e5e6574b3d6f91dbe829ddce40239b35f014fc0a567a1da683382f"
+}

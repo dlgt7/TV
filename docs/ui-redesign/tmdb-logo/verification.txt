@@ -1,0 +1,7 @@
+tmdb-logo: 161x96 -> 173x108; opaque pixels preserved=5504; transform=10.31 ms
+tmdb-70523: 716x96 -> 728x108; opaque pixels preserved=2171; transform=14.24 ms
+tmdb-66732: 258x96 -> 270x108; opaque pixels preserved=8542; transform=13.64 ms
+tmdb-1429: 331x96 -> 343x108; opaque pixels preserved=4660; transform=21.25 ms
+stress-dark: 258x96 -> 270x108; opaque pixels preserved=8542; transform=13.45 ms
+stress-light: 258x96 -> 270x108; opaque pixels preserved=8542; transform=75.53 ms
+All checks passed; 190272 total input pixels; 148.41 ms total host rendering (not Android device timing).

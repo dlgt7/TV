@@ -1,0 +1,77 @@
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PausedDanmakuVisibilityTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=
+com.fongmi.android.tv.test.PausedDanmakuVisibilityTest:
+INSTRUMENTATION_STATUS: test=firstLoadWhilePausedRendersOnlyCurrentlyValidText
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PausedDanmakuVisibilityTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Timed out: first load while paused
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.await(PausedDanmakuVisibilityTest.java:242)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.awaitCurrentText(PausedDanmakuVisibilityTest.java:186)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.firstLoadWhilePausedRendersOnlyCurrentlyValidText(PausedDanmakuVisibilityTest.java:127)
+
+INSTRUMENTATION_STATUS: stream=
+Error in firstLoadWhilePausedRendersOnlyCurrentlyValidText(com.fongmi.android.tv.test.PausedDanmakuVisibilityTest):
+java.lang.AssertionError: Timed out: first load while paused
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.await(PausedDanmakuVisibilityTest.java:242)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.awaitCurrentText(PausedDanmakuVisibilityTest.java:186)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.firstLoadWhilePausedRendersOnlyCurrentlyValidText(PausedDanmakuVisibilityTest.java:127)
+
+INSTRUMENTATION_STATUS: test=firstLoadWhilePausedRendersOnlyCurrentlyValidText
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PausedDanmakuVisibilityTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.fongmi.android.tv.test.PausedDanmakuVisibilityTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Timed out: text restored after paused re-enable
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.await(PausedDanmakuVisibilityTest.java:242)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.awaitCurrentText(PausedDanmakuVisibilityTest.java:186)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback(PausedDanmakuVisibilityTest.java:158)
+
+INSTRUMENTATION_STATUS: stream=
+Error in hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback(com.fongmi.android.tv.test.PausedDanmakuVisibilityTest):
+java.lang.AssertionError: Timed out: text restored after paused re-enable
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.await(PausedDanmakuVisibilityTest.java:242)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.awaitCurrentText(PausedDanmakuVisibilityTest.java:186)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback(PausedDanmakuVisibilityTest.java:158)
+
+INSTRUMENTATION_STATUS: test=hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 18.912
+There were 2 failures:
+1) firstLoadWhilePausedRendersOnlyCurrentlyValidText(com.fongmi.android.tv.test.PausedDanmakuVisibilityTest)
+java.lang.AssertionError: Timed out: first load while paused
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.await(PausedDanmakuVisibilityTest.java:242)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.awaitCurrentText(PausedDanmakuVisibilityTest.java:186)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.firstLoadWhilePausedRendersOnlyCurrentlyValidText(PausedDanmakuVisibilityTest.java:127)
+2) hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback(com.fongmi.android.tv.test.PausedDanmakuVisibilityTest)
+java.lang.AssertionError: Timed out: text restored after paused re-enable
+	at org.junit.Assert.fail(Assert.java:89)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.await(PausedDanmakuVisibilityTest.java:242)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.awaitCurrentText(PausedDanmakuVisibilityTest.java:186)
+	at com.fongmi.android.tv.test.PausedDanmakuVisibilityTest.hideThenShowWhilePausedRestoresTheSameTextFrameWithoutPlayback(PausedDanmakuVisibilityTest.java:158)
+
+FAILURES!!!
+Tests run: 2,  Failures: 2
+
+
+INSTRUMENTATION_CODE: -1

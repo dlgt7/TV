@@ -1,0 +1,30 @@
+{
+  "runId": "37446014814",
+  "testSourceCommit": "29d3449f2486473122372ca41451d008df7efd2f",
+  "testSha256": "e65d44c22feae1cf5828a1dc2f594b13041380dbc7bc67e92e58bd7784703590",
+  "unchangedNonSignatureEntries": 14,
+  "ciCertificateSha256": "9ad56bebccda177e040658c4725aa36b36960cb6d603dc2293f0746a1e93118d",
+  "certificateSha256": "2d58850f504afb0a85b7a9953a4a00d8a0dbde67ec591beb08761f9fb5582a06",
+  "applicationCommit": "e4cc2003d7a770942a978f30b85b54149aceeb67",
+  "applicationSha256": "0c18eff7da3a77867ca2fb2334c3e2fa78dd9405e89cc1b38f6ec7e341b7f3f6",
+  "metadata": {
+    "applicationCommit": "29d3449f2486473122372ca41451d008df7efd2f",
+    "media3Commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d",
+    "abi": "arm64-v8a",
+    "buildType": "debug",
+    "instrumentationExecuted": false,
+    "files": [
+      {
+        "file": "sourceprobe-app-debug.apk",
+        "applicationId": "com.fongmi.android.tv.sourceprobe",
+        "sha256": "43cd7c58e739d418a151beb83204e221933e1df5a5fc89a118c84ced838cd61b"
+      },
+      {
+        "file": "sourceprobe-test-debug.apk",
+        "applicationId": "com.fongmi.android.tv.sourceprobe.test",
+        "sha256": "d2a734739d692e1df73f72754ba434cb452df5b6b08adacef9dc191d56afda38"
+      }
+    ]
+  },
+  "scope": "CI5 test APK against already installed CI2 application"
+}

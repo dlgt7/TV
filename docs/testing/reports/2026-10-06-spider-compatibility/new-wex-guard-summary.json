@@ -1,0 +1,10 @@
+{
+  "sourceApi": "csp_WexAppV7Guard",
+  "jarSha256": "5284ad33611932ec2596075be4a158d7ccfedfcbb6f0c43cfeee112cfcd62982",
+  "status": "results",
+  "spiderClass": "com.github.catvod.spider.WexAppV7Guard",
+  "resultCount": 1,
+  "failureTypes": null,
+  "failureEchRejected": null,
+  "runnerPass": true
+}

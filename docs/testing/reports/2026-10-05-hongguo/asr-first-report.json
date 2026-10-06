@@ -1,0 +1,33 @@
+{
+  "schema": "tv.python-source-asr.v1",
+  "status": "FAIL",
+  "startedAtEpochMs": 1791202514726,
+  "totalBudgetSeconds": 90,
+  "observationBudgetSeconds": 75,
+  "language": "zh",
+  "model": "mandarin-zipformer-ctc",
+  "translationProvider": "OFF",
+  "coverage": "REAL_EXO_AUDIO_LOCAL_ASR_ORIGINAL_SUBTITLE_DISPLAY",
+  "hardwareScope": "ANDROID_NODE_NO_PHYSICAL_HDMI_ASSERTION",
+  "displays": [],
+  "cleanupErrors": [
+    "SOURCE_REFRESH_CLEANUP_FAILED"
+  ],
+  "totalRamMb": 8192,
+  "requiredRamMb": 1280,
+  "modelFilesVerified": true,
+  "sourceSha256": "72c2a119e65453335f9ed9f118c3fd23139ff73d5a102ad51f6d42b5e3bd2fcf",
+  "caseIndex": 0,
+  "episodeIndex": 1,
+  "sourceRefreshElapsedMs": 60000,
+  "failureCode": "UNEXPECTED_Exception",
+  "stage": "source-refresh",
+  "asrObservationStarted": false,
+  "observedPlaybackMs": 0,
+  "settingsRestored": true,
+  "elapsedMs": 60183,
+  "finishedAtEpochMs": 1791202574909,
+  "recognizedSegments": 0,
+  "displayedSubtitleEvents": 0,
+  "maximumDisplayedCharacters": 0
+}
