@@ -6,7 +6,9 @@
 - `EchDnsResolver` 查询 DNS HTTPS 记录（类型 65），从中获取 ECHConfigList。
 - 未选择 DoH（界面显示“系统”）时，ECH 查询默认使用 `https://1.1.1.1/dns-query`。
 - 已选择 DoH 时，ECH 查询复用当前 DoH 选择。
-- 未找到配置、DoH 查询失败或目标端口不是 443 时，回退到原 TLS 路径。
+- 优先使用目标自己发布的 ECH 配置。目标明确没有 HTTPS 记录或没有 ECH 参数时，使用同一 DoH 查询其 A/AAAA；至少有一个地址且所有已返回地址均属于 Cloudflare 已知官方网段，才使用 `crypto.cloudflare.com` 的共享 ECH 配置。
+- 只补充交给 TLS 的 ECHConfigList，不改变目标 URL、HTTP Host、TLS 内层域名、证书身份或连接地址。DoH 服务端的公开记录不会被修改。
+- DoH 查询失败、无法确认 Cloudflare 归属、取不到共享配置或目标端口不是 443 时，回退到原 TLS 路径。
 - 已尝试 ECH 的握手本身失败时，不自动降级重试；可关闭 ECH 后重新连接。
 - 因此该开关不提供“必须使用 ECH，否则拒绝连接”的强制隐私模式。
 
@@ -16,7 +18,7 @@
 - 本次共享路径实测覆盖宿主客户端集成，不能推广为所有 JAR 均使用 ECH。独立或 shaded 网络栈的 JAR、native MPV、WebView 不在覆盖范围内。
 - 获取到配置、调用 `setEchConfigList` 成功或普通 TLS 握手成功，都不等于 ECH 已被服务端接受。
 - Conscrypt 2.7.0 没有公开的 SSLSocket ECH accepted 查询 API。
-- 当前探针请求发布 ECH 配置的 `crypto.cloudflare.com/cdn-cgi/trace`，以同一 HTTPS 响应中的 Cloudflare trace `sni=encrypted` 为服务端证据。
+- 当前探针默认请求没有发布 ECH 配置的 `www.cloudflare.com/cdn-cgi/trace`，先核实目标自有配置缺失，再以同一 HTTPS 响应中的 Cloudflare trace `sni=encrypted` 证明补全生效。`ech_target_mode=published` 切换到有自有配置的 `crypto.cloudflare.com` 进行回归。
 - 同时核对实际 Conscrypt socket、TLS 1.3/ALPN、请求目标及预期路由。
 - 关闭组的预期结果为 `sni=plaintext`，开启组为 `sni=encrypted`。
 
@@ -72,7 +74,19 @@ DoH bootstrap 与目标请求均走该夹具，并检查实际 HTTP 代理路由
 - `ech-validation/conscrypt-shared-probe.json`：共享客户端结果。
 - 报告仅保存状态和必要计数，不输出 trace 正文、地址信息或凭据。
 
-## 2026-10-05 实测结果
+## 2026-10-06 Cloudflare 共享配置补全
+
+上一版只处理站点自己发布的 ECH，未覆盖“没有发布配置但 CF 边缘能解密”的站点。本次增加自动识别与补全。
+
+- `EchDnsResolver.resolve()` 保留仅查询目标自有配置的语义，便于获取共享来源与核验前提；宿主 TLS 路径改用 `resolveWithCloudflareFallback()`。
+- A/AAAA 与 ECH 配置均从当前选定的 DoH 获取，不增加针对目标的系统 DNS 查询。CNAME 有界跟随，只采纳与问题域名关联的 answer 地址；错误、混合非 CF 地址或全空结果均不借用。
+- 匹配 2026-10-06 的 Cloudflare 官方 IPv4/IPv6 网段快照，支持 IPv4-mapped IPv6；BYOIP、专用地址等不在快照内的情况可能不被识别。
+- 整次补全共用 6 秒/8 次 DNS 查询预算；两种查询模式共用最多 4 个进行中任务、128 条 LRU。借用条目有效期受目标缺失记录、地址和共享配置各自期限约束。
+- HTTP/SOCKS 代理仍按原配置连接。这里判断的是所选 DoH 给出的域名归属，不宣称看到了代理实际连接的目标地址；保留原站身份和证书策略，握手拒绝不自动改为明文重试。
+
+主机已验证生产解析器自动处理 `www.cloudflare.com`、`cloudflare.com`：目标自有配置为零，`cloudflare_ech_fallback` 返回共享配置，同响应由 `plaintext` 变为 `encrypted`，TLS 1.3/HTTP2、证书验证和原域名保持正常。Android 本轮结果及新版安装待实际验证后记录，不沿用下面上一版结果冒充。
+
+## 2026-10-05 实测结果（上一版）
 
 完整 CI 构建的 `sourceprobe` 隔离包已在 Android 13 / ARM64 设备完成直连及 HTTP CONNECT 夹具实测。源码为 `ae072fb82fbc862073b6a5050ee665114875851c`，CI run `37364398536`（attempt 2），sourceprobe 构建成功。71 项网络单测通过：DNS parser 32、resolver 14、factory 11、proxy 14；factory 新增 Android 反射式上下文信任检查，原先合计为 70 项。
 

@@ -3,12 +3,13 @@ package com.github.catvod.net.ech;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Bounded DNS wire parser for HTTPS records used by the optional ECH transport. */
+/** Bounded DNS wire parser for HTTPS discovery and optional ECH address eligibility. */
 public final class EchDnsParser {
     private static final int HTTPS = 65;
     private static final int MAX_RECORDS = 256;
@@ -40,9 +41,37 @@ public final class EchDnsParser {
         }
     }
 
+    public static final class AddressResult {
+        public final List<byte[]> addresses;
+        public final String aliasTarget;
+        public final long ttlSeconds;
+        /** Null for a valid answer, including NODATA; otherwise a stable rejection code. */
+        public final String reason;
+
+        private AddressResult(List<byte[]> addresses, String aliasTarget,
+                              long ttlSeconds, String reason) {
+            List<byte[]> copies = new ArrayList<>(addresses.size());
+            for (byte[] address : addresses) copies.add(address.clone());
+            this.addresses = Collections.unmodifiableList(copies);
+            this.aliasTarget = aliasTarget;
+            this.ttlSeconds = ttlSeconds;
+            this.reason = reason;
+        }
+
+        public boolean hasAlias() {
+            return aliasTarget != null;
+        }
+    }
+
     /** Builds one IN/HTTPS question. The caller supplies an ASCII (possibly IDNA) name. */
     public static byte[] buildQuery(int id, String host) {
+        return buildQuery(id, host, HTTPS);
+    }
+
+    /** Builds one IN question; only A, AAAA and HTTPS are supported. */
+    public static byte[] buildQuery(int id, String host, int type) {
         if (id < 0 || id > 65535) throw new IllegalArgumentException("dns_id");
+        if (type != 1 && type != 28 && type != HTTPS) throw new IllegalArgumentException("dns_type");
         String name = normalize(host);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         write16(out, id);
@@ -56,9 +85,123 @@ public final class EchDnsParser {
             for (int i = 0; i < label.length(); i++) out.write(label.charAt(i));
         }
         out.write(0);
-        write16(out, HTTPS);
+        write16(out, type);
         write16(out, 1);
         return out.toByteArray();
+    }
+
+    /**
+     * Reads only the requested address family at the end of the answer's CNAME chain.
+     * Authority and additional addresses cannot establish eligibility. A valid empty
+     * answer is distinct from malformed data, an error RCODE, or a pending alias lookup.
+     */
+    public static AddressResult parseAddresses(byte[] response, int expectedId,
+                                               String expectedHost, int type) {
+        try {
+            if (expectedId < 0 || expectedId > 65535 || (type != 1 && type != 28))
+                throw invalid("invalid_expectation");
+            String host;
+            try {
+                host = normalize(expectedHost);
+            } catch (IllegalArgumentException e) {
+                throw invalid("invalid_expectation");
+            }
+            if (response == null || response.length < 12 || response.length > 65535)
+                throw invalid("message_size");
+            Reader reader = new Reader(response, true);
+            if (reader.u16() != expectedId) throw invalid("id_mismatch");
+            int flags = reader.u16();
+            if ((flags & 0x8000) == 0 || (flags & 0x7800) != 0 || (flags & 0x0040) != 0)
+                throw invalid("invalid_flags");
+            if ((flags & 0x0200) != 0) throw invalid("truncated");
+            if ((flags & 15) != 0) throw invalid("dns_rcode");
+            int questions = reader.u16();
+            int answers = reader.u16();
+            int authorities = reader.u16();
+            int additional = reader.u16();
+            if (questions != 1) throw invalid("question_count");
+            if (answers + authorities + additional > MAX_RECORDS) throw invalid("record_limit");
+            String question = reader.name(response.length, true);
+            if (!host.equals(question) || reader.u16() != type || reader.u16() != 1)
+                throw invalid("question_mismatch");
+            List<AddressRecord> records = new ArrayList<>();
+            boolean optSeen = false;
+            for (int i = 0; i < answers + authorities + additional; i++) {
+                String owner = reader.name(response.length, true);
+                int recordType = reader.u16();
+                int dnsClass = reader.u16();
+                long ttl = reader.u32();
+                int size = reader.u16();
+                reader.require(size, response.length);
+                int end = reader.position + size;
+                if (recordType == 41) {
+                    if (i < answers + authorities || optSeen || !owner.equals(".")
+                            || (ttl & 0xffff7fffL) != 0) throw invalid("invalid_edns");
+                    optSeen = true;
+                    while (reader.position < end) {
+                        reader.require(4, end);
+                        reader.u16();
+                        int optionSize = reader.u16();
+                        reader.require(optionSize, end);
+                        reader.position += optionSize;
+                    }
+                } else if (recordType == 5 || recordType == 1 || recordType == 28) {
+                    if (i < answers && dnsClass != 1) throw invalid("answer_class");
+                    AddressRecord record = new AddressRecord(owner, recordType,
+                            ttl > 0x7fffffffL ? 0 : ttl);
+                    if (recordType == 5) {
+                        record.target = reader.name(end, true);
+                        if (reader.position != end) throw invalid("cname_length");
+                    } else {
+                        if (size != (recordType == 1 ? 4 : 16)) throw invalid("address_length");
+                        record.address = Arrays.copyOfRange(response, reader.position, end);
+                    }
+                    if (i < answers) records.add(record);
+                }
+                reader.position = end;
+            }
+            if (reader.position != response.length) throw invalid("trailing_data");
+            return selectAddresses(records, host, type);
+        } catch (Invalid e) {
+            return new AddressResult(Collections.emptyList(), null, 0, e.getMessage());
+        }
+    }
+
+    private static AddressResult selectAddresses(List<AddressRecord> records,
+                                                 String host, int type) throws Invalid {
+        String current = host;
+        long ttl = Long.MAX_VALUE;
+        Set<String> visited = new HashSet<>();
+        for (int hops = 0; hops <= MAX_ALIASES; hops++) {
+            if (!visited.add(current)) throw invalid("alias_loop");
+            String next = null;
+            boolean hasAddress = false;
+            List<byte[]> addresses = new ArrayList<>();
+            for (AddressRecord record : records) {
+                if (!record.owner.equals(current)) continue;
+                if (record.type == 5) {
+                    if (next != null && !next.equals(record.target)) throw invalid("conflicting_cname");
+                    next = record.target;
+                    ttl = Math.min(ttl, record.ttl);
+                } else {
+                    hasAddress = true;
+                    if (record.type == type) {
+                        addresses.add(record.address);
+                        ttl = Math.min(ttl, record.ttl);
+                    }
+                }
+            }
+            if (next != null) {
+                if (hasAddress) throw invalid("cname_conflict");
+                if (next.equals(".")) throw invalid("invalid_cname");
+                if (hops == MAX_ALIASES) throw invalid("alias_limit");
+                current = next;
+                continue;
+            }
+            String alias = addresses.isEmpty() && !current.equals(host) ? current : null;
+            return new AddressResult(addresses, alias, ttl == Long.MAX_VALUE ? 0 : ttl, null);
+        }
+        throw invalid("alias_limit");
     }
 
     /**
@@ -349,12 +492,32 @@ public final class EchDnsParser {
         }
     }
 
+    private static final class AddressRecord {
+        final String owner;
+        final int type;
+        final long ttl;
+        String target;
+        byte[] address;
+
+        AddressRecord(String owner, int type, long ttl) {
+            this.owner = owner;
+            this.type = type;
+            this.ttl = ttl;
+        }
+    }
+
     private static final class Reader {
         final byte[] bytes;
+        final Set<Integer> nameOffsets;
         int position;
 
         Reader(byte[] bytes) {
+            this(bytes, false);
+        }
+
+        Reader(byte[] bytes, boolean strictPointers) {
             this.bytes = bytes;
+            this.nameOffsets = strictPointers ? new HashSet<>() : null;
         }
 
         void require(int length, int limit) throws Invalid {
@@ -386,12 +549,15 @@ public final class EchDnsParser {
             StringBuilder name = new StringBuilder();
             while (true) {
                 if (++steps > 128 || cursor >= limit) throw invalid("name_bounds");
+                if (nameOffsets != null) nameOffsets.add(cursor);
                 int size = bytes[cursor++] & 255;
                 if ((size & 0xc0) == 0xc0) {
                     if (!allowCompression) throw invalid("compressed_target");
                     if (cursor >= limit) throw invalid("name_bounds");
                     int pointer = (size & 0x3f) << 8 | bytes[cursor++] & 255;
                     if (pointer < 12 || pointer >= cursor - 2) throw invalid("name_pointer");
+                    if (nameOffsets != null && !nameOffsets.contains(pointer))
+                        throw invalid("name_pointer");
                     if (consumed == -1) consumed = cursor;
                     cursor = pointer;
                     limit = bytes.length;

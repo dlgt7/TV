@@ -210,7 +210,7 @@ public class OkHttp {
                     @Override
                     public byte[] resolve(String hostname) {
                         EchDnsResolver resolver = echResolver();
-                        return resolver == null ? null : resolver.resolve(hostname);
+                        return resolver == null ? null : resolver.resolveWithCloudflareFallback(hostname);
                     }
                 });
         OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(requestInterceptor()).addInterceptor(authInterceptor()).addInterceptor(new ProxyRedirectInterceptor(selector)).addNetworkInterceptor(responseInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(sockets, trustManager).followRedirects(false);

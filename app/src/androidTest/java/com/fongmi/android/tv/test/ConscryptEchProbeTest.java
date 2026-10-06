@@ -63,8 +63,6 @@ import okhttp3.TlsVersion;
 /** Separate strict-client and shared-transport probes; only isolated packages are permitted. */
 @RunWith(AndroidJUnit4.class)
 public final class ConscryptEchProbeTest {
-    private static final String HOST = "crypto.cloudflare.com";
-    private static final String TRACE_URL = "https://crypto.cloudflare.com/cdn-cgi/trace";
     private static final String DOH_URL = "https://cloudflare-dns.com/dns-query";
     private static final long TOTAL_MS = 90_000L;
     private static final int MAX_TRACE_BYTES = 32 * 1024;
@@ -115,6 +113,7 @@ public final class ConscryptEchProbeTest {
             String dohMode = dohMode();
             report.put("dohMode", dohMode).put("resolver", "PRODUCTION_ECH_DNS_RESOLVER");
             EchDnsResolver lookup = new EchDnsResolver(doh, dohUrl(dohMode));
+            validatePublishedConfiguration(lookup, report);
 
             JSONObject disabled = runPhase(base, lookup, false, 20_000L, false);
             phases.put(disabled);
@@ -176,6 +175,12 @@ public final class ConscryptEchProbeTest {
             if (!"direct".equals(proxyMode())) throw new IllegalArgumentException("SHARED_PROXY_FIXTURE_UNSUPPORTED");
             String mode = dohMode();
             report.put("dohMode", mode);
+            OkHttpClient validationClient = plainBuilder().build();
+            try {
+                validatePublishedConfiguration(new EchDnsResolver(validationClient, dohUrl(mode)), report);
+            } finally {
+                closeClient(validationClient);
+            }
             // Only the in-memory DoH selection changes; no stored source/DoH configuration is edited.
             OkHttp.dns().setDoh(new Doh().name("ECH probe").url("default".equals(mode) ? "" : dohUrl(mode)));
             OkHttpClient shared = Spider.client();
@@ -248,8 +253,8 @@ public final class ConscryptEchProbeTest {
 
             @Override public byte[] resolve(String hostname) throws IOException {
                 resolutions.incrementAndGet();
-                if (!HOST.equals(hostname)) throw new IOException("UNEXPECTED_ECH_HOST");
-                byte[] config = lookup.resolve(hostname);
+                if (!host().equals(hostname)) throw new IOException("UNEXPECTED_ECH_HOST");
+                byte[] config = lookup.resolveWithCloudflareFallback(hostname);
                 configBytes.set(config == null ? 0 : config.length);
                 dnsReason.set(lookup.lastReason());
                 return config;
@@ -265,7 +270,7 @@ public final class ConscryptEchProbeTest {
                 .followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false)
                 .addNetworkInterceptor(chain -> {
                     Request request = chain.request();
-                    if (!TRACE_URL.equals(request.url().toString()) || request.header("Authorization") != null
+                    if (!traceUrl().equals(request.url().toString()) || request.header("Authorization") != null
                             || request.header("Cookie") != null || request.header("Proxy-Authorization") != null)
                         throw new IOException("PROBE_REQUEST_GUARD_REJECTED");
                     Response response = chain.proceed(request);
@@ -285,33 +290,36 @@ public final class ConscryptEchProbeTest {
         result.put("sharedDnsPreserved", shared && client.dns() == base.dns());
         result.put("sharedApplicationInterceptorsPreserved", shared && client.interceptors().equals(base.interceptors()));
         result.put("originalTrustManagerRetained", client.x509TrustManager() == base.x509TrustManager());
-        try (Response response = client.newCall(new Request.Builder().url(TRACE_URL).build()).execute()) {
+        try (Response response = client.newCall(new Request.Builder().url(traceUrl()).build()).execute()) {
             result.put("httpStatus", response.code());
             result.put("protocol", response.protocol().toString());
             result.put("redirectReceived", response.isRedirect());
             result.put("cacheResponsePresent", response.cacheResponse() != null);
-            boolean sameTarget = TRACE_URL.equals(response.request().url().toString());
+            boolean sameTarget = traceUrl().equals(response.request().url().toString());
             result.put("sameTargetResponse", sameTarget);
             Handshake handshake = response.handshake();
             boolean tls13 = handshake != null && handshake.tlsVersion() == TlsVersion.TLS_1_3;
             result.put("tlsVersion", handshake == null ? "missing" : handshake.tlsVersion().javaName());
             result.put("peerCertificateCount", handshake == null ? 0 : handshake.peerCertificates().size());
             String traceSni = "missing";
+            boolean traceHostMatches = false;
             if (response.body() != null) {
                 byte[] body = readBounded(response.body().byteStream(), MAX_TRACE_BYTES);
                 result.put("responseBytes", body.length);
                 traceSni = traceSni(body);
+                traceHostMatches = traceHostMatches(body);
             }
-            result.put("traceSni", traceSni);
+            result.put("traceSni", traceSni).put("traceHostMatches", traceHostMatches);
             boolean expectedSni = (enabled ? "encrypted" : "plaintext").equals(traceSni);
             boolean configPath = enabled ? events.conscryptSocket
-                    && (shared || resolutions.get() > 0 && configBytes.get() > 0)
+                    && (shared || resolutions.get() > 0 && configBytes.get() > 0
+                    && (requiresBorrowing() ? "cloudflare_ech_fallback" : "ech_config_available").equals(dnsReason.get()))
                     : shared || resolutions.get() == 0;
             boolean sharedPath = !shared || client.sslSocketFactory() == base.sslSocketFactory()
                     && client.dns() == base.dns() && base == Spider.client() && base == OkHttp.client();
             boolean alpnMatches = response.protocol() != Protocol.HTTP_2 || !enabled || "h2".equals(events.alpn);
             boolean ok = response.code() == 200 && !response.isRedirect() && sameTarget
-                    && response.cacheResponse() == null && tls13 && expectedSni && configPath && alpnMatches
+                    && response.cacheResponse() == null && tls13 && expectedSni && traceHostMatches && configPath && alpnMatches
                     && events.secureEnds.get() == 1 && events.connections.get() == 1 && events.routeMatches && sharedPath;
             result.put("passed", ok).put("state", ok ? "PASS" : "EVIDENCE_MISMATCH")
                     .put("alpnMatchesHttp2", alpnMatches);
@@ -337,6 +345,36 @@ public final class ConscryptEchProbeTest {
                     .put("state", socketClosed ? "BUDGET_EXHAUSTED" : "SOCKET_NOT_RELEASED");
         }
         return result;
+    }
+
+    private static boolean requiresBorrowing() {
+        String mode = InstrumentationRegistry.getArguments().getString("ech_target_mode", "cloudflare_fallback");
+        if (!"cloudflare_fallback".equals(mode) && !"published".equals(mode))
+            throw new IllegalArgumentException("UNSUPPORTED_TARGET_TEST_MODE");
+        return "cloudflare_fallback".equals(mode);
+    }
+
+    private static String host() {
+        return requiresBorrowing() ? "www.cloudflare.com" : "crypto.cloudflare.com";
+    }
+
+    private static String traceUrl() {
+        return "https://" + host() + "/cdn-cgi/trace";
+    }
+
+    private static void validatePublishedConfiguration(EchDnsResolver lookup, JSONObject report) throws Exception {
+        byte[] published = lookup.resolve(host());
+        String reason = lookup.lastReason();
+        report.put("targetHost", host()).put("cloudflareFallbackRequired", requiresBorrowing())
+                .put("targetPublishedConfigBytes", published == null ? 0 : published.length)
+                .put("targetPublishedDnsReason", reason)
+                .put("fallbackConfigOwner", requiresBorrowing() ? "crypto.cloudflare.com" : JSONObject.NULL);
+        if (requiresBorrowing()) {
+            assertTrue("Borrowing control must have no published ECH config",
+                    published == null && ("no_ech".equals(reason) || "no_https_record".equals(reason)));
+        } else {
+            assertTrue("Published control must advertise its own ECH config", published != null);
+        }
     }
 
     private static String dohMode() {
@@ -477,6 +515,18 @@ public final class ConscryptEchProbeTest {
             output.write(buffer, 0, count);
         }
         return output.toByteArray();
+    }
+
+    private static boolean traceHostMatches(byte[] body) {
+        int fields = 0;
+        boolean matches = false;
+        for (String line : new String(body, StandardCharsets.UTF_8).split("\\r?\\n")) {
+            if (line.startsWith("h=")) {
+                fields++;
+                matches = host().equals(line.substring(2));
+            }
+        }
+        return fields == 1 && matches;
     }
 
     private static String traceSni(byte[] body) {

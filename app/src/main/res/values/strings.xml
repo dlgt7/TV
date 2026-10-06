@@ -153,7 +153,7 @@
     <string name="setting_doh">DoH</string>
     <string name="setting_ech">ECH</string>
     <string name="setting_ech_info">About ECH</string>
-    <string name="setting_ech_description">Applies to sources and requests that use the app’s network client.\n\nAttempts to encrypt the handshake hostname when the site provides an ECH configuration. Uses regular TLS when no configuration is available or the DNS query fails.\n\nQueries use the selected DoH provider, or Cloudflare when none is selected.\n\nAn ECH handshake failure may fail the request; disable ECH to retry.\n\nChanges take effect for new connections.</string>
+    <string name="setting_ech_description">Applies to sources and requests that use the app’s network client.\n\nPrefers the site’s own ECH configuration. If none is published and its DoH addresses belong to known Cloudflare ranges, tries Cloudflare’s shared configuration to encrypt the handshake hostname.\n\nIdentification and configuration queries use the selected DoH provider, or Cloudflare when none is selected. Uses regular TLS if identification or configuration discovery fails.\n\nAn ECH handshake failure may fail the request; disable ECH to retry.\n\nChanges take effect for new connections.</string>
     <string name="setting_proxy">Proxy</string>
     <string name="setting_cache">Cache</string>
     <string name="setting_backup">Backup</string>

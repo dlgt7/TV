@@ -34,6 +34,8 @@ import okhttp3.ResponseBody;
 /** Optional ECH discovery. A result is configuration availability, never handshake acceptance. */
 public final class EchDnsResolver {
     public static final String DEFAULT_DOH_URL = "https://1.1.1.1/dns-query";
+    private static final String CLOUDFLARE_CONFIG_HOST = "crypto.cloudflare.com";
+    private static final String FALLBACK_CACHE_PREFIX = "cloudflare:";
     private static final int CACHE_LIMIT = 128;
     private static final int IN_FLIGHT_LIMIT = 4;
     private static final int MAX_QUERIES = 8;
@@ -74,6 +76,20 @@ public final class EchDnsResolver {
     }
 
     public byte[] resolve(String hostname, int port) {
+        return resolve(hostname, port, false);
+    }
+
+    /**
+     * Also permits Cloudflare's public configuration when this DoH resolver reports only
+     * Cloudflare addresses for the target. This class supplies configuration bytes only:
+     * DNS classification does not prove which destination a proxy actually connects to,
+     * change the connection route, or guarantee that the TLS server will accept ECH.
+     */
+    public byte[] resolveWithCloudflareFallback(String hostname) {
+        return resolve(hostname, 443, true);
+    }
+
+    private byte[] resolve(String hostname, int port, boolean cloudflareFallback) {
         // Non-default HTTPS ports require a different DNS owner name (_port._https).
         if (port != 443) return result(new Entry(null, "unsupported_port", 0));
         String host;
@@ -82,18 +98,19 @@ public final class EchDnsResolver {
         } catch (IllegalArgumentException e) {
             return result(new Entry(null, "invalid_host", 0));
         }
+        String key = cloudflareFallback ? FALLBACK_CACHE_PREFIX + host : host;
         CompletableFuture<Entry> flight;
         boolean owner = false;
         synchronized (lock) {
-            Entry cached = cache.get(host);
+            Entry cached = cache.get(key);
             if (cached != null && cached.expiresAt > clock.nowMillis()) return result(cached);
-            cache.remove(host);
-            flight = inFlight.get(host);
+            cache.remove(key);
+            flight = inFlight.get(key);
             if (flight == null) {
                 if (inFlight.size() >= IN_FLIGHT_LIMIT)
                     return result(new Entry(null, "lookup_busy", 0));
                 flight = new CompletableFuture<>();
-                inFlight.put(host, flight);
+                inFlight.put(key, flight);
                 owner = true;
             }
         }
@@ -109,7 +126,9 @@ public final class EchDnsResolver {
         }
         Entry entry;
         try {
-            entry = query(host);
+            LookupBudget budget = new LookupBudget();
+            entry = cloudflareFallback ? queryWithCloudflareFallback(host, budget)
+                    : query(host, budget);
         } catch (QueryFailure e) {
             entry = negative(e.reason);
         } catch (IOException e) {
@@ -119,17 +138,14 @@ public final class EchDnsResolver {
             entry = negative("doh_failure");
         } catch (Error e) {
             synchronized (lock) {
-                inFlight.remove(host);
+                inFlight.remove(key);
                 flight.completeExceptionally(e);
             }
             throw e;
         }
         synchronized (lock) {
-            if (entry.expiresAt > clock.nowMillis()) {
-                cache.put(host, entry);
-                while (cache.size() > CACHE_LIMIT) cache.remove(cache.keySet().iterator().next());
-            }
-            inFlight.remove(host);
+            cache(key, entry);
+            inFlight.remove(key);
             flight.complete(entry);
         }
         return result(entry);
@@ -145,26 +161,119 @@ public final class EchDnsResolver {
         return entry.config == null ? null : entry.config.clone();
     }
 
-    private Entry query(String originalHost) throws IOException {
-        long deadline = clock.nowMillis() + LOOKUP_TIMEOUT_MS;
+    private Entry query(String originalHost, LookupBudget budget) throws IOException {
         long expiresAt = Long.MAX_VALUE;
         Set<String> visited = new HashSet<>();
         String host = originalHost;
-        for (int count = 0; count < MAX_QUERIES; count++) {
+        while (true) {
             if (!visited.add(host)) return negative("alias_loop");
-            if (Thread.currentThread().isInterrupted()) return negative("lookup_interrupted");
-            long remaining = deadline - clock.nowMillis();
-            if (remaining <= 0) return negative("lookup_timeout");
             int id = ThreadLocalRandom.current().nextInt(65536);
-            byte[] wire = transport.exchange(EchDnsParser.buildQuery(id, host), remaining);
+            byte[] wire = budget.exchange(EchDnsParser.buildQuery(id, host));
             EchDnsParser.Result parsed = EchDnsParser.parse(wire, id, host, 443);
-            if (!parsed.hasEch() && !parsed.hasAlias()) return negative(parsed.reason);
-            expiresAt = Math.min(expiresAt,
-                    clock.nowMillis() + Math.min(MAX_TTL_MS, parsed.ttlSeconds * 1000L));
+            if (!parsed.hasEch() && !parsed.hasAlias()) {
+                Entry absent = negative(parsed.reason);
+                return new Entry(null, absent.reason, Math.min(expiresAt, absent.expiresAt));
+            }
+            expiresAt = Math.min(expiresAt, expiresAt(parsed.ttlSeconds));
             if (parsed.hasEch()) return new Entry(parsed.echConfigList, "ech_config_available", expiresAt);
             host = canonicalHost(parsed.aliasTarget);
         }
-        return negative("alias_limit");
+    }
+
+    private Entry queryWithCloudflareFallback(String host, LookupBudget budget) throws IOException {
+        Entry published = published(host, budget);
+        if (published.config != null || host.equals(CLOUDFLARE_CONFIG_HOST)
+                || !("no_https_record".equals(published.reason) || "no_ech".equals(published.reason)))
+            return published;
+
+        AddressEntry ipv4 = addresses(host, 1, budget);
+        AddressEntry ipv6 = addresses(host, 28, budget);
+        if (ipv4.addresses.isEmpty() && ipv6.addresses.isEmpty())
+            return negative("cloudflare_no_addresses");
+        for (byte[] address : ipv4.addresses)
+            if (!CloudflareAddressRanges.contains(address)) return negative("cloudflare_non_cf_address");
+        for (byte[] address : ipv6.addresses)
+            if (!CloudflareAddressRanges.contains(address)) return negative("cloudflare_non_cf_address");
+
+        Entry donor = published(CLOUDFLARE_CONFIG_HOST, budget);
+        if (donor.config == null) return donor;
+        long expiresAt = Math.min(Math.min(published.expiresAt, donor.expiresAt),
+                Math.min(ipv4.expiresAt, ipv6.expiresAt));
+        return new Entry(donor.config, "cloudflare_ech_fallback", expiresAt);
+    }
+
+    /** Cache native answers without recursively acquiring another in-flight slot or deadline. */
+    private Entry published(String host, LookupBudget budget) throws IOException {
+        budget.remaining();
+        synchronized (lock) {
+            Entry cached = cache.get(host);
+            if (cached != null && cached.expiresAt > clock.nowMillis()) return cached;
+            cache.remove(host);
+        }
+        Entry entry = query(host, budget);
+        synchronized (lock) {
+            cache(host, entry);
+        }
+        return entry;
+    }
+
+    private AddressEntry addresses(String originalHost, int type, LookupBudget budget)
+            throws IOException {
+        String host = originalHost;
+        long expiresAt = Long.MAX_VALUE;
+        Set<String> visited = new HashSet<>();
+        while (true) {
+            if (!visited.add(host)) throw new QueryFailure("alias_loop");
+            int id = ThreadLocalRandom.current().nextInt(65536);
+            byte[] wire = budget.exchange(EchDnsParser.buildQuery(id, host, type));
+            EchDnsParser.AddressResult parsed = EchDnsParser.parseAddresses(wire, id, host, type);
+            if (parsed.reason != null) throw new QueryFailure(parsed.reason);
+            expiresAt = Math.min(expiresAt, expiresAt(parsed.ttlSeconds));
+            if (!parsed.hasAlias()) return new AddressEntry(parsed.addresses, expiresAt);
+            host = canonicalHost(parsed.aliasTarget);
+        }
+    }
+
+    private long expiresAt(long ttlSeconds) {
+        return clock.nowMillis() + Math.min(MAX_TTL_MS, ttlSeconds * 1000L);
+    }
+
+    /** Must be called while holding lock. Both lookup modes share this one bounded cache. */
+    private void cache(String key, Entry entry) {
+        if (entry.expiresAt <= clock.nowMillis()) return;
+        cache.put(key, entry);
+        while (cache.size() > CACHE_LIMIT) cache.remove(cache.keySet().iterator().next());
+    }
+
+    private final class LookupBudget {
+        private final long deadline = clock.nowMillis() + LOOKUP_TIMEOUT_MS;
+        private int queries;
+
+        byte[] exchange(byte[] query) throws IOException {
+            long remaining = remaining();
+            if (queries >= MAX_QUERIES) throw new QueryFailure("alias_limit");
+            queries++;
+            byte[] wire = transport.exchange(query, remaining);
+            remaining();
+            return wire;
+        }
+
+        long remaining() throws QueryFailure {
+            if (Thread.currentThread().isInterrupted()) throw new QueryFailure("lookup_interrupted");
+            long remaining = deadline - clock.nowMillis();
+            if (remaining <= 0) throw new QueryFailure("lookup_timeout");
+            return remaining;
+        }
+    }
+
+    private static final class AddressEntry {
+        final List<byte[]> addresses;
+        final long expiresAt;
+
+        AddressEntry(List<byte[]> addresses, long expiresAt) {
+            this.addresses = addresses;
+            this.expiresAt = expiresAt;
+        }
     }
 
     private Entry negative(String reason) {
