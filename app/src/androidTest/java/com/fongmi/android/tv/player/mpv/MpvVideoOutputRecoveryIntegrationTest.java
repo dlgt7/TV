@@ -358,24 +358,49 @@ public final class MpvVideoOutputRecoveryIntegrationTest {
 
     private void captureFrame(JSONObject record) throws Exception {
         View surface = value(() -> activity.view.getVideoSurfaceView());
+        assertTrue("No real video surface", surface instanceof SurfaceView || surface instanceof TextureView);
+        JSONArray samples = record.optJSONArray("frameCaptureSamples");
+        if (samples == null) { samples = new JSONArray(); record.put("frameCaptureSamples", samples); }
+        long started = SystemClock.elapsedRealtime(), deadline = started + 8000;
         Bitmap bitmap = Bitmap.createBitmap(160, 90, Bitmap.Config.ARGB_8888);
         try {
-            if (surface instanceof SurfaceView view) {
-                CountDownLatch done = new CountDownLatch(1); AtomicInteger code = new AtomicInteger(-1);
-                main(() -> PixelCopy.request(view, bitmap, result -> { code.set(result); done.countDown(); }, new Handler(Looper.getMainLooper())));
-                assertTrue("Surface copy timeout", done.await(5, TimeUnit.SECONDS));
-                assertEquals(PixelCopy.SUCCESS, code.get());
-            } else if (surface instanceof TextureView view) assertNotNull(value(() -> view.getBitmap(bitmap)));
-            else fail("No real video surface");
-            int[] pixels = new int[160 * 90]; bitmap.getPixels(pixels, 0, 160, 0, 0, 160, 90);
-            int nonblack = 0, minimum = 255, maximum = 0;
-            for (int pixel : pixels) {
-                int bright = Math.max((pixel >> 16) & 255, Math.max((pixel >> 8) & 255, pixel & 255));
-                if (bright > 8 && (pixel >>> 24) > 0) nonblack++;
-                minimum = Math.min(minimum, bright); maximum = Math.max(maximum, bright);
-            }
-            assertTrue("Video output is blank or uniform", nonblack > 100 && maximum - minimum > 16);
-            record.put("pixelCopyHasVideo", true).put("nonblackPixels", nonblack);
+            do {
+                assertEquals("Player failed while waiting for a real frame", 0, errorCode.get());
+                assertSame("Video surface changed during capture", surface, value(() -> activity.view.getVideoSurfaceView()));
+                bitmap.eraseColor(android.graphics.Color.TRANSPARENT);
+                int copyCode;
+                if (surface instanceof SurfaceView view) {
+                    CountDownLatch done = new CountDownLatch(1); AtomicInteger code = new AtomicInteger(-1);
+                    main(() -> PixelCopy.request(view, bitmap, result -> { code.set(result); done.countDown(); }, new Handler(Looper.getMainLooper())));
+                    assertTrue("Surface copy timeout", done.await(Math.max(1, Math.min(5000, deadline - SystemClock.elapsedRealtime())), TimeUnit.MILLISECONDS));
+                    copyCode = code.get();
+                    assertTrue("PixelCopy failed permanently: " + copyCode, copyCode == PixelCopy.SUCCESS
+                            || copyCode == PixelCopy.ERROR_SOURCE_NO_DATA || copyCode == PixelCopy.ERROR_TIMEOUT);
+                } else copyCode = value(() -> ((TextureView) surface).getBitmap(bitmap)) == null
+                        ? PixelCopy.ERROR_SOURCE_NO_DATA : PixelCopy.SUCCESS;
+                int[] pixels = new int[160 * 90]; bitmap.getPixels(pixels, 0, 160, 0, 0, 160, 90);
+                int nonblack = 0, minimum = 255, maximum = 0;
+                for (int pixel : pixels) {
+                    int bright = Math.max((pixel >> 16) & 255, Math.max((pixel >> 8) & 255, pixel & 255));
+                    if (bright > 8 && (pixel >>> 24) > 0) nonblack++;
+                    minimum = Math.min(minimum, bright); maximum = Math.max(maximum, bright);
+                }
+                samples.put(new JSONObject().put("stage", stage).put("elapsedMs", SystemClock.elapsedRealtime() - started)
+                        .put("pixelCopyResult", copyCode).put("nonblackPixels", nonblack)
+                        .put("minimumBrightness", minimum).put("maximumBrightness", maximum)
+                        .put("surfaceWidth", value(surface::getWidth)).put("surfaceHeight", value(surface::getHeight)));
+                // FILE_LOADED/VO dimensions can precede Surface buffer submission, especially while paused.
+                // Require the same real pixel evidence; never resume playback or relax the pixel thresholds.
+                if (copyCode == PixelCopy.SUCCESS && nonblack > 100 && maximum - minimum > 16) {
+                    record.put("pixelCopyHasVideo", true).put("nonblackPixels", nonblack);
+                    return;
+                }
+                if (SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(120);
+            } while (SystemClock.elapsedRealtime() < deadline);
+            File image = new File(target.getFilesDir(), "mpv-recovery-frame-" + stage + ".png");
+            try (FileOutputStream output = new FileOutputStream(image)) { bitmap.compress(Bitmap.CompressFormat.PNG, 100, output); }
+            record.put("failedFrameFile", image.getName());
+            fail("Video output stayed blank or uniform for 8 seconds; inspect frameCaptureSamples");
         } finally { bitmap.recycle(); }
     }
 
