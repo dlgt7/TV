@@ -14,6 +14,7 @@ import com.fongmi.android.tv.bean.DoubanDiscoverQuery;
 import com.fongmi.android.tv.bean.DiscoverListQuery;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.utils.TmdbEndpoint;
+import com.fongmi.android.tv.utils.TmdbNetwork;
 import com.github.catvod.net.OkHttp;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -211,7 +212,7 @@ public class DiscoverApi {
 
     private static Call newCall(Row row, HttpUrl url, Object tag) {
         Request.Builder builder = isDouban(row) ? doubanRequest(url, tag) : new Request.Builder().url(url).tag(tag);
-        return OkHttp.client().newCall(builder.build());
+        return TmdbNetwork.newCall(builder.build());
     }
 
     static List<Vod> parseDoubanSubjects(String body) {
@@ -360,7 +361,7 @@ public class DiscoverApi {
             post(() -> listener.onError(new IOException("Discover facet url unavailable")));
             return;
         }
-        OkHttp.client().newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
+        TmdbNetwork.newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) post(() -> listener.onError(e));
@@ -450,7 +451,7 @@ public class DiscoverApi {
             post(() -> listener.onError(new IOException("Discover query url unavailable")));
             return;
         }
-        OkHttp.client().newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
+        TmdbNetwork.newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) post(() -> listener.onError(e));
@@ -480,7 +481,7 @@ public class DiscoverApi {
     }
 
     public static void fetch(DoubanDiscoverQuery query, Object tag, QueryListener listener) {
-        OkHttp.client().newCall(doubanRequest(query.buildUrl(), tag).build()).enqueue(new Callback() {
+        TmdbNetwork.newCall(doubanRequest(query.buildUrl(), tag).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) post(() -> listener.onError(e));
@@ -521,7 +522,7 @@ public class DiscoverApi {
             return;
         }
         Request request = doubanRequest(url, tag).build();
-        OkHttp.client().newCall(request).enqueue(new Callback() {
+        TmdbNetwork.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) post(() -> listener.onError(e));
@@ -558,7 +559,7 @@ public class DiscoverApi {
             post(() -> listener.onError(new IOException("TMDB search url unavailable")));
             return;
         }
-        OkHttp.client().newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
+        TmdbNetwork.newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) post(() -> listener.onError(e));
@@ -690,7 +691,7 @@ public class DiscoverApi {
             post(() -> listener.onError(new IOException("Discover detail url unavailable")));
             return;
         }
-        OkHttp.client().newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
+        TmdbNetwork.newCall(new Request.Builder().url(url).tag(tag).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) post(() -> listener.onError(e));

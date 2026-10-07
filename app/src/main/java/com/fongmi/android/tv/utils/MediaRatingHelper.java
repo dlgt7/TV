@@ -115,7 +115,7 @@ public final class MediaRatingHelper {
             callback.onFound(null);
             return;
         }
-        OkHttp.newCall(url.toString(), TAG).enqueue(new Callback() {
+        TmdbNetwork.newCall(new okhttp3.Request.Builder().url(url).tag(TAG).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (!call.isCanceled()) callback.onError(e);

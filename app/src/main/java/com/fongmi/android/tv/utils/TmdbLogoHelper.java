@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.fongmi.android.tv.App;
-import com.github.catvod.net.OkHttp;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -130,7 +129,7 @@ public final class TmdbLogoHelper {
 
     private static void search(String apiKey, MediaType type, String title, String year, SearchCallback callback) {
         HttpUrl url = buildSearchUrl(apiKey, type, title, year);
-        OkHttp.newCall(url.toString()).enqueue(new Callback() {
+        TmdbNetwork.newCall(new okhttp3.Request.Builder().url(url).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 post(() -> callback.onError(e));
@@ -150,7 +149,7 @@ public final class TmdbLogoHelper {
 
     private static void fetchLogo(String apiKey, MediaType type, int id, String imageSize, LogoCallback callback) {
         HttpUrl url = buildImagesUrl(apiKey, type, id);
-        OkHttp.newCall(url.toString()).enqueue(new Callback() {
+        TmdbNetwork.newCall(new okhttp3.Request.Builder().url(url).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 post(() -> callback.onError(e));
