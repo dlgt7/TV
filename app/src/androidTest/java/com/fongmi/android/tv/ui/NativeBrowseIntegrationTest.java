@@ -710,22 +710,34 @@ public final class NativeBrowseIntegrationTest {
         while (SystemClock.elapsedRealtime() < deadline) {
             AccessibilityNodeInfo root = instrumentation.getUiAutomation().getRootInActiveWindow();
             if (root != null) {
-                List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(text);
-                Rect found = null;
-                for (AccessibilityNodeInfo node : nodes) {
-                    if (text.contentEquals(node.getText() == null ? "" : node.getText()) && node.isVisibleToUser()) {
-                        Rect bounds = new Rect();
-                        node.getBoundsInScreen(bounds);
-                        if (!bounds.isEmpty()) found = bounds;
-                    }
-                    node.recycle();
-                }
-                root.recycle();
+                Rect found;
+                // Compose exposes virtual children but does not implement the provider text-search API.
+                // Traverse the actual accessible nodes, as a user-facing automation selector does.
+                try { found = findVisibleTextBounds(root, text, 0); }
+                finally { root.recycle(); }
                 if (found != null) return found;
             }
             SystemClock.sleep(50);
         }
         throw new AssertionError("No visible touch target for " + text);
+    }
+
+    private Rect findVisibleTextBounds(AccessibilityNodeInfo node, String text, int depth) {
+        if (depth > 50) return null;
+        if (text.contentEquals(node.getText() == null ? "" : node.getText()) && node.isVisibleToUser()) {
+            Rect bounds = new Rect();
+            node.getBoundsInScreen(bounds);
+            if (!bounds.isEmpty()) return bounds;
+        }
+        for (int index = 0; index < node.getChildCount(); index++) {
+            AccessibilityNodeInfo child = node.getChild(index);
+            if (child == null) continue;
+            Rect found;
+            try { found = findVisibleTextBounds(child, text, depth + 1); }
+            finally { child.recycle(); }
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private void tapView(View view) {
