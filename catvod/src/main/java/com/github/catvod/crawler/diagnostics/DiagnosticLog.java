@@ -79,6 +79,11 @@ public final class DiagnosticLog {
 
     public static boolean isEnabled() { return enabled; }
 
+    /** Opaque process-local generation for bridges which buffer partial output between calls. */
+    public static long getSessionGeneration() {
+        synchronized (LOCK) { return generation; }
+    }
+
     /** Delete only files owned by this recorder; callers must stop collection first. */
     public static void clear(File privateDirectory) throws IOException {
         synchronized (DISK_LOCK) {
@@ -94,8 +99,13 @@ public final class DiagnosticLog {
 
     public static void record(String source, String event) {
         if (!enabled) return;
-        final long currentGeneration;
-        synchronized (LOCK) { currentGeneration = generation; }
+        recordInSession(getSessionGeneration(), source, event);
+    }
+
+    /** Reject buffered or in-flight output from a previous session, including a restart during redaction. */
+    public static void recordInSession(long currentGeneration, String source, String event) {
+        if (!enabled) return;
+        synchronized (LOCK) { if (!enabled || generation != currentGeneration) return; }
         try {
             String safe = DiagnosticRedactor.redact(event);
             String tag = DiagnosticRedactor.redact(source).replaceAll("[\\r\\n\\t]", " ");

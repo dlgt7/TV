@@ -96,6 +96,45 @@ public class DiagnosticLogTest {
         assertEquals(1, folder.getRoot().list().length);
     }
 
+    @Test(timeout = 5000) public void rejectsOldSessionOutputFromThreadsThatResumeAfterStopClearStart() throws Exception {
+        DiagnosticLog.start(folder.getRoot());
+        long previousSession = DiagnosticLog.getSessionGeneration();
+        java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(2);
+        java.util.concurrent.CountDownLatch restarted = new java.util.concurrent.CountDownLatch(1);
+        java.util.List<Thread> threads = new java.util.ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            Thread worker = new Thread(() -> {
+                ready.countDown();
+                try {
+                    restarted.await();
+                    DiagnosticLog.recordInSession(previousSession, "python", "stale buffered fixture");
+                } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+            });
+            threads.add(worker);
+            worker.start();
+        }
+        try {
+            assertTrue(ready.await(1, java.util.concurrent.TimeUnit.SECONDS));
+            DiagnosticLog.stop();
+            assertNotEquals(previousSession, DiagnosticLog.getSessionGeneration());
+            DiagnosticLog.clear(folder.getRoot());
+            DiagnosticLog.start(folder.getRoot());
+            long currentSession = DiagnosticLog.getSessionGeneration();
+            assertNotEquals(previousSession, currentSession);
+            restarted.countDown();
+            for (Thread worker : threads) { worker.join(1000); assertFalse(worker.isAlive()); }
+            DiagnosticLog.recordInSession(currentSession, "python", "current session fixture");
+            try (ZipFile zip = new ZipFile(DiagnosticLog.exportZip())) {
+                String events = read(zip, "events.log");
+                assertFalse(events.contains("stale buffered fixture"));
+                assertTrue(events.contains("current session fixture"));
+            }
+        } finally {
+            restarted.countDown();
+            for (Thread worker : threads) { worker.interrupt(); worker.join(1000); }
+        }
+    }
+
     private static String read(ZipFile zip, String name) throws Exception {
         try (java.io.InputStream input = zip.getInputStream(zip.getEntry(name))) {
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);

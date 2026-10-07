@@ -123,7 +123,8 @@ public final class MaintenanceDialog {
                         if (!DiagnosticManager.isEnabled()) { Notify.show(R.string.maintenance_log_enable_first); return; }
                         work(activity, () -> DiagnosticManager.getDownloadUrl(activity), url -> download(activity, url));
                     } else if (which == 3) {
-                        work(activity, () -> DiagnosticManager.exportZip(activity), file -> share(activity, file));
+                        if (!DiagnosticManager.isEnabled()) { Notify.show(R.string.maintenance_log_enable_first); return; }
+                        work(activity, () -> DiagnosticManager.exportShareZip(activity), file -> share(activity, file));
                     } else {
                         work(activity, () -> {
                             DiagnosticManager.stop();
@@ -153,14 +154,18 @@ public final class MaintenanceDialog {
     }
 
     private static void share(FragmentActivity activity, File file) {
-        try {
-            android.net.Uri uri = FileUtil.getShareUri(file);
-            Intent intent = new Intent(Intent.ACTION_SEND).setType("application/zip")
-                    .putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.setClipData(ClipData.newRawUri("diagnostics", uri));
-            activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.maintenance_log_share)));
-        } catch (Exception unavailable) {
-            Notify.show(R.string.maintenance_share_unavailable);
+        synchronized (DiagnosticManager.class) {
+            if (!DiagnosticManager.canShare(file)) { Notify.show(R.string.maintenance_log_enable_first); return; }
+            try {
+                android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(activity,
+                        com.fongmi.android.tv.BuildConfig.APPLICATION_ID + ".provider", file);
+                Intent intent = new Intent(Intent.ACTION_SEND).setType("application/zip")
+                        .putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.setClipData(ClipData.newRawUri("diagnostics", uri));
+                activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.maintenance_log_share)));
+            } catch (Exception unavailable) {
+                Notify.show(R.string.maintenance_share_unavailable);
+            }
         }
     }
 

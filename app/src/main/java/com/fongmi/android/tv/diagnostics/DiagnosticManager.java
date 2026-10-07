@@ -1,7 +1,10 @@
 package com.fongmi.android.tv.diagnostics;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
+
+import androidx.core.content.FileProvider;
 
 import com.fongmi.android.tv.BuildConfig;
 import com.fongmi.android.tv.server.Server;
@@ -11,6 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Android entry points; diagnostics are disabled on every process start. */
 public final class DiagnosticManager {
@@ -18,6 +23,7 @@ public final class DiagnosticManager {
     private static Thread.UncaughtExceptionHandler previousHandler;
     private static Thread.UncaughtExceptionHandler installedHandler;
     private static long session;
+    private static final Map<File, ShareGrant> SHARES = new HashMap<>();
 
     private DiagnosticManager() {}
 
@@ -44,6 +50,10 @@ public final class DiagnosticManager {
     public static synchronized void stop() {
         DOWNLOAD.revoke();
         session++;
+        for (Map.Entry<File, ShareGrant> entry : new HashMap<>(SHARES).entrySet()) {
+            try { revokeShare(entry.getValue().context, entry.getKey()); }
+            catch (IOException failure) { DiagnosticLog.record("diagnostics", failure); }
+        }
         DiagnosticLog.stop();
         if (installedHandler != null && Thread.getDefaultUncaughtExceptionHandler() == installedHandler) {
             Thread.setDefaultUncaughtExceptionHandler(previousHandler);
@@ -55,10 +65,44 @@ public final class DiagnosticManager {
     public static boolean isEnabled() { return DiagnosticLog.isEnabled(); }
     public static void markIncident(String reason) { DiagnosticLog.markIncident(reason); }
     public static File exportZip(Context context) throws IOException { return DiagnosticLog.exportZip(); }
+
+    /** Each exported file has a unique URI and immutable bytes, unlike the LAN staging ZIP. */
+    public static synchronized File exportShareZip(Context context) throws IOException {
+        Context application = context.getApplicationContext();
+        File source = exportZip(application);
+        DiagnosticShareArchive owner = new DiagnosticShareArchive(source.getParentFile());
+        File file = owner.create(source, old -> revokeShare(application, old));
+        SHARES.put(file, new ShareGrant(application, session));
+        return file;
+    }
+
+    /** The UI checks and launches its sharing Intent under this class's monitor. */
+    public static synchronized boolean canShare(File file) {
+        ShareGrant grant = SHARES.get(file);
+        return isEnabled() && grant != null && grant.session == session && file.isFile();
+    }
+
     public static synchronized void clear(Context context) throws IOException {
         if (isEnabled()) throw new IOException("Stop diagnostic collection before clearing");
         DOWNLOAD.revoke();
-        DiagnosticLog.clear(new File(context.getApplicationContext().getFilesDir(), "diagnostics"));
+        Context application = context.getApplicationContext();
+        File directory = new File(application.getFilesDir(), "diagnostics");
+        new DiagnosticShareArchive(directory).clear(file -> revokeShare(application, file));
+        DiagnosticLog.clear(directory);
+    }
+
+    private static void revokeShare(Context context, File file) throws IOException {
+        try {
+            context.revokeUriPermission(FileProvider.getUriForFile(context,
+                    BuildConfig.APPLICATION_ID + ".provider", file), Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            SHARES.remove(file);
+        } catch (RuntimeException failure) { throw new IOException("Cannot revoke diagnostic share", failure); }
+    }
+
+    private static final class ShareGrant {
+        final Context context;
+        final long session;
+        ShareGrant(Context context, long session) { this.context = context; this.session = session; }
     }
 
     /** Worker-thread operation. The returned LAN URL expires in ten minutes or immediately on stop. */

@@ -16,10 +16,24 @@ class DiagnosticTee:
     def __getattr__(self, name):
         return getattr(self._original, name)
 
+    def _session(self):
+        generation = self._sink.getSessionGeneration()
+        if generation != getattr(self._local, "generation", None):
+            self._local.pending = ""
+            self._local.discard = False
+            self._local.generation = generation
+        return generation
+
     def write(self, value):
+        generation = None
+        try:
+            generation = self._session()
+        except Exception:
+            self._local.pending = ""
+            self._local.discard = False
         result = self._original.write(value)
         try:
-            if not self._sink.isEnabled():
+            if generation is None or not self._sink.isEnabled():
                 self._local.pending = ""
                 self._local.discard = False
                 return result
@@ -34,13 +48,13 @@ class DiagnosticTee:
                     available = _LIMIT - len(pending)
                     pending += value[start:min(stop, start + available)]
                     if stop - start > available:
-                        self._sink.record(self._source, pending + " [truncated]")
+                        self._sink.recordInSession(generation, self._source, pending + " [truncated]")
                         pending = ""
                         discard = True
                 if end < 0:
                     break
                 if not discard:
-                    self._sink.record(self._source, pending.rstrip("\r"))
+                    self._sink.recordInSession(generation, self._source, pending.rstrip("\r"))
                 pending, discard = "", False
                 start = end + 1
             self._local.pending = pending
@@ -50,11 +64,17 @@ class DiagnosticTee:
         return result
 
     def flush(self):
+        generation = None
+        try:
+            generation = self._session()
+        except Exception:
+            self._local.pending = ""
+            self._local.discard = False
         self._original.flush()
         try:
             pending = getattr(self._local, "pending", "")
-            if pending and self._sink.isEnabled():
-                self._sink.record(self._source, pending)
+            if generation is not None and pending and self._sink.isEnabled():
+                self._sink.recordInSession(generation, self._source, pending)
             self._local.pending = ""
         except Exception:
             pass
@@ -67,8 +87,9 @@ class DiagnosticHandler(logging.Handler):
 
     def emit(self, record):
         try:
+            generation = self._sink.getSessionGeneration()
             if self._sink.isEnabled():
-                self._sink.record("python:logging", self.format(record)[:32768])
+                self._sink.recordInSession(generation, "python:logging", self.format(record)[:32768])
         except Exception:
             pass
 
