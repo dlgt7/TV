@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.AdapterVodListBinding;
 import com.fongmi.android.tv.ui.base.BaseVodHolder;
+import com.fongmi.android.tv.ui.custom.PosterTitleMarquee;
 import com.fongmi.android.tv.ui.presenter.VodPresenter;
 import com.fongmi.android.tv.utils.ImgUtil;
 
@@ -17,6 +18,7 @@ public class VodListHolder extends BaseVodHolder {
         super(binding.getRoot());
         this.binding = binding;
         this.listener = listener;
+        PosterTitleMarquee.bind(binding.name);
     }
 
     @Override

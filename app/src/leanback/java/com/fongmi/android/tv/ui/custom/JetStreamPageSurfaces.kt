@@ -737,6 +737,7 @@ class JetStreamVodTitleTextView @JvmOverloads constructor(
 
     init {
         applyJetStreamVodTitleText(attrs, defStyleAttr)
+        PosterTitleMarquee.bind(this)
     }
 }
 
