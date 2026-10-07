@@ -54,6 +54,11 @@ final class PosterSourcesController {
         binding.season.setOnClickListener(view -> chooseSeason());
         binding.fullSearch.setOnClickListener(view -> { stop(); CollectActivity.start(activity, title); });
         binding.close.setOnClickListener(view -> close.run());
+        for (View control : new View[]{binding.smart, binding.retry, binding.season, binding.fullSearch, binding.close}) {
+            control.setOnFocusChangeListener((view, focused) -> {
+                if (focused && results != null) render();
+            });
+        }
         updateControls();
     }
 
@@ -98,7 +103,7 @@ final class PosterSourcesController {
         List<String> aliases = originalTitle.isEmpty() || originalTitle.equals(title) ? List.of() : List.of(originalTitle);
         // A series premiere year is not the release year of every later season.
         SearchRelevance.Query query = new SearchRelevance.Query(title, aliases, movie ? year : "", selectedSeason == 0 ? null : selectedSeason);
-        results = new PosterSourceResults(query, VodConfig.get().getHome().getKey(), sites.stream().map(Site::getKey).toList());
+        results = new PosterSourceResults(query, VodConfig.get().getHome().getKey(), sites.stream().map(Site::getKey).toList(), movie ? "movie" : "tv");
         adapter.update(List.of());
         if (sites.isEmpty()) {
             running = false;
