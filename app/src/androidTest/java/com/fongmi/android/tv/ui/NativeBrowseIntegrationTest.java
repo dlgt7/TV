@@ -73,6 +73,7 @@ public final class NativeBrowseIntegrationTest {
     private static final String[] PREFERENCES = {"browse_poster_home", "browse_search_filter", "browse_detail_sources", "browse_smart_sources"};
     private final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
     private final List<Activity> launched = new ArrayList<>();
+    private final List<Activity> previousActivities = new ArrayList<>();
     private final Map<String, Object> preferences = new HashMap<>();
     private final AtomicInteger rejectedRequests = new AtomicInteger();
     private Map<DiscoverApi.Row, Object> cache;
@@ -90,6 +91,7 @@ public final class NativeBrowseIntegrationTest {
                 || packageName.equals("com.fongmi.android.tv.sourceprobe"));
         assertEquals("Native browsing is a TV feature", "leanback", BuildConfig.FLAVOR_mode);
         main(() -> {
+            previousActivities.addAll(validationActivities());
             Map<String, ?> existing = Prefers.getPrefers().getAll();
             for (String key : PREFERENCES) if (existing.containsKey(key)) preferences.put(key, existing.get(key));
             cache = discoverCache();
@@ -111,33 +113,42 @@ public final class NativeBrowseIntegrationTest {
 
     @After public void cleanup() {
         if (!prepared) return;
+        List<Activity> closing = new ArrayList<>(launched);
         main(() -> {
-            for (int i = launched.size() - 1; i >= 0; i--) {
-                Activity activity = launched.get(i);
+            // Include an activity opened by a tap even if the following assertion timed out
+            // before awaitActivity could record it. Never close pre-existing or other-app UI.
+            for (Activity activity : validationActivities()) {
+                if (!previousActivities.contains(activity) && !closing.contains(activity)) closing.add(activity);
+            }
+            for (int i = closing.size() - 1; i >= 0; i--) {
+                Activity activity = closing.get(i);
                 if (!activity.isDestroyed()) activity.finish();
             }
         });
-        instrumentation.waitForIdleSync();
-        main(() -> {
-            offlineClient.dispatcher().cancelAll();
-            offlineClient.connectionPool().evictAll();
-            setField(OkHttp.get(), "client", originalClient);
-            setField(TmdbNetwork.class, "client", originalTmdbClient);
-            cache.clear();
-            cache.putAll(savedCache);
-            if (replacedSites) setField(VodConfig.get(), "sites", savedSites);
-            SharedPreferences.Editor editor = Prefers.getPrefers().edit();
-            for (String key : PREFERENCES) {
-                Object value = preferences.get(key);
-                if (value instanceof Boolean flag) editor.putBoolean(key, flag);
-                else if (value instanceof Integer mode) editor.putInt(key, mode);
-                else if (value instanceof String text) editor.putString(key, text);
-                else if (value instanceof Long number) editor.putLong(key, number);
-                else if (value instanceof Float number) editor.putFloat(key, number);
-                else editor.remove(key);
-            }
-            assertTrue("Restore the exact pre-test settings", editor.commit());
-        });
+        try {
+            await(() -> closing.stream().allMatch(Activity::isDestroyed), "test activities finish before restoring fixture state");
+        } finally {
+            main(() -> {
+                offlineClient.dispatcher().cancelAll();
+                offlineClient.connectionPool().evictAll();
+                setField(OkHttp.get(), "client", originalClient);
+                setField(TmdbNetwork.class, "client", originalTmdbClient);
+                cache.clear();
+                cache.putAll(savedCache);
+                if (replacedSites) setField(VodConfig.get(), "sites", savedSites);
+                SharedPreferences.Editor editor = Prefers.getPrefers().edit();
+                for (String key : PREFERENCES) {
+                    Object value = preferences.get(key);
+                    if (value instanceof Boolean flag) editor.putBoolean(key, flag);
+                    else if (value instanceof Integer mode) editor.putInt(key, mode);
+                    else if (value instanceof String text) editor.putString(key, text);
+                    else if (value instanceof Long number) editor.putLong(key, number);
+                    else if (value instanceof Float number) editor.putFloat(key, number);
+                    else editor.remove(key);
+                }
+                assertTrue("Restore the exact pre-test settings", editor.commit());
+            });
+        }
     }
 
     @Test(timeout = 60000)
@@ -429,7 +440,7 @@ public final class NativeBrowseIntegrationTest {
             replacedSites = true;
             setField(VodConfig.get(), "sites", new ArrayList<Site>());
         });
-        instrumentation.waitForIdleSync();
+        await(original::isDestroyed, "the original detail finishes before testing the optional panel");
 
         DiscoverDetailActivity detail = launchDetail(true);
         await(() -> detail.hasWindowFocus() && (boolean) field(detail, "metadataError"), "unavailable metadata uses poster fallback");
@@ -661,6 +672,17 @@ public final class NativeBrowseIntegrationTest {
         return activity;
     }
 
+    private List<Activity> validationActivities() {
+        List<Activity> result = new ArrayList<>();
+        String targetPackage = instrumentation.getTargetContext().getPackageName();
+        for (Stage stage : new Stage[]{Stage.CREATED, Stage.STARTED, Stage.RESUMED, Stage.PAUSED, Stage.STOPPED}) {
+            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(stage)) {
+                if (targetPackage.equals(activity.getPackageName())) result.add(activity);
+            }
+        }
+        return result;
+    }
+
     private <T extends Activity> T awaitActivity(Class<T> type) {
         AtomicReference<T> result = new AtomicReference<>();
         await(() -> {
@@ -719,7 +741,7 @@ public final class NativeBrowseIntegrationTest {
 
     private void press(int keyCode) {
         instrumentation.sendKeyDownUpSync(keyCode);
-        instrumentation.waitForIdleSync();
+        // Each caller awaits its concrete focus/activity state; animated pages need not go idle.
     }
 
     private Rect awaitTextBounds(String text) {
@@ -777,7 +799,8 @@ public final class NativeBrowseIntegrationTest {
         up.setSource(InputDevice.SOURCE_TOUCHSCREEN);
         try { instrumentation.sendPointerSync(up); }
         finally { up.recycle(); }
-        instrumentation.waitForIdleSync();
+        // A looping input cursor animation can prevent global idle indefinitely. Callers use
+        // bounded state assertions to observe the actual tap result instead.
     }
 
     private void await(BooleanSupplier predicate, String reason) {
