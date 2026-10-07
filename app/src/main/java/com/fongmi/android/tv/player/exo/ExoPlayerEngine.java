@@ -63,6 +63,9 @@ public class ExoPlayerEngine implements PlayerEngine {
         preCache.stop();
         next.release();
         preloadCoordinator.detach();
+        // Exo may synchronously report a renderer-release timeout before clearing listeners.
+        // That error belongs to the retired player, not the replacement being constructed.
+        player.removeListener(listener);
         player.release();
         subtitles.release();
         subtitles = new com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController();

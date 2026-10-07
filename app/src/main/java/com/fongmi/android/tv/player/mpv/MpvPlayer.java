@@ -30,12 +30,14 @@ import androidx.media3.common.util.Util;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.bean.Sub;
+import com.fongmi.android.tv.cache.CacheLease;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.media.MediaItemFactory;
 import com.fongmi.android.tv.player.media.PlaySpec;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.utils.MpvLogCollector;
 import com.github.catvod.utils.Path;
+import com.github.catvod.crawler.diagnostics.DiagnosticLog;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.Futures;
@@ -64,6 +66,9 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     private static final long DESTROY_TIMEOUT_MS = 5_000L;
     private static NativeState nativeState = NativeState.IDLE;
     private static long nativeGeneration;
+    // MPV writes shader/ICC cache files while native destruction runs after Player.release().
+    // This belongs to the native generation, not to any one Java PlayerManager instance.
+    private static CacheLease nativeCacheLease;
 
     private enum NativeState {
         IDLE,
@@ -552,6 +557,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
             if (nativeState != NativeState.IDLE) {
                 throw new IllegalStateException("MPV native 当前不可创建: " + nativeState);
             }
+            // acquire() leaves the cache gate before we enter any blocking native call.
+            nativeCacheLease = CacheLease.acquire(Path.mpvCache());
             nativeState = NativeState.CREATING;
             generation = ++nativeGeneration;
         }
@@ -606,12 +613,19 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 MpvLogCollector.log("MpvPlayer", "destroy 完成, reason=" + reason);
             } catch (Throwable e) {
                 MpvLogCollector.logError("MpvPlayer", "destroy 异常, MPV 保持不可用: " + e.getMessage());
+                DiagnosticLog.record("mpv-cache", "Native destroy failed; cache ownership retained until process exit");
             } finally {
+                CacheLease finishedLease = null;
                 synchronized (NATIVE_LOCK) {
                     if (destroyed && nativeGeneration == generation && nativeState == NativeState.DESTROYING) {
+                        finishedLease = nativeCacheLease;
+                        nativeCacheLease = null;
                         nativeState = NativeState.IDLE;
                     }
                 }
+                // Close only the completed generation's lease; a new native instance may
+                // already have acquired its own lease after the IDLE transition above.
+                if (finishedLease != null) finishedLease.close();
             }
         }, "mpv-destroy");
         destroy.setDaemon(true);

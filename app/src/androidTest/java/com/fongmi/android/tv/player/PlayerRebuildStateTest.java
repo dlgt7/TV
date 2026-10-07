@@ -31,9 +31,11 @@ public class PlayerRebuildStateTest {
     @Test public void pausedSpeedSurvivesAudioAndDecodeRebuilds() {
         CoreFixtureServer.ensureStarted();
         int originalEngine = PlayerSetting.getEngine();
+        boolean originalTunnel = PlayerSetting.isTunnel();
         try {
             main(() -> {
                 PlayerSetting.putEngine(PlayerSetting.ENGINE_EXO);
+                PlayerSetting.putTunnel(false);
                 manager = new PlayerManager(new EmptyCallback() {
                     @Override public void onError(String message) { error.set(message); }
                 });
@@ -58,12 +60,22 @@ public class PlayerRebuildStateTest {
                 assertPausedSpeed();
             });
             awaitReady();
+            main(() -> {
+                assertPausedSpeed();
+                // Retire the replacement before it has finished preparing. Queued events
+                // from either previous player must not change the final player's state.
+                manager.rebuildAudioPipeline();
+                manager.rebuildAudioPipeline();
+                assertPausedSpeed();
+            });
+            awaitReady();
             main(this::assertPausedSpeed);
             assertNull(error.get());
         } finally {
             main(() -> {
                 if (manager != null) manager.release();
                 PlayerSetting.putEngine(originalEngine);
+                com.github.catvod.utils.Prefers.put("tunnel", originalTunnel);
             });
             CoreFixtureServer.stop();
         }

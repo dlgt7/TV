@@ -38,6 +38,7 @@ public class NextMediaPreloadTest {
         activity = (CorePlaybackActivity) instrumentation.startActivitySync(new Intent(instrumentation.getTargetContext(), CorePlaybackActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         String base = CoreFixtureServer.baseUrl();
         MediaItem first = item(base, "base.mp4"), second = item(base, "styled.mkv");
+        boolean originalNextEpisode = PreloadSetting.isNextEpisode();
         try {
             main(() -> {
                 PreloadSetting.putNextEpisode(true);
@@ -51,6 +52,13 @@ public class NextMediaPreloadTest {
                 next.player.setMediaItem(first); next.player.prepare(); next.player.play();
             });
             await(() -> next.player.getPlaybackState() == Player.STATE_READY && !next.player.isLoading(), "current buffer ready");
+            main(() -> next.player.pause());
+            await(() -> {
+                PreloadBudget.Lease probe = coordinator.acquire(PreloadBudget.Owner.CURRENT, () -> {});
+                if (probe == null) return false;
+                coordinator.release(probe);
+                return true;
+            }, "background budget ready (playback reserve, seek cooldown, memory and storage)");
             main(() -> {
                 PreloadBudget.Lease current = coordinator.acquire(PreloadBudget.Owner.CURRENT, () -> {});
                 assertNotNull("Current item can reserve the background connection", current);
@@ -83,7 +91,7 @@ public class NextMediaPreloadTest {
                 if (coordinator != null) coordinator.detach();
                 if (next != null) { next.release(); next.player.release(); }
                 if (subtitles != null) subtitles.release();
-                activity.finish(); PreloadSetting.putNextEpisode(true);
+                activity.finish(); PreloadSetting.putNextEpisode(originalNextEpisode);
             });
         }
     }

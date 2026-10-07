@@ -156,8 +156,8 @@ public final class MaintenanceDialog {
         try {
             android.net.Uri uri = FileUtil.getShareUri(file);
             Intent intent = new Intent(Intent.ACTION_SEND).setType("application/zip")
-                    .putExtra(Intent.EXTRA_STREAM, uri).setClipData(ClipData.newRawUri("diagnostics", uri))
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    .putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setClipData(ClipData.newRawUri("diagnostics", uri));
             activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.maintenance_log_share)));
         } catch (Exception unavailable) {
             Notify.show(R.string.maintenance_share_unavailable);
@@ -212,7 +212,7 @@ public final class MaintenanceDialog {
             }
         });
         androidx.lifecycle.LifecycleEventObserver lifecycle = (owner, event) -> {
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP || event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
                 closed.set(true);
                 checker.cancel();
                 task.cancel(true);
