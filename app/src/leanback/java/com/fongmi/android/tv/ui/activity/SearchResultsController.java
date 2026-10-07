@@ -29,6 +29,7 @@ import com.fongmi.android.tv.setting.BrowseExperienceSettings;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.adapter.CollectAdapter;
 import com.fongmi.android.tv.ui.base.BaseActivity;
+import com.fongmi.android.tv.ui.custom.TouchFocus;
 import com.fongmi.android.tv.ui.fragment.CollectFragment;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.SearchResultFilter;
@@ -138,6 +139,7 @@ final class SearchResultsController {
     }
 
     private void initEvent() {
+        TouchFocus.bind(mBinding.relevance);
         mBinding.relevance.setOnClickListener(view -> new MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.search_relevance_title)
                 .setSingleChoiceItems(R.array.search_relevance_modes, filterMode, (dialog, which) -> {

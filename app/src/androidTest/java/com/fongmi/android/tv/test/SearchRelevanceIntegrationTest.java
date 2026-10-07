@@ -130,6 +130,15 @@ public final class SearchRelevanceIntegrationTest {
         assertEquals(2, server.searchRequests.get());
         assertMode(0, 6, true, true);
 
+        // The first touch must open the filter, even while another control owns focus.
+        press(KeyEvent.KEYCODE_DPAD_UP);
+        main(() -> assertTrue(activity.findViewById(R.id.recycler).requestFocus()));
+        await(() -> activity.findViewById(R.id.recycler).hasFocus() && !activity.findViewById(R.id.relevance).hasFocus(), "another control owns focus before first tap");
+        tapView(R.id.relevance);
+        awaitChoiceVisible(0);
+        press(KeyEvent.KEYCODE_BACK);
+        await(() -> activity.hasWindowFocus() && activity.findViewById(R.id.relevance).hasFocus(), "first tap activated the filter and cancel restores focus");
+
         chooseMode(1);
         assertMode(1, 4, false, true);
         chooseMode(2);
@@ -207,6 +216,20 @@ public final class SearchRelevanceIntegrationTest {
         if (bounds.isEmpty()) return false;
         // Material's single-choice label can be non-clickable: ListView owns the item click.
         // A real pointer tap on the visible row exercises that path and mixed touch/D-pad input.
+        tapBounds(bounds);
+        return true;
+    }
+
+    private void tapView(int id) {
+        Rect bounds = value(() -> {
+            Rect visible = new Rect();
+            assertTrue("Tap target must be visibly laid out", activity.findViewById(id).getGlobalVisibleRect(visible));
+            return visible;
+        });
+        tapBounds(bounds);
+    }
+
+    private void tapBounds(Rect bounds) {
         long downTime = SystemClock.uptimeMillis();
         MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, bounds.exactCenterX(), bounds.exactCenterY(), 0);
         MotionEvent up = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, bounds.exactCenterX(), bounds.exactCenterY(), 0);
@@ -216,7 +239,6 @@ public final class SearchRelevanceIntegrationTest {
             instrumentation.sendPointerSync(up);
         } finally { down.recycle(); up.recycle(); }
         instrumentation.waitForIdleSync();
-        return true;
     }
 
     /** Inspect the actual ListRow adapter consumed by the displayed poster presenters. */
