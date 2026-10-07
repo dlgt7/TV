@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.net.SocketException;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -61,6 +63,11 @@ public final class DiscoverFiltersIntegrationTest {
     @Test
     public void realDiscoverFiltersKeepLibrariesAndPlatformStateSeparate() throws Exception {
         assertEquals("Use the isolated test application", "com.fongmi.android.tv.sourceprobe", target.getPackageName());
+        String requestedLibrary = InstrumentationRegistry.getArguments().getString("discover_library", "all");
+        assertTrue("discover_library must be all or douban", "all".equals(requestedLibrary) || "douban".equals(requestedLibrary));
+        boolean doubanOnly = "douban".equals(requestedLibrary);
+        report.put("scope", doubanOnly ? "douban-only" : "douban-and-tmdb");
+        report.put("tmdbNetworkChecked", false);
         OkHttpClient original = OkHttp.client();
         Field clientField = OkHttp.class.getDeclaredField("client");
         clientField.setAccessible(true);
@@ -105,32 +112,35 @@ public final class DiscoverFiltersIntegrationTest {
             awaitResults("douban:");
             showPanel(false);
 
-            stage = "switch-to-tmdb";
-            // Leave a real Douban request in flight while switching libraries.
-            choose("FILTER_GENRE", "科幻");
-            int movieGeneration = generation();
-            choose("FILTER_LIBRARY", "tmdb");
-            main(() -> {
-                assertTrue(query() instanceof DiscoverQuery);
-                assertEquals(6, panel().getRowCount());
-                assertFalse(state().accepts(movieGeneration));
-                assertFalse(panel().getRow(row("FILTER_MEDIA")).stream().anyMatch(option -> "show".equals(option.getValue())));
-                return null;
-            });
-            // A TMDB network error must fail, not count as a successful library switch.
-            awaitResults("tmdb:");
-            showPanel(false);
+            if (!doubanOnly) {
+                stage = "switch-to-tmdb";
+                report.put("tmdbNetworkChecked", true);
+                // Leave a real Douban request in flight while switching libraries.
+                choose("FILTER_GENRE", "科幻");
+                int movieGeneration = generation();
+                choose("FILTER_LIBRARY", "tmdb");
+                main(() -> {
+                    assertTrue(query() instanceof DiscoverQuery);
+                    assertEquals(6, panel().getRowCount());
+                    assertFalse(state().accepts(movieGeneration));
+                    assertFalse(panel().getRow(row("FILTER_MEDIA")).stream().anyMatch(option -> "show".equals(option.getValue())));
+                    return null;
+                });
+                // A TMDB network error must fail, not count as a successful library switch.
+                awaitResults("tmdb:");
+                showPanel(false);
+            }
 
-            stage = "return-to-douban-show";
-            int tmdbGeneration = generation();
-            choose("FILTER_LIBRARY", "douban");
+            stage = doubanOnly ? "douban-show" : "return-to-douban-show";
+            int previousGeneration = generation();
+            if (!doubanOnly) choose("FILTER_LIBRARY", "douban");
             choose("FILTER_MEDIA", "show");
             choose("FILTER_GENRE", "真人秀");
             choose("FILTER_REGION", "华语");
             main(() -> {
                 assertTrue(query() instanceof DoubanDiscoverQuery);
                 assertEquals("综艺,真人秀,华语", ((DoubanDiscoverQuery) query()).buildUrl().queryParameter("tags"));
-                assertFalse(state().accepts(tmdbGeneration));
+                assertFalse(state().accepts(previousGeneration));
                 return null;
             });
             awaitResults("douban:");
@@ -209,6 +219,7 @@ public final class DiscoverFiltersIntegrationTest {
                 return response;
             } catch (IOException | RuntimeException error) {
                 put(event, "exceptionClass", error.getClass().getSimpleName());
+                if (error instanceof SocketException socket) put(event, "socketCategory", socketCategory(socket));
                 throw error;
             } finally {
                 put(event, "elapsedMs", SystemClock.elapsedRealtime() - started);
@@ -216,6 +227,16 @@ public final class DiscoverFiltersIntegrationTest {
                 put(event, "completed", true);
             }
         }).build();
+    }
+
+    private static String socketCategory(SocketException error) {
+        String message = error.getMessage();
+        String normalized = message == null ? "" : message.toLowerCase(Locale.ROOT);
+        if (normalized.contains("connection reset")) return "Connection reset";
+        if (normalized.contains("network is unreachable") || normalized.contains("network unreachable")) return "Network unreachable";
+        if (normalized.contains("connection refused")) return "Connection refused";
+        if (normalized.contains("socket closed") || normalized.contains("socket is closed")) return "Socket closed";
+        return "other";
     }
 
     private static void put(JSONObject object, String key, Object value) {
