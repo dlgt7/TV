@@ -46,6 +46,7 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
     }
 
     public void setFull(boolean full) {
+        if (!full) endSpeed();
         this.full = full;
     }
 
@@ -55,6 +56,12 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
 
     public boolean onKeyDown(KeyEvent event) {
         check(event);
+        return true;
+    }
+
+    public boolean finishSpeedKey(KeyEvent event) {
+        if (!changeSpeed || !KeyUtil.isActionUp(event) || !KeyUtil.isUpKey(event)) return false;
+        endSpeed();
         return true;
     }
 
@@ -68,7 +75,7 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
         } else if (KeyUtil.isActionUp(event) && (KeyUtil.isLeftKey(event) || KeyUtil.isRightKey(event))) {
             pendingSeek.post(250);
         } else if (KeyUtil.isActionUp(event) && KeyUtil.isUpKey(event)) {
-            if (changeSpeed) listener.onSpeedEnd();
+            if (changeSpeed) endSpeed();
             else listener.onKeyUp();
             changeSpeed = false;
         } else if (KeyUtil.isActionUp(event) && KeyUtil.isDownKey(event)) {
@@ -76,7 +83,7 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
         } else if (KeyUtil.isActionUp(event) && KeyUtil.isEnterKey(event)) {
             listener.onKeyCenter();
         } else if (event.isLongPress() && KeyUtil.isUpKey(event)) {
-            changeSpeed = listener.onSpeedUp();
+            if (!changeSpeed) changeSpeed = listener.onSpeedUp();
         }
     }
 
@@ -113,7 +120,14 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
     }
 
     public void reset() {
+        endSpeed();
         pendingSeek.clear();
+    }
+
+    private void endSpeed() {
+        if (!changeSpeed) return;
+        changeSpeed = false;
+        listener.onSpeedEnd();
     }
 
     public interface Listener {

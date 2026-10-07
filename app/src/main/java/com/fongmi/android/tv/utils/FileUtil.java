@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.cache.CacheManager;
 import com.fongmi.android.tv.impl.Callback;
 import com.github.catvod.utils.Path;
 
@@ -82,14 +83,14 @@ public class FileUtil {
 
     public static void clearCache(Callback callback) {
         Task.execute(() -> {
-            Path.clear(Path.cache());
+            CacheManager.clearAll();
             App.post(callback::success);
         });
     }
 
     public static void getCacheSize(Callback callback) {
         Task.execute(() -> {
-            String usage = byteCountToDisplaySize(getDirectorySize(Path.cache()));
+            String usage = byteCountToDisplaySize(CacheManager.totalBytes());
             App.post(() -> callback.success(usage));
         });
     }

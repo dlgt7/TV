@@ -129,6 +129,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private int mQualitySelectedPos = -1;
     private VodPlaybackController mVod;
     private CustomKeyDownVod mKeyDown;
+    private final com.fongmi.android.tv.playback.TemporaryPlaybackSpeed temporarySpeed = new com.fongmi.android.tv.playback.TemporaryPlaybackSpeed();
     private VideoViewModel mViewModel;
     private History mHistory;
     private boolean fullscreen;
@@ -725,6 +726,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void startPlayback(Result result, boolean useParse, long startPositionMs, History history, Episode episode) {
+        onSpeedEnd();
         claimLocalPlayback();
         String mediaKey = com.github.catvod.utils.Util.md5(getHistoryKey() + "|" + episode.getUrl() + "|" + episode.getName());
         long effectiveStartPositionMs = AiSkipRuntime.get().startSession(mediaKey, history, episode.getName(), startPositionMs, this::refreshAiSkipResult);
@@ -845,6 +847,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void renderHistory(History history) {
+        onSpeedEnd();
         mHistory = history;
         mBinding.control.action.opening.setText(history.getOpening() <= 0 ? getString(R.string.play_op) : Util.timeMs(history.getOpening()));
         mBinding.control.action.ending.setText(history.getEnding() <= 0 ? getString(R.string.play_ed) : Util.timeMs(history.getEnding()));
@@ -2034,6 +2037,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mKeyDown != null && mKeyDown.finishSpeedKey(event)) return true;
         if (mBinding.control.jetstream.consumeSeekConfirmKey(event)) return true;
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             App.removeCallbacks(restorePlaybackPanel);
@@ -2066,6 +2070,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     @Override
     public boolean onSpeedUp() {
         if (!isPlaybackReady() || mHistory == null || !player().isPlaying()) return false;
+        if (!temporarySpeed.begin(player().getSpeed())) return true;
         mBinding.widget.speed.setVisibility(View.VISIBLE);
         mBinding.widget.speed.startAnimation(ResUtil.getAnim(R.anim.forward));
         PlaybackAction.setSpeed(player(), mBinding.control.action.speed, PlayerSetting.getSpeed());
@@ -2075,10 +2080,11 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public void onSpeedEnd() {
+        Float previousSpeed = temporarySpeed.end();
         mBinding.widget.speed.clearAnimation();
         mBinding.widget.speed.setVisibility(View.GONE);
-        if (!isPlaybackReady() || mHistory == null) return;
-        PlaybackAction.setSpeed(player(), mBinding.control.action.speed, mHistory.getSpeed());
+        if (!isPlaybackReady() || previousSpeed == null) return;
+        PlaybackAction.setSpeed(player(), mBinding.control.action.speed, previousSpeed);
         syncJetStreamControl();
     }
 
@@ -2137,6 +2143,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     protected void onStop() {
+        if (mKeyDown != null) mKeyDown.reset();
         SyncplaySession.get().removeObserver(mSyncplayObserver);
         super.onStop();
         if (PlayerSetting.isBackgroundOff()) mClock.stop();

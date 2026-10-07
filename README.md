@@ -82,6 +82,8 @@
 | 文档 | 内容 |
 | --- | --- |
 | [CONFIG.md](docs/CONFIG.md) | 点播、直播、解析、代理、DoH、弹幕与配置示例。 |
+| [诊断与工具](docs/practical-improvements.md) | 缓存管理、诊断包、来源健康、网盘检查和播放体验改进。 |
+| [OTA 更新](docs/ota-updates.md) | 手动更新、重要版本云控、镜像下载和发布流程。 |
 | [SPIDER.md](docs/SPIDER.md) | Java、JavaScript、Python 爬虫接口与返回结构。 |
 | [LOCAL.md](docs/LOCAL.md) | 局域网推送、播放控制、字幕和弹幕注入。 |
 | [LIVE.md](docs/LIVE.md) | 直播来源、频道分组与格式。 |

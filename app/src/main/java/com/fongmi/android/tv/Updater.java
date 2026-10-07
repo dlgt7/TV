@@ -9,6 +9,9 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.fongmi.android.tv.impl.UpdateListener;
+import com.fongmi.android.tv.cache.CacheLease;
+import com.fongmi.android.tv.cache.CacheManager;
+import com.github.catvod.crawler.diagnostics.DiagnosticLog;
 import com.fongmi.android.tv.ui.dialog.UpdateDialog;
 import com.fongmi.android.tv.update.UpdateApkValidator;
 import com.fongmi.android.tv.update.UpdateDownloader;
@@ -138,7 +141,8 @@ public class Updater implements UpdateListener, DefaultLifecycleObserver {
         UpdateApkValidator validator = new UpdateApkValidator(activity.getApplicationContext(), release.code);
         task = Task.submit(() -> {
             try {
-                clearOldDownloads(destination.getParentFile());
+                CacheManager.clearOldUpdates(System.currentTimeMillis() - CHECK_INTERVAL);
+                DiagnosticLog.record("ota", "download code=" + release.code);
                 File file = downloader.download(UpdateSources.mirrors(release.asset.url),
                         destination, release.asset.size, release.asset.sha256,
                         validator, percent -> App.post(() -> {
@@ -151,16 +155,6 @@ public class Updater implements UpdateListener, DefaultLifecycleObserver {
         });
     }
 
-    private static void clearOldDownloads(File directory) {
-        File[] files = directory == null ? null : directory.listFiles();
-        if (files == null) return;
-        long cutoff = System.currentTimeMillis() - CHECK_INTERVAL;
-        for (File file : files) {
-            // Keep recent completed files available while Android's installer is reading them.
-            if (file.isFile() && file.getName().startsWith("update-") && file.lastModified() < cutoff) file.delete();
-        }
-    }
-
     private void install(File file) {
         if (!canShow()) {
             finish();
@@ -168,6 +162,7 @@ public class Updater implements UpdateListener, DefaultLifecycleObserver {
         }
         finish();
         try {
+            CacheLease.protectFor(file, 10 * 60_000L);
             FileUtil.openFile(file);
         } catch (Exception e) {
             Notify.show(R.string.update_install_failed);
@@ -175,6 +170,7 @@ public class Updater implements UpdateListener, DefaultLifecycleObserver {
     }
 
     private void failed(int message) {
+        if (!closed) DiagnosticLog.record("ota", "failed stage=" + (downloading ? "download" : "check"));
         if (!closed && canShow() && (manual || downloading)) Notify.show(message);
         finish();
     }

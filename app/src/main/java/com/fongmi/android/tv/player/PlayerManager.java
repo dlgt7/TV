@@ -17,6 +17,9 @@ import androidx.media3.ui.danmaku.DanmakuConfig;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
+import com.fongmi.android.tv.cache.CacheLease;
+import com.fongmi.android.tv.cache.CacheManager;
+import com.github.catvod.crawler.diagnostics.DiagnosticLog;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.ai.skip.AiSkipRuntime;
 import com.fongmi.android.tv.bean.Danmaku;
@@ -46,6 +49,7 @@ public class PlayerManager implements ParseCallback {
 
     private final Runnable runnable;
     private final Callback callback;
+    private final CacheLease cacheLease;
     private PlayerEngine engine;
     private VideoSize videoSize;
     private ParseJob parseJob;
@@ -64,7 +68,13 @@ public class PlayerManager implements ParseCallback {
         this.callback = callback;
         this.runnable = this::onPlayTimeout;
         this.decode = PlayerEngine.HARD;
-        this.engine = PlayerEngineFactory.create(decode, listener);
+        this.cacheLease = CacheManager.playbackLease();
+        try {
+            this.engine = PlayerEngineFactory.create(decode, listener);
+        } catch (RuntimeException | Error failure) {
+            cacheLease.close();
+            throw failure;
+        }
         this.player = engine.getPlayer();
         this.pendingStartPositionMs = C.TIME_UNSET;
         this.danmakuConfig = DanmakuSetting.getConfig();
@@ -79,9 +89,14 @@ public class PlayerManager implements ParseCallback {
     public void release() {
         App.removeCallbacks(runnable);
         if (player != null) player.removeListener(listener);
-        if (engine != null) engine.release();
-        engine = null;
-        player = null;
+        try {
+            if (engine != null) engine.release();
+        } finally {
+            engine = null;
+            player = null;
+            cacheLease.close();
+            DiagnosticLog.record("playback", "released");
+        }
     }
 
     public Player getPlayer() {
@@ -265,7 +280,7 @@ public class PlayerManager implements ParseCallback {
         // Capture position before engine teardown; after ensureEngine the old player is gone.
         long position = getPosition();
         reset(); // cancel play-timeout so a slow MPV teardown cannot fire onPlayTimeout → fallback
-        startCurrent(position);
+        restartCurrent(position, false);
     }
 
     public String getPositionTime(long delta) {
@@ -420,7 +435,7 @@ public class PlayerManager implements ParseCallback {
             forcePlatformEngine = false;
             MpvLogCollector.log("PlayerManager", "切换解码模式并退出 Dolby Vision 平台转交");
             callback.onDecodeChanged();
-            startCurrent(position);
+            restartCurrent(position, false);
             return;
         }
         boolean rebuild = engine.setDecode(decode);
@@ -428,18 +443,14 @@ public class PlayerManager implements ParseCallback {
         callback.onDecodeChanged();
         if (!rebuild) return;
         long position = isLive() ? C.TIME_UNSET : getPosition();
-        setPlayer(engine.rebuild());
-        startCurrent(position);
+        restartCurrent(position, true);
     }
 
     /** Rebuilds the renderer/AudioSink so the AI PCM tap and lookahead buffer change immediately. */
     public void rebuildAudioPipeline() {
         if (engine == null || spec == null || player == null) return;
-        boolean playing = player.getPlayWhenReady();
         long position = player.isCurrentMediaItemLive() ? C.TIME_UNSET : getPosition();
-        setPlayer(engine.rebuild());
-        startCurrent(position);
-        player.setPlayWhenReady(playing);
+        restartCurrent(position, true);
     }
 
     public void refreshAudioEffects() {
@@ -468,8 +479,7 @@ public class PlayerManager implements ParseCallback {
         MpvLogCollector.logError("PlayerManager", "隧道播放失败，关闭后重试: errorCode=" + e.errorCode);
         PlayerSetting.putTunnel(false);
         Notify.show(R.string.error_tunnel_fallback);
-        setPlayer(engine.rebuild());
-        startCurrent(position);
+        restartCurrent(position, true);
     }
 
     private void handlePlatformDecoderFallback(PlaybackException e) {
@@ -477,7 +487,7 @@ public class PlayerManager implements ParseCallback {
         forcePlatformEngine = true;
         MpvLogCollector.log("PlayerManager", "MPV Dolby Vision 硬解转交平台解码器: " + e.getMessage());
         Notify.show(R.string.error_dolby_fallback);
-        startCurrent(position);
+        restartCurrent(position, false);
     }
 
     private boolean isHard() {
@@ -493,6 +503,7 @@ public class PlayerManager implements ParseCallback {
         if (forcePlatformEngine && engine.getType() == PlayerEngine.Type.EXO) return;
         if (!forcePlatformEngine && PlayerEngineFactory.matches(engine, spec)) return;
         PlayerEngine old = engine;
+        androidx.media3.common.PlaybackParameters parameters = player.getPlaybackParameters();
         String targetEngine = forcePlatformEngine ? "EXO (Dolby Vision)" : engineName(PlayerSetting.getEngine());
         MpvLogCollector.log("PlayerManager", "重建播放器实例: " + engineName(old.getType()) + " -> " + targetEngine);
         // Release first so MPV enters DESTROYING before a replacement is selected.
@@ -510,6 +521,22 @@ public class PlayerManager implements ParseCallback {
                 ? PlayerEngineFactory.createPlatform(decode, listener)
                 : PlayerEngineFactory.create(decode, spec, listener);
         setPlayer(engine.getPlayer());
+        restorePlaybackParameters(parameters);
+    }
+
+    private void restartCurrent(long positionMs, boolean rebuild) {
+        androidx.media3.common.PlaybackParameters parameters = player.getPlaybackParameters();
+        boolean playing = player.getPlayWhenReady();
+        if (rebuild) setPlayer(engine.rebuild());
+        startCurrent(positionMs);
+        // Both engines start a new item playing. Restore after start, including a paused
+        // Syncplay session or an audio/subtitle settings change made while paused.
+        restorePlaybackParameters(parameters);
+        player.setPlayWhenReady(playing);
+    }
+
+    private void restorePlaybackParameters(androidx.media3.common.PlaybackParameters parameters) {
+        if (player.isCommandAvailable(Player.COMMAND_SET_SPEED_AND_PITCH)) player.setPlaybackParameters(parameters);
     }
 
     private void setPlayer(Player player) {
@@ -538,6 +565,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void start(PlaySpec spec, long timeout, long startPositionMs) {
+        DiagnosticLog.record("playback", "request startPositionMs=" + startPositionMs + " decode=" + decode);
         forcePlatformEngine = false;
         this.spec = spec;
         setMediaItem(timeout, startPositionMs);
@@ -628,6 +656,7 @@ public class PlayerManager implements ParseCallback {
 
     @Override
     public void onParseError() {
+        DiagnosticLog.record("parse", "failed");
         pendingStartPositionMs = C.TIME_UNSET;
         callback.onError(ResUtil.getString(R.string.error_play_parse));
     }
@@ -659,6 +688,7 @@ public class PlayerManager implements ParseCallback {
 
         @Override
         public void onPlaybackStateChanged(int state) {
+            DiagnosticLog.record("playback", "state=" + state + " engine=" + (engine == null ? "none" : engine.getType()));
             if (state == Player.STATE_READY || state == Player.STATE_ENDED) App.removeCallbacks(runnable);
         }
 
@@ -692,6 +722,8 @@ public class PlayerManager implements ParseCallback {
 
         @Override
         public void onPlayerError(@NonNull PlaybackException e) {
+            DiagnosticLog.record("playback", "errorCode=" + e.errorCode);
+            DiagnosticLog.record("playback", e);
             if (spec == null) return;
             PlayerEngine.ErrorAction action = engine.handleError(e);
             if (action != PlayerEngine.ErrorAction.RECOVERED) App.removeCallbacks(runnable);

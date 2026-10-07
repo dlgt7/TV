@@ -20,6 +20,7 @@ public class ExoPlayerEngine implements PlayerEngine {
     private final ErrorMsgProvider provider;
     private final Player.Listener listener;
     private final PreCache preCache;
+    private final PreloadCoordinator preloadCoordinator;
     private ExoPlayer player;
     private PlaySpec spec;
     private int decode;
@@ -28,10 +29,11 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     public ExoPlayerEngine(int decode, Player.Listener listener) {
         this.subtitles = new com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController();
-        this.next = new NextMediaPreload(decode, listener, subtitles);
+        this.preloadCoordinator = new PreloadCoordinator();
+        this.next = new NextMediaPreload(decode, listener, subtitles, preloadCoordinator);
         this.player = next.player;
         this.provider = new ErrorMsgProvider();
-        this.preCache = new PreCache();
+        this.preCache = new PreCache(preloadCoordinator);
         this.listener = listener;
         this.decode = decode;
     }
@@ -51,6 +53,7 @@ public class ExoPlayerEngine implements PlayerEngine {
         AiSubtitleRuntime.get().stopSession();
         preCache.release();
         next.release();
+        preloadCoordinator.detach();
         player.release();
         subtitles.release();
     }
@@ -59,11 +62,16 @@ public class ExoPlayerEngine implements PlayerEngine {
     public Player rebuild() {
         preCache.stop();
         next.release();
+        preloadCoordinator.detach();
+        // Exo may synchronously report a renderer-release timeout before clearing listeners.
+        // That error belongs to the retired player, not the replacement being constructed.
+        player.removeListener(listener);
         player.release();
         subtitles.release();
         subtitles = new com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController();
-        next = new NextMediaPreload(decode, listener, subtitles);
-        return player = next.player;
+        next = new NextMediaPreload(decode, listener, subtitles, preloadCoordinator);
+        player = next.player;
+        return player;
     }
 
     @Override
@@ -116,6 +124,7 @@ public class ExoPlayerEngine implements PlayerEngine {
     }
 
     private void startInternal(long position) {
+        preCache.stop();
         MediaItem item = MediaItemFactory.from(spec);
         subtitles.activate(item);
         androidx.media3.exoplayer.source.MediaSource prepared = next.take(item);

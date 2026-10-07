@@ -21,6 +21,7 @@ import androidx.media3.extractor.ExtractorsFactory;
 import androidx.media3.extractor.ts.TsExtractor;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.cache.LeasedCache;
 import com.fongmi.android.tv.setting.PreloadSetting;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.github.catvod.net.OkHttp;
@@ -37,6 +38,7 @@ public class MediaSourceFactory implements MediaSource.Factory {
 
     private static StandaloneDatabaseProvider databaseProvider;
     private static Cache cache;
+    private static SimpleCache cacheOwner;
 
     private final DefaultMediaSourceFactory defaultMediaSourceFactory;
     private HttpDataSource.Factory httpDataSourceFactory;
@@ -62,7 +64,18 @@ public class MediaSourceFactory implements MediaSource.Factory {
     static synchronized Cache getCache() {
         if (cache != null) return cache;
         File dir = Path.exoCache();
-        return cache = new SimpleCache(dir, new LeastRecentlyUsedCacheEvictor(getMaxCacheSize(dir)), getDatabaseProvider());
+        cacheOwner = new SimpleCache(dir, new LeastRecentlyUsedCacheEvictor(getMaxCacheSize(dir)), getDatabaseProvider());
+        return cache = new LeasedCache(cacheOwner, dir);
+    }
+
+    /** Called only by CacheManager after its shared playback/download ownership gate. */
+    public static synchronized void clearCacheResources() throws Cache.CacheException {
+        getCache();
+        Cache owner = cacheOwner;
+        for (String key : new java.util.ArrayList<>(owner.getKeys())) {
+            if (Thread.currentThread().isInterrupted()) return;
+            owner.removeResource(key);
+        }
     }
 
     private static StandaloneDatabaseProvider getDatabaseProvider() {
@@ -98,9 +111,13 @@ public class MediaSourceFactory implements MediaSource.Factory {
     @NonNull
     @Override
     public MediaSource createMediaSource(@NonNull MediaItem mediaItem) {
+        return createMediaSource(mediaItem, OkHttp.player());
+    }
+
+    MediaSource createMediaSource(@NonNull MediaItem mediaItem, Call.Factory callFactory) {
         // Every item owns an immutable header snapshot. Preparing the next item must not
         // change the cookies/authorization used by current playback or its retries.
-        DataSource.Factory upstream = createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem), OkHttp.player());
+        DataSource.Factory upstream = createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem), callFactory);
         DefaultMediaSourceFactory factory = new DefaultMediaSourceFactory(getCacheDataSource(upstream), subtitles == null ? getExtractorsFactory() : subtitles.extractors(getExtractorsFactory(), mediaItem));
         if (subtitles != null) factory.setSubtitleParserFactory(subtitles.parserFactory());
         if (subtitles == null) return factory.createMediaSource(mediaItem);

@@ -11,6 +11,7 @@ import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.exception.ExtractException;
 import com.fongmi.android.tv.player.extractor.Source;
+import com.fongmi.android.tv.source.health.SourceHealthManager;
 import com.github.catvod.utils.Trans;
 
 import java.util.HashMap;
@@ -76,7 +77,7 @@ public class SiteViewModel extends ViewModel {
     }
 
     public void detailContent(String key, String id) {
-        execute(TaskType.RESULT, result, () -> SiteApi.detailContent(key, id));
+        executeHealth(key, SourceHealthManager.Phase.DETAIL, () -> SiteApi.detailContent(key, id));
     }
 
     public void playerContent(String key, String flag, String id) {
@@ -85,11 +86,31 @@ public class SiteViewModel extends ViewModel {
     }
 
     public void searchContent(Site site, String keyword, boolean quick, String page) {
-        execute(TaskType.RESULT, result, SearchTask.create(site, keyword, quick, page));
+        if (quick && !site.isQuickSearch()) execute(TaskType.RESULT, result, () -> Result.empty());
+        else executeHealth(site.getKey(), SourceHealthManager.Phase.SEARCH, SearchTask.create(site, keyword, quick, page));
     }
 
     public void searchContent(List<Site> sites, String keyword, boolean quick) {
-        searches.start(sites, site -> SearchTask.create(site, keyword, quick), search::setValue);
+        List<Site> ordered = SourceHealthManager.sort(sites);
+        if (quick) ordered.removeIf(site -> !site.isQuickSearch());
+        searches.start(ordered, site -> SearchTask.create(site, keyword, quick), search::setValue);
+    }
+
+    private void executeHealth(String siteKey, SourceHealthManager.Phase phase, Callable<Result> callable) {
+        SourceHealthManager.Attempt attempt = SourceHealthManager.attempt(siteKey, phase);
+        tasks.execute(TaskType.RESULT, Constant.TIMEOUT_VOD, () -> {
+            attempt.start();
+            try { return callable.call(); }
+            finally { attempt.finish(); }
+        }, value -> {
+            attempt.complete(value, null);
+            result.setValue(value);
+        }, error -> {
+            attempt.complete(null, error);
+            if (error instanceof ExtractException) result.setValue(Result.error(error.getMessage()));
+            else result.setValue(Result.empty());
+            error.printStackTrace();
+        });
     }
 
     private void execute(TaskType type, MutableLiveData<Result> liveData, Callable<Result> callable) {

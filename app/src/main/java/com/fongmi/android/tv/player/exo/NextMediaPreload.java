@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.player.exo;
 
+import android.os.Handler;
+
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.DefaultLoadControl;
@@ -12,25 +14,45 @@ import androidx.media3.exoplayer.source.preload.PreloadManagerListener;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.setting.PreloadSetting;
+import com.github.catvod.net.OkHttp;
+import com.github.catvod.utils.Prefers;
 
-/** One bounded next-item buffer. Current playback always gets network priority. */
+/** One bounded next-item buffer, sharing a network slot with current-item pre-cache. */
 final class NextMediaPreload implements Player.Listener {
     private final DefaultPreloadManager manager;
+    private final PreloadCoordinator coordinator;
+    private final Handler handler;
+    private final Runnable task = this::update;
     final ExoPlayer player;
     private MediaItem pending;
+    private AbortableCallFactory calls;
+    private PreloadBudget.Lease lease;
+    private PreloadManagerListener completion;
     private long startMs;
     private boolean added;
     private boolean consumed;
+    private boolean completed;
     private boolean allowed;
     private boolean released;
     private final android.content.SharedPreferences.OnSharedPreferenceChangeListener preferences = (prefs, key) -> {
-        if ("preload_next".equals(key)) com.fongmi.android.tv.App.post(() -> { if (!released) update(); });
+        if ("preload_next".equals(key)) App.post(() -> { if (!released) update(); });
     };
 
-    NextMediaPreload(int decode, Player.Listener listener, com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController subtitles) {
+    NextMediaPreload(int decode, Player.Listener listener,
+                     com.fongmi.android.tv.player.subtitle.AdvancedSubtitleController subtitles,
+                     PreloadCoordinator coordinator) {
+        this.coordinator = coordinator;
         DefaultPreloadManager.Builder builder = new DefaultPreloadManager.Builder(App.get(),
                 ignored -> allowed ? DefaultPreloadManager.PreloadStatus.specifiedRangeLoaded(startMs, 10_000) : null)
-                .setMediaSourceFactory(new MediaSourceFactory(subtitles))
+                .setMediaSourceFactory(new MediaSourceFactory(subtitles) {
+                    @Override public MediaSource createMediaSource(MediaItem item) {
+                        // A prepared source retains its own factory after take(). Canceling a later
+                        // preload must never close the connections now used by foreground playback.
+                        AbortableCallFactory request = calls;
+                        return request != null && pending != null && sameMedia(item, pending)
+                                ? super.createMediaSource(item, request) : super.createMediaSource(item);
+                    }
+                })
                 .setTrackSelectorFactory(context -> {
                     com.fongmi.android.tv.player.track.DualSubtitleTrackSelector selector = new com.fongmi.android.tv.player.track.DualSubtitleTrackSelector(
                             (androidx.media3.exoplayer.trackselection.DecodeTrackSelector) ExoUtil.buildTrackSelector(decode), subtitles.secondaryRendererCount());
@@ -42,13 +64,10 @@ final class NextMediaPreload implements Player.Listener {
                         .setPlayerTargetBufferBytes(PlayerId.PRELOAD.name, 64 * 1024 * 1024).build());
         manager = builder.build();
         player = ExoUtil.buildPlayer(decode, listener, builder);
+        handler = new Handler(player.getApplicationLooper());
+        coordinator.attach(player);
         player.addListener(this);
-        com.github.catvod.utils.Prefers.getPrefers().registerOnSharedPreferenceChangeListener(preferences);
-        manager.addListener(new PreloadManagerListener() {
-            @Override public void onError(PreloadException error) {
-                if (pending != null && pending.equals(error.mediaItem)) clear();
-            }
-        });
+        Prefers.getPrefers().registerOnSharedPreferenceChangeListener(preferences);
     }
 
     void preload(MediaItem item, long positionMs) {
@@ -65,6 +84,14 @@ final class NextMediaPreload implements Player.Listener {
         }
         MediaSource source = manager.getMediaSource(pending);
         consumed = source != null;
+        if (consumed) {
+            handler.removeCallbacks(task);
+            removeCompletionListener();
+            coordinator.release(lease);
+            coordinator.cancelWaiting(PreloadBudget.Owner.NEXT);
+            lease = null;
+            // Ownership of calls has moved to the source/player. clear() must not abort them.
+        }
         return source;
     }
 
@@ -74,34 +101,80 @@ final class NextMediaPreload implements Player.Listener {
     }
 
     private void update() {
+        handler.removeCallbacks(task);
+        if (released) return;
+        updateInternal();
+        if (pending != null && !consumed) handler.postDelayed(task, 1_000);
+    }
+
+    private void updateInternal() {
         if (!PreloadSetting.isNextEpisode()) { clear(); return; }
         if (pending == null || consumed) return;
-        // stop() during an episode handoff is followed synchronously by take(). Keep the
-        // prepared source alive until the new request either consumes or explicitly clears it.
+        if (!coordinator.hasResources()) { pause(); return; }
+        // The coordinator defers IDLE cancellation by one application-loop turn, allowing
+        // synchronous stop()/take() to transfer even a partially prepared source.
         if (player.getPlaybackState() == Player.STATE_IDLE) return;
-        allowed = PreloadSetting.isNextEpisode() && player.getPlaybackState() == Player.STATE_READY
-                && !player.isLoading() && !player.isCurrentMediaItemLive();
-        if (!allowed && added) {
-            manager.remove(pending);
-            added = false;
-        } else if (allowed && !added) {
-            manager.add(pending, 0);
-            added = true;
-            manager.invalidate();
-        }
+        if (added || completed) return;
+        lease = coordinator.acquire(PreloadBudget.Owner.NEXT, this::pause);
+        if (lease == null) return;
+        allowed = true;
+        calls = new AbortableCallFactory(OkHttp.player());
+        AbortableCallFactory request = calls;
+        completion = new PreloadManagerListener() {
+            @Override public void onCompleted(MediaItem item) {
+                if (calls != request || consumed) return;
+                completed = true;
+                coordinator.release(lease);
+                lease = null;
+            }
+            @Override public void onError(PreloadException error) {
+                if (calls == request && !consumed) clear();
+            }
+        };
+        manager.addListener(completion);
+        manager.add(pending, 0);
+        added = true;
+        manager.invalidate();
+    }
+
+    private void pause() {
+        if (consumed) return;
+        allowed = false;
+        // manager.remove() cancels asynchronously; abort the actual HTTP calls first.
+        if (calls != null) calls.abort();
+        removeCompletionListener();
+        if (pending != null && added) manager.remove(pending);
+        calls = null;
+        added = false;
+        completed = false;
+        coordinator.release(lease);
+        lease = null;
+    }
+
+    private void removeCompletionListener() {
+        if (completion != null) manager.removeListener(completion);
+        completion = null;
     }
 
     void clear() {
-        if (pending != null && added) manager.remove(pending);
+        handler.removeCallbacks(task);
+        if (!consumed) pause();
+        else {
+            removeCompletionListener();
+            if (pending != null && added) manager.remove(pending);
+        }
+        coordinator.cancelWaiting(PreloadBudget.Owner.NEXT);
         pending = null;
+        calls = null;
         added = false;
         consumed = false;
+        completed = false;
         allowed = false;
     }
 
     void release() {
         released = true;
-        com.github.catvod.utils.Prefers.getPrefers().unregisterOnSharedPreferenceChangeListener(preferences);
+        Prefers.getPrefers().unregisterOnSharedPreferenceChangeListener(preferences);
         player.removeListener(this);
         clear();
         manager.release();
@@ -111,8 +184,8 @@ final class NextMediaPreload implements Player.Listener {
     @Override public void onIsLoadingChanged(boolean loading) { update(); }
     @Override public void onPositionDiscontinuity(Player.PositionInfo oldPosition, Player.PositionInfo newPosition, int reason) {
         if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT) {
-            allowed = false;
-            if (pending != null && added && !consumed) { manager.remove(pending); added = false; }
+            pause();
+            update();
         }
     }
 }
