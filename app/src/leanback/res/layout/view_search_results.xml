@@ -15,7 +15,8 @@
         <com.fongmi.android.tv.ui.custom.JetStreamChipRoundTextView
             android:id="@+id/relevance" android:layout_width="wrap_content" android:layout_height="40dp"
             android:layout_marginStart="16dp" android:minWidth="112dp"
-            android:focusable="true" android:clickable="true" android:gravity="center"
+            android:focusable="true" android:focusableInTouchMode="true"
+            android:clickable="true" android:gravity="center"
             android:nextFocusDown="@id/recycler" android:textSize="13sp"
             android:text="@string/search_relevance_legacy" />
     </LinearLayout>

@@ -3,8 +3,10 @@ package com.fongmi.android.tv.test;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.SystemClock;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.TextView;
@@ -199,10 +201,22 @@ public final class SearchRelevanceIntegrationTest {
 
     private boolean clickAccessibleText(String text) {
         AccessibilityNodeInfo node = accessibleChoice(text);
-        for (int level = 0; node != null && level < 4; level++, node = node.getParent()) {
-            if (node.isClickable()) return node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        }
-        return false;
+        if (node == null) return false;
+        Rect bounds = new Rect();
+        node.getBoundsInScreen(bounds);
+        if (bounds.isEmpty()) return false;
+        // Material's single-choice label can be non-clickable: ListView owns the item click.
+        // A real pointer tap on the visible row exercises that path and mixed touch/D-pad input.
+        long downTime = SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, bounds.exactCenterX(), bounds.exactCenterY(), 0);
+        MotionEvent up = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, bounds.exactCenterX(), bounds.exactCenterY(), 0);
+        try {
+            instrumentation.sendPointerSync(down);
+            SystemClock.sleep(50);
+            instrumentation.sendPointerSync(up);
+        } finally { down.recycle(); up.recycle(); }
+        instrumentation.waitForIdleSync();
+        return true;
     }
 
     /** Inspect the actual ListRow adapter consumed by the displayed poster presenters. */
