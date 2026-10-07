@@ -99,9 +99,9 @@ jobs:
           test -n "$KEY_ALIAS"
           test -n "$STORE_PASSWORD"
           test -n "$KEY_PASSWORD"
-          echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode > app/release.jks
           {
-            echo "storeFile=../release.jks"
+            echo "storeFile=release.jks"
             echo "keyAlias=$KEY_ALIAS"
             echo "keyPassword=$KEY_PASSWORD"
             echo "storePassword=$STORE_PASSWORD"
