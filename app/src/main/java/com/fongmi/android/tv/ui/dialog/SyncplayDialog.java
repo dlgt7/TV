@@ -55,7 +55,11 @@ public final class SyncplayDialog {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(value.phase != SyncplaySession.Phase.CONNECTING);
         };
         session.observe(observer);
-        if (notice != 0) status.setText(notice);
+        if (notice != 0) {
+            // Keep required-input notices visible even when the form needs to scroll.
+            ((TextView) form.findViewById(R.id.syncplay_description)).setText(notice);
+            status.setText(notice);
+        }
         dialog.setOnDismissListener(ignored -> session.removeObserver(observer));
         confirm.setOnClickListener(view -> session.confirmSameMedia());
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> session.leave());
