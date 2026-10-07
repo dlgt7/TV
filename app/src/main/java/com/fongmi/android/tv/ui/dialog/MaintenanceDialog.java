@@ -204,8 +204,9 @@ public final class MaintenanceDialog {
                         case UNSUPPORTED -> R.string.maintenance_drive_unsupported;
                         case UNCERTAIN -> R.string.maintenance_drive_uncertain;
                     });
+                    String title = result.provider.isEmpty() ? state : result.provider + " · " + state;
                     message(activity, R.string.maintenance_drive,
-                            result.provider + " · " + state + "\n\n" + result.message + "\n\n"
+                            title + "\n\n" + result.message + "\n\n"
                                     + activity.getString(R.string.maintenance_drive_advisory));
                 });
             } catch (Exception error) {
