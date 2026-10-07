@@ -54,7 +54,7 @@ final class PosterSourcesController {
             start();
         });
         binding.season.setOnClickListener(view -> chooseSeason());
-        binding.fullSearch.setOnClickListener(view -> { stop(); CollectActivity.start(activity, title); });
+        binding.fullSearch.setOnClickListener(view -> { stop(); SearchActivity.start(activity, title); });
         binding.close.setOnClickListener(view -> close.run());
         for (View control : new View[]{binding.smart, binding.retry, binding.season, binding.fullSearch, binding.close}) {
             control.setOnFocusChangeListener((view, focused) -> {
