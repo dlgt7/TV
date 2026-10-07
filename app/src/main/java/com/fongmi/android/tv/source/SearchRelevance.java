@@ -82,7 +82,9 @@ public final class SearchRelevance {
         if (expected.season != null && expected.season.equals(actual.season)) score += 10;
         boolean confirmedYear = expected.year.isEmpty() || expected.year.equals(actual.year);
         boolean confirmedSeason = expected.season == null ? actual.season == null : expected.season.equals(actual.season);
-        return new Match(score, true, exact, exact && confirmedYear && confirmedSeason);
+        // Related search may include the series; strict search must not silently change to a sequel.
+        boolean strict = exact && confirmedSeason;
+        return new Match(score, true, strict, strict && confirmedYear && confirmedSeason);
     }
 
     private static boolean containsTitle(String candidate, String query) {

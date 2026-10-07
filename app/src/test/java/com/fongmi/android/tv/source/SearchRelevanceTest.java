@@ -91,7 +91,22 @@ public class SearchRelevanceTest {
         assertFalse(match("庆余年2", "庆余年 第一季").relevant());
         assertFalse(match("Planet Earth II", "Planet Earth S01").relevant());
         assertTrue(match("庆余年", "庆余年 第二季").relevant());
+        assertFalse(match("庆余年", "庆余年 第二季").strict());
         assertFalse(match("庆余年", "庆余年 第二季").confident());
+    }
+
+    @Test
+    public void strictSearchDoesNotSilentlyChooseNumberedMovieSequels() {
+        assertTrue(match("Rocky", "Rocky II").relevant());
+        assertFalse(match("Rocky", "Rocky II").strict());
+        assertFalse(match("Rocky", "Rocky 2").strict());
+        assertFalse(match("Alien", "Alien 2").strict());
+        assertFalse(match("The Matrix", "The Matrix II").strict());
+        assertTrue(match("Rocky II", "Rocky 2").strict());
+        assertFalse(match("Rocky II", "Rocky").strict());
+        assertFalse(match("庆余年2", "庆余年").strict());
+        assertFalse(match("Rocky II", "Rocky III").relevant());
+        assertTrue(match("The Matrix", "The Matrix").strict());
     }
 
     @Test

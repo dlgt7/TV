@@ -66,7 +66,7 @@ public class SearchResultFilterTest {
 
     @Test
     public void strictModeOnlyKeepsTheCompleteTitle() {
-        Result result = Result.list(List.of(vod("庆"), vod("庆余年 第二季"), vod("庆余年 幕后特辑")));
+        Result result = Result.list(List.of(vod("庆"), vod("庆余年"), vod("庆余年 第二季"), vod("庆余年 幕后特辑")));
         SearchResultFilter.apply(result, "庆余年", 2);
         assertEquals(1, result.getList().size());
     }
