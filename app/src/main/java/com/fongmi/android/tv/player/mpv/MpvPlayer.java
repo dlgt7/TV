@@ -782,15 +782,9 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         restoreSeekPreroll();
         applySeekPreroll(false);
         applySubtitleStyle();
-        if (startPositionMs > 0 && shouldDeferInitialSeek(url)) {
-            pendingSeekAfterLoadMs = startPositionMs;
-            command("loadfile", url, "replace");
-        } else if (startPositionMs > 0) {
-            pendingSeekAfterLoadMs = C.TIME_UNSET;
-            command("loadfile", url, "replace", "start=" + seconds(startPositionMs));
-        } else {
-            command("loadfile", url, "replace");
-        }
+        pendingSeekAfterLoadMs = startPositionMs > 0 && MpvLoadFile.deferInitialSeek(url)
+                ? startPositionMs : C.TIME_UNSET;
+        command(MpvLoadFile.command(url, startPositionMs));
         command("set", "pause", playWhenReady ? "no" : "yes");
     }
 
@@ -1704,20 +1698,6 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         } catch (Exception e) {
             return fallback;
         }
-    }
-
-    private static boolean isHlsUrl(String url) {
-        return !TextUtils.isEmpty(url) && url.toLowerCase(Locale.US).contains(".m3u8");
-    }
-
-    private static boolean isHttpUrl(String url) {
-        if (TextUtils.isEmpty(url)) return false;
-        String lower = url.toLowerCase(Locale.US);
-        return lower.startsWith("http://") || lower.startsWith("https://");
-    }
-
-    private static boolean shouldDeferInitialSeek(String url) {
-        return isHlsUrl(url) || isHttpUrl(url);
     }
 
     private void runForPlayback(Runnable runnable) {

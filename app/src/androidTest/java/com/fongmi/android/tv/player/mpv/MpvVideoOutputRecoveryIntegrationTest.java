@@ -223,6 +223,7 @@ public final class MpvVideoOutputRecoveryIntegrationTest {
             report.put("boundedExhaustion", true).put("terminalErrorCode", errorCode.get())
                     .put("nativeStartFileEvents", starts.get()).put("checksPassed", true);
         } finally {
+            if (!report.optBoolean("checksPassed")) captureFailureDiagnostics();
             try {
                 main(() -> {
                     MPVLib.removeLogObserver(logObserver); MPVLib.removeObserver(observer);
@@ -251,6 +252,78 @@ public final class MpvVideoOutputRecoveryIntegrationTest {
                     output.setReadable(true, true); output.setWritable(true, true);
                 }
             }
+        }
+    }
+
+    /** Read-only, allowlisted state captured before release; diagnostic failures never skip cleanup. */
+    private void captureFailureDiagnostics() {
+        try {
+            JSONObject snapshot = new JSONObject();
+            report.put("failureDiagnostics", snapshot);
+            snapshot.put("stage", stage).put("contextErrorEvents", contextErrors.get())
+                    .put("startFileEvents", starts.get()).put("renderedFrameEvents", frames.get())
+                    .put("observedPlayerErrorCode", errorCode.get());
+            if (manager != null) {
+                for (String name : new String[]{"current-vo", "gpu-api", "gpu-context", "current-gpu-context"}) {
+                    diagnostic(snapshot, "native_" + name, () -> {
+                        String text = MPVLib.INSTANCE.getPropertyString(name);
+                        return text != null && text.matches("[A-Za-z0-9_.+-]{0,64}") ? text : JSONObject.NULL;
+                    });
+                }
+                for (String name : new String[]{"vo-configured", "pause", "seeking", "idle-active"})
+                    diagnostic(snapshot, "native_" + name, () -> MPVLib.INSTANCE.getPropertyBoolean(name));
+                for (String name : new String[]{"time-pos", "speed", "volume"})
+                    diagnostic(snapshot, "native_" + name, () -> MPVLib.INSTANCE.getPropertyDouble(name));
+                diagnostic(snapshot, "media3", () -> value(() -> {
+                    JSONObject playerState = new JSONObject();
+                    Player player = manager.getPlayer();
+                    if (player == null) return playerState;
+                    diagnostic(playerState, "state", player::getPlaybackState);
+                    diagnostic(playerState, "errorCode", () -> player.getPlayerError() == null ? 0 : player.getPlayerError().errorCode);
+                    diagnostic(playerState, "positionMs", player::getCurrentPosition);
+                    diagnostic(playerState, "durationMs", player::getDuration);
+                    diagnostic(playerState, "playWhenReady", player::getPlayWhenReady);
+                    diagnostic(playerState, "loading", player::isLoading);
+                    diagnostic(playerState, "speed", () -> player.getPlaybackParameters().speed);
+                    diagnostic(playerState, "volume", player::getVolume);
+                    diagnostic(playerState, "videoWidth", () -> player.getVideoSize().width);
+                    diagnostic(playerState, "videoHeight", () -> player.getVideoSize().height);
+                    for (String name : new String[]{"pendingStartPositionMs", "pendingSeekAfterLoadMs", "outputReloadPending",
+                            "awaitingOutputStart", "fileLoaded", "loading"}) {
+                        try {
+                            java.lang.reflect.Field field = player.getClass().getDeclaredField(name);
+                            field.setAccessible(true);
+                            Object fieldValue = field.get(player);
+                            if (fieldValue instanceof Number || fieldValue instanceof Boolean) playerState.put(name, fieldValue);
+                        } catch (Throwable ignored) { }
+                    }
+                    try {
+                        java.lang.reflect.Field pending = player.getClass().getDeclaredField("pendingUrl");
+                        pending.setAccessible(true);
+                        Object address = pending.get(player);
+                        playerState.put("hasPendingUrl", address instanceof String && !((String) address).isEmpty());
+                    } catch (Throwable ignored) { }
+                    return playerState;
+                }));
+            }
+            // Retain the snapshot even if native release later stalls; no private strings are included.
+            File output = new File(target.getFilesDir(), "mpv-video-output-recovery-result.json");
+            try (FileOutputStream stream = new FileOutputStream(output)) {
+                stream.write((report.toString(2) + "\n").getBytes(StandardCharsets.UTF_8));
+            }
+            output.setReadable(false, false); output.setWritable(false, false);
+            output.setReadable(true, true); output.setWritable(true, true);
+        } catch (Throwable ignored) { }
+    }
+
+    private static void diagnostic(JSONObject object, String key, Supplier<?> read) {
+        try {
+            Object value = read.get();
+            if (value instanceof Double doubleValue && !Double.isFinite(doubleValue)
+                    || value instanceof Float floatValue && !Float.isFinite(floatValue)) value = null;
+            object.put(key, value == null ? JSONObject.NULL : value);
+        } catch (Throwable ignored) {
+            try { object.put(key, JSONObject.NULL); } catch (Throwable ignoredAgain) { }
         }
     }
 
