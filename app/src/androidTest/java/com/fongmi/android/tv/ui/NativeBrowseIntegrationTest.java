@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.RectF;
 import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.View;
@@ -239,6 +240,40 @@ public final class NativeBrowseIntegrationTest {
     }
 
     @Test(timeout = 60000)
+    public void populatedShelvesContainWholeCardsAndNeverOverlapFollowingContent() {
+        main(() -> {
+            seedPosters();
+            BrowseExperienceSettings.putPosterHomeEnabled(true);
+        });
+        HomeActivity home = launch(HomeActivity.class);
+        VerticalGridView page = value(() -> home.findViewById(R.id.recycler));
+        await(() -> home.hasWindowFocus() && (int) field(field(home, "mPosterHome"), "pending") == 0,
+                "all poster fixture shelves finish loading");
+        List<Integer> positions = value(() -> shelfPositions(home));
+        assertTrue("Exercise multiple populated shelves", positions.size() >= 3);
+
+        for (int position : positions) {
+            main(() -> focusRow(home, position));
+            await(() -> focusedPosterCard(home, position) != null && page.getScrollState() == RecyclerView.SCROLL_STATE_IDLE
+                    && !page.isLayoutRequested() && !page.isComputingLayout() && !page.isAnimating(),
+                    "poster shelf " + position + " finishes layout with a real focused card");
+            main(() -> assertAttachedShelfGeometry(page));
+        }
+
+        int lastShelf = positions.get(positions.size() - 1);
+        int footerPosition = value(() -> ((ArrayObjectAdapter) field(home, "mAdapter")).size() - 1);
+        await(() -> page.findViewHolderForAdapterPosition(lastShelf) != null
+                && page.findViewHolderForAdapterPosition(footerPosition) != null
+                && !page.isLayoutRequested(), "last shelf and footer are both laid out");
+        main(() -> {
+            RectF shelf = screenBounds(page.findViewHolderForAdapterPosition(lastShelf).itemView);
+            RectF footer = screenBounds(page.findViewHolderForAdapterPosition(footerPosition).itemView);
+            assertTrue("The footer must follow the complete last shelf: " + shelf + " / " + footer,
+                    shelf.bottom <= footer.top + 1.5f);
+        });
+    }
+
+    @Test(timeout = 60000)
     public void detailSourcePanelIsOptionalAndWorksWithoutMetadataOrConfiguredSources() {
         DiscoverDetailActivity original = launchDetail(false);
         await(() -> original.hasWindowFocus(), "original detail window");
@@ -356,12 +391,66 @@ public final class NativeBrowseIntegrationTest {
     }
 
     private int firstShelfPosition(HomeActivity home) {
+        List<Integer> positions = shelfPositions(home);
+        if (!positions.isEmpty()) return positions.get(0);
+        throw new AssertionError("Fixture has no focusable poster shelf");
+    }
+
+    private List<Integer> shelfPositions(HomeActivity home) {
         ArrayObjectAdapter adapter = (ArrayObjectAdapter) field(home, "mAdapter");
         PosterHomeController controller = (PosterHomeController) field(home, "mPosterHome");
+        List<Integer> result = new ArrayList<>();
         for (int i = adapter.indexOf(R.string.home_recommend) + 1; i < adapter.size() - 1; i++) {
-            if (controller.isFocusable(adapter.get(i))) return i;
+            if (controller.isFocusable(adapter.get(i))) result.add(i);
         }
-        throw new AssertionError("Fixture has no focusable poster shelf");
+        return result;
+    }
+
+    private static void assertAttachedShelfGeometry(VerticalGridView page) {
+        List<RecyclerView.ViewHolder> shelves = new ArrayList<>();
+        for (int index = 0; index < page.getChildCount(); index++) {
+            RecyclerView.ViewHolder holder = page.getChildViewHolder(page.getChildAt(index));
+            HorizontalGridView posters = holder.itemView.findViewById(R.id.posters);
+            if (posters == null || !holder.itemView.isShown() || holder.itemView.getHeight() == 0
+                    || posters.getAdapter() == null || posters.getAdapter().getItemCount() == 0) continue;
+            shelves.add(holder);
+            RectF shelfBounds = screenBounds(holder.itemView);
+            RectF gridBounds = screenBounds(posters);
+            View heading = holder.itemView.findViewById(R.id.title);
+            RectF headingBounds = screenBounds(heading);
+            for (int cardIndex = 0; cardIndex < posters.getChildCount(); cardIndex++) {
+                View card = posters.getChildAt(cardIndex);
+                if (!card.isShown() || card.getHeight() == 0) continue;
+                RectF cardBounds = screenBounds(card);
+                assertContains("A complete poster card must fit its shelf", shelfBounds, cardBounds);
+                assertContains("The poster viewport must reserve space for artwork, title and metadata", gridBounds, cardBounds);
+                assertTrue("Shelf heading must remain above its cards: " + headingBounds + " / " + cardBounds,
+                        headingBounds.bottom <= cardBounds.top + 1.5f);
+            }
+        }
+        assertFalse("At least one populated shelf must be attached", shelves.isEmpty());
+        shelves.sort(java.util.Comparator.comparingInt(RecyclerView.ViewHolder::getBindingAdapterPosition));
+        for (int index = 1; index < shelves.size(); index++) {
+            RectF previous = screenBounds(shelves.get(index - 1).itemView);
+            RectF next = screenBounds(shelves.get(index).itemView);
+            assertTrue("Adjacent shelves must not overlap: " + previous + " / " + next,
+                    previous.bottom <= next.top + 1.5f);
+        }
+    }
+
+    private static void assertContains(String reason, RectF outer, RectF inner) {
+        // Locations are rounded to physical pixels; allow only that rounding, not clipped cards.
+        assertTrue(reason + ": " + outer + " / " + inner,
+                outer.left <= inner.left + 1.5f && outer.top <= inner.top + 1.5f
+                        && outer.right + 1.5f >= inner.right && outer.bottom + 1.5f >= inner.bottom);
+    }
+
+    private static RectF screenBounds(View view) {
+        int[] origin = new int[2];
+        view.getLocationOnScreen(origin);
+        // Card focus is a scale transform. VisibleRect would conceal the very overflow being tested.
+        return new RectF(origin[0], origin[1], origin[0] + view.getWidth() * view.getScaleX(),
+                origin[1] + view.getHeight() * view.getScaleY());
     }
 
     private static String rowText(RecyclerView recycler, int position, int viewId) {

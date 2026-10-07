@@ -298,6 +298,9 @@ public final class PosterHomeController implements VodPresenter.OnClickListener 
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
             AdapterHomeWallShelfBinding binding = AdapterHomeWallShelfBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
             ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(PosterHomeController.this, Style.rect(), new int[]{ResUtil.dp2px(132), ResUtil.dp2px(176)}));
+            // Empty adapters cannot supply a wrap_content cross-axis measurement to Leanback.
+            // Reserve 176 poster + 8 gap + 26 title + 20 metadata; the XML adds 12dp padding per side.
+            binding.posters.setRowHeight(ResUtil.dp2px(230));
             binding.posters.setAdapter(new ItemBridgeAdapter(adapter));
             binding.posters.setHorizontalSpacing(ResUtil.dp2px(20));
             binding.posters.setItemAnimator(null);
