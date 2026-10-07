@@ -102,6 +102,26 @@ public class CloudflareRouteFallbackTest {
         }
     }
 
+    @Test public void strictMetadataRedirectPolicyNeverDowngradesHttpsToPlaintext() throws Exception {
+        try (Fixture f = new Fixture(); MockWebServer plaintext = new MockWebServer()) {
+            plaintext.start();
+            f.sockets.ports.put(ORIGIN, f.origin.getPort());
+            f.origin.enqueue(new MockResponse.Builder().code(302)
+                    .addHeader("Location", plaintext.url("/3/configuration?api_key=test-key")).build());
+            OkHttpClient.Builder builder = f.client.newBuilder()
+                    .followRedirects(false).followSslRedirects(false);
+            // Exercise the same custom redirect interceptor installed by OkHttp.trustedClient().
+            builder.interceptors().add(0, new ProxyRedirectInterceptor(null));
+            try (Response response = builder.build().newCall(f.request(HOST)).execute()) {
+                assertEquals(302, response.code());
+                assertTrue(response.request().url().isHttps());
+            }
+            assertEquals(1, f.origin.getRequestCount());
+            assertEquals(0, plaintext.getRequestCount());
+            assertFalse(f.sockets.dials.contains(EDGE));
+        }
+    }
+
     private static MockResponse ok() { return new MockResponse.Builder().body("{}").build(); }
     private static List<InetAddress> ips(String... values) throws UnknownHostException {
         List<InetAddress> result = new ArrayList<>();

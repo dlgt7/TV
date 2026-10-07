@@ -43,7 +43,8 @@ public final class TmdbNetwork {
     private static synchronized OkHttpClient client() {
         if (client == null) client = OkHttp.trustedClient().newBuilder()
                 .connectTimeout(3500, TimeUnit.MILLISECONDS).readTimeout(8, TimeUnit.SECONDS)
-                .callTimeout(20, TimeUnit.SECONDS).addInterceptor(RECOVERY).build();
+                .callTimeout(20, TimeUnit.SECONDS).followSslRedirects(false)
+                .addInterceptor(RECOVERY).build();
         return client;
     }
 }
