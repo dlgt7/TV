@@ -176,11 +176,7 @@ public final class SyncplaySession {
     private void updateFile() {
         if (player == null || player.getCurrentMediaItem() == null) { updateGate(); return; }
         MediaItem item = player.getCurrentMediaItem(); MediaMetadata metadata = item.mediaMetadata;
-        String title = metadata.title == null ? "" : metadata.title.toString();
-        String episode = metadata.artist == null ? "" : metadata.artist.toString();
-        String name = (title + (episode.isEmpty() || episode.equals(title) ? "" : " " + episode)).trim()
-                .replaceAll("[\\p{Cntrl}]+", " ");
-        if (name.length() > 250) name = name.substring(0, 250);
+        String name = SyncplayMediaName.from(metadata.title, metadata.artist);
         long duration = player.getDuration();
         String identity = item.mediaId + "|" + name + "|" + (duration > 0 ? duration / 1000 : 0);
         if (!identity.equals(fileIdentity)) {

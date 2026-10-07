@@ -37,6 +37,8 @@ public final class SyncplaySynchronizer {
         for (SyncplayProtocol.Member member : members) {
             if (member.username.equals(username)) continue;
             if (member.filename.isEmpty() || member.duration <= 0) return Gate.WAITING_FOR_ROOM;
+            if (!confirmedSameMedia && (SyncplayMediaName.isUnknown(filename) || SyncplayMediaName.isUnknown(member.filename)))
+                return Gate.DIFFERENT_MEDIA;
             if (!confirmedSameMedia && (!normalize(filename).equals(normalize(member.filename))
                     || duration > 0 && Math.abs(duration - member.duration) > 2.5))
                 return Gate.DIFFERENT_MEDIA;
