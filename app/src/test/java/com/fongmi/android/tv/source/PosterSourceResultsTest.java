@@ -174,6 +174,107 @@ public class PosterSourceResultsTest {
         assertEquals(1, results.snapshot(true).size());
     }
 
+    @Test
+    public void seriesPosterRejectsExplicitSameNameMovieCategories() {
+        PosterSourceResults results = typedResults("三体", "tv");
+        results.add(List.of(typedVod("movie", "三体", "电影"), typedVod("film", "三体", "FILM"),
+                typedVod("english", "三体", "Movie"), typedVod("series", "三体", "国产电视剧")));
+
+        assertEquals(1, results.snapshot(true).size());
+        assertEquals("series", results.snapshot(true).get(0).vod().getId());
+        assertTrue(results.snapshot(true).get(0).match().confident());
+        assertEquals(3, results.hiddenCount());
+    }
+
+    @Test
+    public void moviePosterRejectsExplicitSameNameSeriesCategories() {
+        PosterSourceResults results = typedResults("三体", "movie");
+        results.add(List.of(typedVod("tv", "三体", "TV"), typedVod("series", "三体", "Drama series"),
+                typedVod("chinese", "三体", "连续剧"), typedVod("traditional", "三体", "電視劇"),
+                typedVod("movie", "三体", "科幻電影")));
+
+        assertEquals(1, results.snapshot(true).size());
+        assertEquals("movie", results.snapshot(true).get(0).vod().getId());
+        assertTrue(results.snapshot(true).get(0).match().confident());
+        assertEquals(4, results.hiddenCount());
+    }
+
+    @Test
+    public void unspecifiedOrAmbiguousCategoriesStayVisibleButUnconfirmed() {
+        PosterSourceResults results = typedResults("三体", "movie");
+        results.add(List.of(typedVod("empty", "三体", ""), typedVod("anime", "三体", "anime"),
+                typedVod("animation", "三体", "国产动漫"), typedVod("mixed", "三体", "电影 / 电视剧"),
+                typedVod("substring", "三体", "ITV精选")));
+
+        assertEquals(5, results.snapshot(true).size());
+        assertTrue(results.snapshot(true).stream().noneMatch(item -> item.match().confident()));
+        assertEquals(0, results.hiddenCount());
+    }
+
+    @Test
+    public void kindIsNeverGuessedFromTitleText() {
+        PosterSourceResults results = typedResults("The Movie", "tv");
+        results.add(List.of(typedVod("title", "The Movie", "")));
+
+        assertEquals(1, results.snapshot(true).size());
+        assertFalse(results.snapshot(true).get(0).match().confident());
+    }
+
+    @Test
+    public void aLaterKnownKindUpgradesTheSameIdAtTheSameTitleScore() {
+        PosterSourceResults results = typedResults("三体", "tv");
+        Vod uncertain = typedVod("same", "三体", "");
+        Vod confirmed = typedVod("same", "三体", "电视剧");
+        results.add(List.of(uncertain, confirmed, uncertain));
+
+        assertEquals(1, results.snapshot(true).size());
+        assertSame(confirmed, results.snapshot(true).get(0).vod());
+        assertTrue(results.snapshot(true).get(0).match().confident());
+    }
+
+    @Test
+    public void explicitConflictingTypeRemovesAnEarlierUnclassifiedCandidate() {
+        PosterSourceResults results = typedResults("三体", "tv");
+        results.add(List.of(typedVod("same", "三体", ""), typedVod("same", "三体", "电影"), typedVod("same", "三体", "")));
+
+        assertTrue(results.snapshot(true).isEmpty());
+        assertEquals(1, results.hiddenCount());
+        results.add(List.of(typedVod("same", "三体", "电视剧")));
+        assertEquals(1, results.snapshot(true).size());
+        assertEquals(0, results.hiddenCount());
+    }
+
+    @Test
+    public void equallyMatchingKnownTypeRanksBeforeUnknownTypeFromPreferredSite() {
+        PosterSourceResults results = new PosterSourceResults(SearchRelevance.Query.of("三体"), "home", List.of("home", "other"), "tv");
+        Vod unknown = vod("home", "unknown", "三体", "");
+        Vod known = vod("other", "known", "三体", "");
+        known.setTypeName("电视剧");
+        results.add(List.of(unknown, known));
+
+        assertSame(known, results.snapshot(true).get(0).vod());
+        assertSame(unknown, results.snapshot(false).get(0).vod());
+    }
+
+    @Test
+    public void legacyConstructorsDoNotImposeANewKindConstraint() {
+        PosterSourceResults results = results("三体");
+        results.add(List.of(typedVod("movie", "三体", "电影"), typedVod("tv", "三体", "电视剧"), typedVod("unknown", "三体", "")));
+
+        assertEquals(3, results.snapshot(true).size());
+        assertTrue(results.snapshot(true).stream().allMatch(item -> item.match().confident()));
+    }
+
+    private static PosterSourceResults typedResults(String title, String type) {
+        return new PosterSourceResults(SearchRelevance.Query.of(title), "", List.of(), type);
+    }
+
+    private static CandidateVod typedVod(String id, String title, String type) {
+        CandidateVod vod = vod("source", id, title, "");
+        vod.setTypeName(type);
+        return vod;
+    }
+
     private static PosterSourceResults results(String title) {
         return new PosterSourceResults(SearchRelevance.Query.of(title), "");
     }
