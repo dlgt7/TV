@@ -32,6 +32,7 @@
             android:orientation="vertical">
 
             <com.fongmi.android.tv.ui.custom.JetStreamSupportingLabelTextView
+                android:id="@+id/sourceLabel"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp" android:text="@string/discover_source_tmdb"
                 android:textSize="13sp" />
@@ -164,11 +165,16 @@
                 android:visibility="gone" />
         </LinearLayout>
 
+        <FrameLayout android:id="@+id/artworkColumn"
+            android:layout_width="216dp" android:layout_height="match_parent">
         <com.fongmi.android.tv.ui.custom.JetStreamPosterImageView
             android:id="@+id/poster"
             android:layout_width="216dp"
             android:layout_height="324dp"
             android:transitionName="discover_poster"
             tools:src="@drawable/ic_launcher_background" />
+        <include android:id="@+id/sourcePanel" layout="@layout/view_poster_sources"
+            android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone" />
+        </FrameLayout>
     </LinearLayout>
 </FrameLayout>

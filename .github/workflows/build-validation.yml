@@ -112,6 +112,11 @@ jobs:
             --tests "com.fongmi.android.tv.diagnostics.*" \
             --tests "com.fongmi.android.tv.drive.*" \
             --tests "com.fongmi.android.tv.model.BoundedSearchBatchTest" \
+            --tests "com.fongmi.android.tv.source.SearchRelevanceTest" \
+            --tests "com.fongmi.android.tv.source.PosterSourceResultsTest" \
+            --tests "com.fongmi.android.tv.utils.SearchResultFilterTest" \
+            --tests "com.fongmi.android.tv.utils.Tmdb*Test" \
+            --tests "com.fongmi.android.tv.ui.home.*" \
             --tests "com.fongmi.android.tv.source.health.*" \
             --tests "com.fongmi.android.tv.server.process.DiagnosticsTest" \
             --tests "com.fongmi.android.tv.player.exo.AbortableCallFactoryTest" \

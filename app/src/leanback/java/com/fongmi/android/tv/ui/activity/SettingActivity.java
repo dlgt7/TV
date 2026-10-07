@@ -38,6 +38,8 @@ import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.PreloadSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.setting.SourceSelectionSetting;
+import com.fongmi.android.tv.setting.BrowseExperienceSettings;
+import com.fongmi.android.tv.utils.TmdbNetwork;
 import com.fongmi.android.tv.source.SourceSelectionMode;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.JetStreamDialogDecor;
@@ -234,6 +236,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         String[] doh = getDohList();
         setRowValue(JetStreamSettingView.KEY_INCOGNITO, Setting.getSwitch(Setting.isIncognito()));
         setSourceSelectionRows();
+        refreshBrowseRows();
         setRowValue(JetStreamSettingView.KEY_DETAIL_FILTER, getStatus(Setting.getDetailFilter()));
         setRowValue(JetStreamSettingView.KEY_FLAG_FILTER, getStatus(Setting.getFlagFilter()));
         setRowValue(JetStreamSettingView.KEY_TOAST_FILTER, Setting.getSwitch(Setting.isToastFilter()));
@@ -250,6 +253,25 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         setMpvLogText();
         setQuickJsLogText();
         setRowValue(JetStreamSettingView.KEY_VERSION, BuildConfig.VERSION_NAME);
+    }
+
+    private void refreshBrowseRows() {
+        setRowValue(JetStreamSettingView.KEY_TMDB_RECOVERY, Setting.getSwitch(TmdbNetwork.isRouteRecoveryEnabled()));
+        setRowValue(JetStreamSettingView.KEY_BROWSE_HOME, getString(BrowseExperienceSettings.isPosterHomeEnabled() ? R.string.browse_home_posters : R.string.browse_home_original));
+        int[] modes = {R.string.browse_filter_original, R.string.browse_filter_relevant, R.string.browse_filter_strict};
+        setRowValue(JetStreamSettingView.KEY_BROWSE_FILTER, getString(modes[BrowseExperienceSettings.getSearchFilterMode()]));
+        setRowValue(JetStreamSettingView.KEY_BROWSE_SOURCES, Setting.getSwitch(BrowseExperienceSettings.isDetailSourcesEnabled()));
+        setRowValue(JetStreamSettingView.KEY_BROWSE_SMART, Setting.getSwitch(BrowseExperienceSettings.isSmartSourceEnabled()));
+    }
+
+    private void setBrowseFilter() {
+        String[] modes = {getString(R.string.browse_filter_original), getString(R.string.browse_filter_relevant), getString(R.string.browse_filter_strict)};
+        new MaterialAlertDialogBuilder(this).setTitle(R.string.browse_search_filter)
+                .setSingleChoiceItems(modes, BrowseExperienceSettings.getSearchFilterMode(), (dialog, which) -> {
+                    BrowseExperienceSettings.putSearchFilterMode(which);
+                    refreshBrowseRows();
+                    dialog.dismiss();
+                }).show();
     }
 
     private void setSourceSelectionRows() {
@@ -354,6 +376,12 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_DANMAKU_AUTO -> setDanmakuAuto();
             case JetStreamSettingView.KEY_DANMAKU_SPIDER -> setDanmakuSpider();
             case JetStreamSettingView.KEY_INCOGNITO -> setIncognito();
+            case JetStreamSettingView.KEY_TMDB_RECOVERY -> { TmdbNetwork.setRouteRecoveryEnabled(!TmdbNetwork.isRouteRecoveryEnabled()); refreshBrowseRows(); }
+            case JetStreamSettingView.KEY_BROWSE_HOME -> { BrowseExperienceSettings.putPosterHomeEnabled(!BrowseExperienceSettings.isPosterHomeEnabled()); refreshBrowseRows(); }
+            case JetStreamSettingView.KEY_BROWSE_FILTER -> setBrowseFilter();
+            case JetStreamSettingView.KEY_BROWSE_SOURCES -> { BrowseExperienceSettings.putDetailSourcesEnabled(!BrowseExperienceSettings.isDetailSourcesEnabled()); refreshBrowseRows(); }
+            case JetStreamSettingView.KEY_BROWSE_SMART -> { BrowseExperienceSettings.putSmartSourceEnabled(!BrowseExperienceSettings.isSmartSourceEnabled()); refreshBrowseRows(); }
+            case JetStreamSettingView.KEY_BROWSE_RESTORE -> { BrowseExperienceSettings.restoreOriginal(); refreshBrowseRows(); Notify.show(R.string.browse_restored); }
             case JetStreamSettingView.KEY_SOURCE_MODE -> setSourceMode();
             case JetStreamSettingView.KEY_SOURCE_CROSS_SITE -> setSourceCrossSite();
             case JetStreamSettingView.KEY_SOURCE_CLEAR -> clearSourceLearning();

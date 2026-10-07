@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_wall_title">发现你的下一部</string>
+    <string name="home_wall_hint">先挑作品，再选喜欢的播放源</string>
+    <string name="home_wall_all">精选</string>
+    <string name="home_wall_movies">电影</string>
+    <string name="home_wall_tv">剧集</string>
+    <string name="home_wall_top">高分</string>
+    <string name="home_wall_loading">正在准备海报…</string>
+    <string name="home_wall_empty">暂时没有可展示的海报</string>
+    <string name="home_wall_empty_hint">可以重试，或打开推荐页挑片。搜索和片库仍可使用。</string>
+    <string name="home_wall_ready">想找更多？去推荐页按类型、地区和年份挑选。</string>
+    <string name="home_wall_retry">刷新海报</string>
+    <string name="home_wall_more">更多推荐</string>
+    <string name="home_wall_settings">首页设置</string>
+    <string name="home_wall_trending">此刻热门</string>
+    <string name="home_wall_movie_shelf">豆瓣 · 热门电影</string>
+    <string name="home_wall_tv_shelf">豆瓣 · 热门剧集</string>
+    <string name="home_wall_playing_shelf">正在热映</string>
+    <string name="home_wall_series_shelf">全球人气剧集</string>
+    <string name="home_wall_top_movies">高分电影</string>
+    <string name="home_wall_top_series">高分剧集</string>
+</resources>
