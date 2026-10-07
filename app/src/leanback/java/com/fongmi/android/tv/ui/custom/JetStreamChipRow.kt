@@ -224,10 +224,12 @@ class JetStreamChipRow @JvmOverloads constructor(
                 val selectedItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == selectedIndex }
                 if (selectedItem != null) {
                     val density = LocalDensity.current
-                    // LazyRow offsets include its content padding; clamp to the viewport so
-                    // the mark cannot paint over neighbouring controls during scrolling.
-                    val center = selectedItem.offset + selectedItem.size / 2f
-                    if (center >= 0 && center <= listState.layoutInfo.viewportEndOffset) {
+                    // Item offsets use the content origin; the overlay uses the viewport
+                    // origin. Include leading content padding in both center and clip bounds.
+                    val layout = listState.layoutInfo
+                    val center = selectedItem.offset - layout.viewportStartOffset + selectedItem.size / 2f
+                    val viewportWidth = layout.viewportEndOffset - layout.viewportStartOffset
+                    if (center >= 0 && center <= viewportWidth) {
                         TvSelectionIndicator(
                             left = with(density) { center.toDp() } - 8.dp,
                             top = maxHeight / 2 + 14.dp
