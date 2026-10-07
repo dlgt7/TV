@@ -347,6 +347,73 @@ public final class NativeBrowseIntegrationTest {
     }
 
     @Test(timeout = 60000)
+    public void scrollingSourceCardsStayInsideTheirViewportAndLeaveControlsUsable() {
+        main(() -> {
+            BrowseExperienceSettings.putDetailSourcesEnabled(true);
+            savedSites = field(VodConfig.get(), "sites");
+            replacedSites = true;
+            setField(VodConfig.get(), "sites", new ArrayList<Site>());
+        });
+        DiscoverDetailActivity detail = launchDetail(true);
+        await(detail::hasWindowFocus, "detail for a scrollable source fixture");
+        tapView(value(() -> detail.findViewById(R.id.search)));
+        View panel = value(() -> detail.findViewById(R.id.sourcePanel));
+        await(() -> panel.isShown() && panel.findViewById(R.id.smart).hasFocus(), "source controls are ready");
+        RecyclerView results = value(() -> panel.findViewById(R.id.results));
+        main(() -> {
+            List<Vod> candidates = new ArrayList<>();
+            for (int index = 0; index < 30; index++) {
+                Vod candidate = poster("scroll-source-item-" + index, "星河旅人", "movie");
+                candidate.setSite(Site.get("scroll-source-" + index, "示例播放源 " + (index + 1)));
+                candidates.add(candidate);
+            }
+            Object controller = field(detail, "sources");
+            ((PosterSourceResults) field(controller, "results")).add(candidates);
+            invoke(controller, "render");
+        });
+        await(() -> results.getAdapter() != null && results.getAdapter().getItemCount() == 30
+                && results.findViewHolderForAdapterPosition(0) != null && results.canScrollVertically(1),
+                "more source cards than can fit in the viewport");
+        main(() -> {
+            View first = results.findViewHolderForAdapterPosition(0).itemView;
+            assertTrue(first.getHeight() > 0);
+            // A non-integral row scroll exposes the first/last partially clipped cards.
+            results.scrollBy(0, first.getHeight() / 2 + results.getPaddingTop());
+        });
+        await(() -> results.getScrollState() == RecyclerView.SCROLL_STATE_IDLE && !results.isLayoutRequested()
+                && !results.isComputingLayout() && !results.isAnimating(), "partial source row scroll settles");
+        main(() -> {
+            RectF viewport = paddedScreenBounds(results);
+            int clippedVisibleCards = 0;
+            for (int index = 0; index < results.getChildCount(); index++) {
+                View card = results.getChildAt(index);
+                RectF full = screenBounds(card);
+                boolean crossesEdge = full.top < viewport.top || full.bottom > viewport.bottom;
+                if (!crossesEdge || !RectF.intersects(viewport, full)) continue;
+                Rect visible = new Rect();
+                assertTrue("A card straddling the viewport still has a visible portion", card.getGlobalVisibleRect(visible));
+                clippedVisibleCards++;
+                assertContains("Overflowing source card pixels must be clipped before the controls/footer", viewport, new RectF(visible));
+            }
+            assertTrue("The fixture must exercise actual partial-row clipping, not only complete cards", clippedVisibleCards > 0);
+            for (int id : new int[]{R.id.heading, R.id.smart, R.id.retry}) {
+                RectF control = screenBounds(panel.findViewById(id));
+                assertTrue("The source header controls remain above the scrolling viewport", control.bottom <= viewport.top + 1.5f);
+            }
+            for (int id : new int[]{R.id.fullSearch, R.id.close}) {
+                RectF control = screenBounds(panel.findViewById(id));
+                assertTrue("The source footer remains below the scrolling viewport", control.top + 1.5f >= viewport.bottom);
+            }
+            assertTrue(panel.findViewById(R.id.smart).requestFocus());
+        });
+        press(KeyEvent.KEYCODE_DPAD_RIGHT);
+        await(() -> panel.findViewById(R.id.retry).hasFocus(), "header controls remain reachable after scrolling many cards");
+        tapView(value(() -> panel.findViewById(R.id.close)));
+        await(() -> !panel.isShown() && detail.findViewById(R.id.search).hasFocus(),
+                "the footer close button remains actionable after partially scrolling source cards");
+    }
+
+    @Test(timeout = 60000)
     public void detailSourcePanelIsOptionalAndWorksWithoutMetadataOrConfiguredSources() {
         DiscoverDetailActivity original = launchDetail(false);
         await(() -> original.hasWindowFocus(), "original detail window");
@@ -524,6 +591,15 @@ public final class NativeBrowseIntegrationTest {
         // Card focus is a scale transform. VisibleRect would conceal the very overflow being tested.
         return new RectF(origin[0], origin[1], origin[0] + view.getWidth() * view.getScaleX(),
                 origin[1] + view.getHeight() * view.getScaleY());
+    }
+
+    private static RectF paddedScreenBounds(View view) {
+        RectF result = screenBounds(view);
+        result.left += view.getPaddingLeft();
+        result.top += view.getPaddingTop();
+        result.right -= view.getPaddingRight();
+        result.bottom -= view.getPaddingBottom();
+        return result;
     }
 
     private static String rowText(RecyclerView recycler, int position, int viewId) {
