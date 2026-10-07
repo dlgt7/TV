@@ -10,12 +10,14 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +68,8 @@ import androidx.tv.material3.MaterialTheme as TvMaterialTheme
 import androidx.tv.material3.Text as TvText
 import com.fongmi.android.tv.ui.theme.JetStreamTheme
 import com.fongmi.android.tv.utils.TmdbLogoTransformation
+
+private const val DETAIL_ACTION_FOCUSED_SCALE = 1.02f
 
 class JetStreamVodDetailView @JvmOverloads constructor(
     context: Context,
@@ -357,14 +361,22 @@ class JetStreamVodDetailView @JvmOverloads constructor(
                 inverseOnSurface = colors.inverseOnSurface
             )
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActionButton(specs.first(), actionModifier(0, Modifier.fillMaxWidth())) {
-                    performAction(DetailAction.WATCH)
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    specs.drop(1).forEachIndexed { index, spec ->
-                        ActionButton(spec, actionModifier(index + 1, Modifier.weight(1f))) {
-                            performAction(spec.action)
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                // Keep normal outlines and scaled corners inside the View host throughout
+                // the focus animation, including the lower row's bottom border.
+                val horizontalGutter = maxOf(6.dp, maxWidth * ((DETAIL_ACTION_FOCUSED_SCALE - 1f) / 2f) + 3.dp)
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalGutter, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActionButton(specs.first(), actionModifier(0, Modifier.fillMaxWidth())) {
+                        performAction(DetailAction.WATCH)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        specs.drop(1).forEachIndexed { index, spec ->
+                            ActionButton(spec, actionModifier(index + 1, Modifier.weight(1f))) {
+                                performAction(spec.action)
+                            }
                         }
                     }
                 }
@@ -384,15 +396,14 @@ class JetStreamVodDetailView @JvmOverloads constructor(
                 onClick = onClick,
                 modifier = buttonModifier,
                 enabled = spec.enabled,
-                // The full-width View host clips a scaled button at its edges.
-                scale = ButtonDefaults.scale(focusedScale = 1.02f)
+                scale = ButtonDefaults.scale(focusedScale = DETAIL_ACTION_FOCUSED_SCALE)
             ) { ActionLabel(spec) }
         } else {
             OutlinedButton(
                 onClick = onClick,
                 modifier = buttonModifier,
                 enabled = spec.enabled,
-                scale = OutlinedButtonDefaults.scale(focusedScale = 1.02f)
+                scale = OutlinedButtonDefaults.scale(focusedScale = DETAIL_ACTION_FOCUSED_SCALE)
             ) { ActionLabel(spec) }
         }
     }
