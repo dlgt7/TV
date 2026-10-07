@@ -34,7 +34,7 @@ public class UpdateRepositoryTest {
 
     private JSONObject manifest(int code) throws Exception {
         JSONObject asset = new JSONObject()
-                .put("url", "https://github.com/wobuhui666/TV/releases/download/build-123/leanback-arm64_v8a.apk")
+                .put("url", "https://github.com/dlgt7/TV/releases/download/build-123/leanback-arm64_v8a.apk")
                 .put("size", 500000000)
                 .put("sha256", "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789");
         return new JSONObject().put("schema", 1).put("code", code).put("name", "5.5.5+20261007")

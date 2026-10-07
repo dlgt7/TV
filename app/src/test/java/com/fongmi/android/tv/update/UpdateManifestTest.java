@@ -12,7 +12,7 @@ public class UpdateManifestTest {
 
     private static final String PACKAGE = "com.fongmi.android.tv";
     private static final String SHA = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
-    private static final String RELEASE = "https://github.com/wobuhui666/TV/releases/download/build-123/";
+    private static final String RELEASE = "https://github.com/dlgt7/TV/releases/download/build-123/";
 
     private JSONObject manifest(String mode, String abi) throws Exception {
         JSONObject asset = new JSONObject().put("url", RELEASE + mode + "-" + abi + ".apk")
@@ -132,20 +132,20 @@ public class UpdateManifestTest {
     public void rejectsWrongOwnerMutableAssetsAndAmbiguousUrls() throws Exception {
         String file = "leanback-arm64_v8a.apk";
         for (String url : new String[]{
-                "http://github.com/wobuhui666/TV/releases/download/build-123/" + file,
+                "http://github.com/dlgt7/TV/releases/download/build-123/" + file,
                 "https://github.com/FongMi/TV/releases/download/build-123/" + file,
-                "https://github.com/wobuhui666/TV/releases/latest/download/" + file,
-                "https://github.com/wobuhui666/TV/releases/download/latest/" + file,
-                "https://github.com/wobuhui666/TV/releases/download/LATEST/" + file,
-                "https://github.com/wobuhui666/TV/releases/download/../" + file,
-                "https://github.com/wobuhui666/TV/releases/download/%2e%2e/" + file,
-                "https://github.com/wobuhui666/TV/releases/download/build-123%2fother/" + file,
+                "https://github.com/dlgt7/TV/releases/latest/download/" + file,
+                "https://github.com/dlgt7/TV/releases/download/latest/" + file,
+                "https://github.com/dlgt7/TV/releases/download/LATEST/" + file,
+                "https://github.com/dlgt7/TV/releases/download/../" + file,
+                "https://github.com/dlgt7/TV/releases/download/%2e%2e/" + file,
+                "https://github.com/dlgt7/TV/releases/download/build-123%2fother/" + file,
                 RELEASE + "../build-123/" + file,
                 RELEASE + file + "?download=true", RELEASE + file + "#fragment",
                 RELEASE + file + "/", RELEASE + "mobile-arm64_v8a.apk", RELEASE + "leanback-armeabi_v7a.apk",
-                "https://user@github.com/wobuhui666/TV/releases/download/build-123/" + file,
-                "https://github.com:443/wobuhui666/TV/releases/download/build-123/" + file,
-                "https://github.com.evil.test/wobuhui666/TV/releases/download/build-123/" + file,
+                "https://user@github.com/dlgt7/TV/releases/download/build-123/" + file,
+                "https://github.com:443/dlgt7/TV/releases/download/build-123/" + file,
+                "https://github.com.evil.test/dlgt7/TV/releases/download/build-123/" + file,
                 "https://gh-proxy.com/" + RELEASE + file}) {
             JSONObject json = manifest("leanback", "arm64_v8a");
             asset(json).put("url", url);
