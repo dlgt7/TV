@@ -22,26 +22,36 @@ import okhttp3.dnsoverhttps.DnsOverHttps;
 public class OkDns implements Dns {
 
     private final ConcurrentHashMap<String, String> map;
+    private final Runnable configurationChanged;
     private volatile Supplier<Doh> supplier;
     private volatile DnsOverHttps doh;
     private Doh selectedDoh = new Doh();
 
     public OkDns() {
+        this(OkHttp::echConfigurationChanged);
+    }
+
+    OkDns(Runnable configurationChanged) {
         this.map = new ConcurrentHashMap<>();
+        this.configurationChanged = configurationChanged;
     }
 
     public synchronized void setDoh(Doh item) {
+        applyDoh(item);
+        configurationChanged.run();
+    }
+
+    private void applyDoh(Doh item) {
         HttpUrl url = HttpUrl.parse(item.getUrl());
         // POST avoids stale shared HTTP GET responses; ECH discovery uses POST as well.
         this.doh = url == null ? null : new DnsOverHttps.Builder().client(new OkHttpClient()).url(url).post(true).bootstrapDnsHosts(item.getHosts()).build();
         this.selectedDoh = Doh.objectFrom(item.toString());
         this.supplier = null;
-        OkHttp.echConfigurationChanged();
     }
 
     public synchronized void setDoh(Supplier<Doh> supplier) {
         this.supplier = supplier;
-        OkHttp.echConfigurationChanged();
+        configurationChanged.run();
     }
 
     /** Snapshot of the same DoH selection used for address lookups. */
@@ -53,7 +63,7 @@ public class OkDns implements Dns {
 
     public void clear() {
         map.clear();
-        OkHttp.echConfigurationChanged();
+        configurationChanged.run();
     }
 
     public void addAll(List<String> hosts) {
@@ -84,6 +94,9 @@ public class OkDns implements Dns {
 
     private synchronized void initDoh(Supplier<Doh> supplier) {
         if (supplier != this.supplier) return;
-        setDoh(supplier.get());
+        // Installing the supplier already invalidated the old route/ECH generation.
+        // Doing it again here cancels the CF DNS Future currently executing this method,
+        // interrupting first-time public-suffix loading and concurrent DNS waiters.
+        applyDoh(supplier.get());
     }
 }

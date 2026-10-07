@@ -249,7 +249,7 @@ public class OkHttp {
             synchronized (instance.echLock) {
                 generation = instance.echGeneration;
             }
-            // Read DNS outside echLock: lazy DNS initialization invalidates the ECH cache.
+            // Keep DNS initialization outside echLock: explicit DNS changes take the DNS lock first.
             Doh selection = dns().getDoh();
             String url = selection.getUrl();
             List<String> ips = new ArrayList<>(selection.getIps());
