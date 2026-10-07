@@ -66,7 +66,9 @@ public final class PosterSourceResults {
                             : new SearchRelevance.Match(match.score(), match.relevant(), match.strict(), false);
                 } else conflictingKinds.remove(id);
             }
-            if (!match.relevant()) {
+            // A source picker offers the work itself. Broad mentions, reviews and trailers remain
+            // available through full search; movie sequels must also agree with the requested title.
+            if (!match.titleMatch() || expectedKind == Kind.MOVIE && !match.strict()) {
                 if (!candidates.containsKey(id) && rejected.size() < 2000) rejected.put(id, true);
                 continue;
             }

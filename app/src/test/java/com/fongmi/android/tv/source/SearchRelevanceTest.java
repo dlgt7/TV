@@ -82,6 +82,24 @@ public class SearchRelevanceTest {
         assertFalse(match("庆余年", "庆余年 / 解说").confident());
         assertFalse(match("The Matrix", "The Matrix (Trailer)").strict());
         assertTrue(match("Trailer Park Boys", "Trailer Park Boys").strict());
+        assertFalse(match("Trailer Park Boys", "Trailer Park Boys / Review").titleMatch());
+        assertTrue(SearchRelevance.evaluate("Trailer Park Boys", "", new SearchRelevance.Query("公园男孩", List.of("Trailer Park Boys"), "", null)).titleMatch());
+    }
+
+    @Test
+    public void posterTitleEvidenceIsDistinctFromBroadSearchAndSeasonSelection() {
+        SearchRelevance.Match allSeasons = match("庆余年", "庆余年 第二季");
+        assertTrue(allSeasons.titleMatch());
+        assertFalse(allSeasons.strict());
+        SearchRelevance.Query constrained = new SearchRelevance.Query("庆余年", List.of(), "2024", 2);
+        SearchRelevance.Match broad = SearchRelevance.evaluate("庆余年 第二季 主创见面会", "2024", constrained);
+        assertEquals(65, broad.score());
+        assertTrue(broad.relevant());
+        assertFalse(broad.titleMatch());
+        SearchRelevance.Match supplement = SearchRelevance.evaluate("庆余年 第二季 / 影评", "2024", constrained);
+        assertEquals(45, supplement.score());
+        assertTrue(supplement.relevant());
+        assertFalse(supplement.titleMatch());
     }
 
     @Test

@@ -89,9 +89,9 @@ public class PosterSourceResultsTest {
 
     @Test
     public void candidateBoundStillAdmitsABetterLateResult() {
-        PosterSourceResults results = results("沙丘");
+        PosterSourceResults results = new PosterSourceResults(new SearchRelevance.Query("沙丘", List.of("Dune"), "", null), "");
         List<Vod> early = new ArrayList<>();
-        for (int i = 0; i < 140; i++) early.add(vod("a", "related-" + i, "沙丘 幕后", ""));
+        for (int i = 0; i < 140; i++) early.add(vod("a", "alias-" + i, "Dune", ""));
         results.add(early);
         Vod exact = vod("b", "exact", "沙丘", "");
         results.add(List.of(exact));
@@ -263,6 +263,37 @@ public class PosterSourceResultsTest {
 
         assertEquals(3, results.snapshot(true).size());
         assertTrue(results.snapshot(true).stream().allMatch(item -> item.match().confident()));
+    }
+
+    @Test
+    public void spiderManPosterRejectsRealReviewSuitDetailsAndFakeTrailerResults() {
+        PosterSourceResults results = new PosterSourceResults(new SearchRelevance.Query("蜘蛛侠：崭新之日", List.of("Spider-Man: Brand New Day"), "2026", null), "", List.of(), "movie");
+        results.add(List.of(
+                typedVod("review", "线上真实影评《蜘蛛侠崭新之日》", "电影"),
+                typedVod("suit", "【漫威】电影《蜘蛛侠：崭新之日》新战衣细节展示", "电影"),
+                typedVod("fake-trailer", "蜘蛛侠：崭新之日 Spider-Man: Brand New Day 伪预告片", "电影"),
+                typedVod("review-alias", "蜘蛛侠：崭新之日 / 影评", "电影")));
+
+        assertTrue(results.snapshot(true).isEmpty());
+        assertEquals(4, results.hiddenCount());
+        Vod exact = typedVod("feature", "Spider-Man: Brand New Day", "电影");
+        results.add(List.of(exact));
+        assertEquals(1, results.snapshot(true).size());
+        assertSame(exact, results.snapshot(true).get(0).vod());
+        assertFalse("Missing year remains an explicit source choice to verify", results.snapshot(true).get(0).match().confident());
+    }
+
+    @Test
+    public void onlyTelevisionPostersAllowUnselectedSeasonSuffixes() {
+        PosterSourceResults movie = typedResults("Rocky", "movie");
+        movie.add(List.of(typedVod("original", "Rocky", "movie"), typedVod("sequel", "Rocky II", "movie")));
+        assertEquals(1, movie.snapshot(true).size());
+        assertEquals("original", movie.snapshot(true).get(0).vod().getId());
+
+        PosterSourceResults tv = typedResults("庆余年", "tv");
+        tv.add(List.of(typedVod("first", "庆余年 第一季", "电视剧"), typedVod("second", "庆余年 第二季", "电视剧"), typedVod("unknown", "庆余年", "")));
+        assertEquals(3, tv.snapshot(true).size());
+        assertEquals(0, tv.hiddenCount());
     }
 
     private static PosterSourceResults typedResults(String title, String type) {

@@ -22,7 +22,7 @@ public final class SearchRelevance {
     // English tags must be separate words: stripping 'IT', 'Dark' or the 'x' in Matrix corrupts titles.
     private static final Pattern NOISE = Pattern.compile("(?i)(?<![a-z0-9])(?:4k|8k|16k|2160p|1080p|720p|480p|uhd|hdr10?\\+?|dolby|blu[ .-]?ray|web[ .-]?dl)(?![a-z0-9])|中文字幕|中字|国语|粤语|高清|超清|蓝光|完结|全集|全\\d+集|无删减|纯净版|修复版|导演剪辑版");
     private static final Pattern BRACKETS = Pattern.compile("[\\[(【]([^\\])】]*)[\\])】]");
-    private static final Pattern SUPPLEMENT = Pattern.compile("(?i)\\b(?:trailer|featurette|recap|review|teaser)\\b|预告|花絮|解说|幕后|速看|影视剪辑");
+    private static final Pattern SUPPLEMENT = Pattern.compile("(?i)\\b(?:trailer|featurette|recap|review|teaser|reaction|breakdown|explained|interview|clips?|fan[ -]?made)\\b|预告|花絮|解说|影评|幕后|速看|影视剪辑|混剪|饭制|战衣细节");
     private static final Pattern NON_WORD = Pattern.compile("[^\\p{L}\\p{Nd}]+");
 
     private SearchRelevance() { }
@@ -40,6 +40,8 @@ public final class SearchRelevance {
 
     public record Match(int score, boolean relevant, boolean strict, boolean confident) {
         public boolean matchesMode(int mode) { return mode == 2 ? strict : relevant; }
+        /** Complete title/known alias evidence; unlike strict(), an unselected TV season is allowed. */
+        public boolean titleMatch() { return relevant && score >= 76; }
     }
 
     public static Match evaluate(Vod result, Query query) {
@@ -74,12 +76,11 @@ public final class SearchRelevance {
             }
         }
         if (score == 0) return none();
-        if (SUPPLEMENT.matcher(normalize(resultTitle)).find() && !SUPPLEMENT.matcher(normalize(query.title())).find()) {
-            exact = false;
-            score = Math.min(score, 45);
-        }
+        boolean supplement = hasExtraSupplement(resultTitle, query);
+        if (supplement) exact = false;
         if (!expected.year.isEmpty() && expected.year.equals(actual.year)) score += 10;
         if (expected.season != null && expected.season.equals(actual.season)) score += 10;
+        if (supplement) score = Math.min(score, 45);
         boolean confirmedYear = expected.year.isEmpty() || expected.year.equals(actual.year);
         boolean confirmedSeason = expected.season == null ? actual.season == null : expected.season.equals(actual.season);
         // Related search may include the series; strict search must not silently change to a sequel.
@@ -93,6 +94,15 @@ public final class SearchRelevance {
         if (hasHan(query)) return compact(candidate).contains(compact(query));
         // Latin queries require word boundaries; 'it' must not match 'Titanic'.
         return (" " + candidate + " ").contains(" " + query + " ");
+    }
+
+    private static boolean hasExtraSupplement(String actual, Query query) {
+        Set<String> titleWords = new LinkedHashSet<>();
+        Matcher known = SUPPLEMENT.matcher(normalize(query.title() + " " + String.join(" ", query.aliases())));
+        while (known.find()) titleWords.add(known.group());
+        Matcher found = SUPPLEMENT.matcher(normalize(actual));
+        while (found.find()) if (!titleWords.contains(found.group())) return true;
+        return false;
     }
 
     private static Title parse(String value, String suppliedYear, Integer suppliedSeason) {
