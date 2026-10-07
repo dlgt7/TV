@@ -4,11 +4,15 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
+import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.webkit.WebView;
 import android.widget.TextView;
 
@@ -271,6 +275,75 @@ public final class NativeBrowseIntegrationTest {
             assertTrue("The footer must follow the complete last shelf: " + shelf + " / " + footer,
                     shelf.bottom <= footer.top + 1.5f);
         });
+    }
+
+    @Test(timeout = 60000)
+    public void firstTouchActivatesCategoriesHeroPostersFooterAndSourceClose() {
+        main(() -> {
+            seedPosters();
+            BrowseExperienceSettings.putPosterHomeEnabled(true);
+            BrowseExperienceSettings.putDetailSourcesEnabled(true);
+        });
+        HomeActivity home = launch(HomeActivity.class);
+        VerticalGridView page = value(() -> home.findViewById(R.id.recycler));
+        await(() -> home.hasWindowFocus() && (int) field(field(home, "mPosterHome"), "pending") == 0,
+                "touch fixture home is ready");
+        main(() -> invoke(home, "requestNavFocus"));
+        await(() -> home.findViewById(R.id.nav).hasFocus(), "remote focus starts outside the touched categories");
+        Rect category = awaitTextBounds(home.getString(R.string.home_wall_top));
+        tap(category.exactCenterX(), category.exactCenterY());
+        await(() -> (int) field(field(home, "mPosterHome"), "category") == 3,
+                "a single actual pointer tap selects the high-rated category");
+
+        main(() -> invoke(home, "requestNavFocus"));
+        await(() -> home.findViewById(R.id.nav).hasFocus(), "focus is outside the hero before its first tap");
+        View action = value(() -> page.findViewHolderForAdapterPosition(0).itemView.findViewById(R.id.action));
+        String title = value(() -> rowText(page, 0, R.id.name));
+        tapView(action);
+        DiscoverDetailActivity detail = awaitActivity(DiscoverDetailActivity.class);
+        main(() -> {
+            assertEquals(title, ((TextView) detail.findViewById(R.id.title)).getText().toString());
+            assertFalse(containsWebView(detail.getWindow().getDecorView()));
+            savedSites = field(VodConfig.get(), "sites");
+            replacedSites = true;
+            setField(VodConfig.get(), "sites", new ArrayList<Site>());
+        });
+        tapView(value(() -> detail.findViewById(R.id.search)));
+        View panel = value(() -> detail.findViewById(R.id.sourcePanel));
+        await(() -> panel.isShown() && panel.findViewById(R.id.smart).hasFocus(), "the source rail opens with focus on its first control");
+        View close = value(() -> panel.findViewById(R.id.close));
+        main(() -> assertFalse("Close has not been focused before the pointer tap", close.hasFocus()));
+        tapView(close);
+        await(() -> !panel.isShown() && detail.findViewById(R.id.search).hasFocus(),
+                "one tap on an unfocused close control closes the native rail");
+
+        press(KeyEvent.KEYCODE_BACK);
+        await(home::hasWindowFocus, "return to the home wall for poster touch");
+        int shelfPosition = value(() -> firstShelfPosition(home));
+        main(() -> focusRow(home, shelfPosition));
+        await(() -> focusedPosterCard(home, shelfPosition) != null, "first card is focused before touching another card");
+        View secondCard = value(() -> {
+            HorizontalGridView posters = page.findViewHolderForAdapterPosition(shelfPosition).itemView.findViewById(R.id.posters);
+            RecyclerView.ViewHolder holder = posters.findViewHolderForAdapterPosition(1);
+            assertNotNull("Fixture contains a second visible poster", holder);
+            assertFalse("The touched poster has not first been focused", holder.itemView.hasFocus());
+            return holder.itemView;
+        });
+        String secondTitle = value(() -> ((TextView) secondCard.findViewById(R.id.name)).getText().toString());
+        tapView(secondCard);
+        DiscoverDetailActivity fromPoster = awaitActivity(DiscoverDetailActivity.class);
+        main(() -> assertEquals(secondTitle, ((TextView) fromPoster.findViewById(R.id.title)).getText().toString()));
+
+        press(KeyEvent.KEYCODE_BACK);
+        await(home::hasWindowFocus, "return to the home wall for footer touch");
+        main(() -> focusRow(home, ((ArrayObjectAdapter) field(home, "mAdapter")).size() - 1));
+        await(() -> visibleView(home, R.id.retry) != null && visibleView(home, R.id.retry).hasFocus(), "footer retry is attached");
+        main(() -> assertTrue(home.findViewById(R.id.more).requestFocus()));
+        int generation = value(() -> (int) field(field(home, "mPosterHome"), "generation"));
+        main(cache::clear);
+        tapView(value(() -> home.findViewById(R.id.retry)));
+        await(() -> (int) field(field(home, "mPosterHome"), "generation") > generation,
+                "one tap on an unfocused footer retry starts a fresh discovery request");
     }
 
     @Test(timeout = 60000)
@@ -553,6 +626,52 @@ public final class NativeBrowseIntegrationTest {
 
     private void press(int keyCode) {
         instrumentation.sendKeyDownUpSync(keyCode);
+        instrumentation.waitForIdleSync();
+    }
+
+    private Rect awaitTextBounds(String text) {
+        long deadline = SystemClock.elapsedRealtime() + 8000;
+        while (SystemClock.elapsedRealtime() < deadline) {
+            AccessibilityNodeInfo root = instrumentation.getUiAutomation().getRootInActiveWindow();
+            if (root != null) {
+                List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(text);
+                Rect found = null;
+                for (AccessibilityNodeInfo node : nodes) {
+                    if (text.contentEquals(node.getText() == null ? "" : node.getText()) && node.isVisibleToUser()) {
+                        Rect bounds = new Rect();
+                        node.getBoundsInScreen(bounds);
+                        if (!bounds.isEmpty()) found = bounds;
+                    }
+                    node.recycle();
+                }
+                root.recycle();
+                if (found != null) return found;
+            }
+            SystemClock.sleep(50);
+        }
+        throw new AssertionError("No visible touch target for " + text);
+    }
+
+    private void tapView(View view) {
+        Rect bounds = value(() -> {
+            Rect result = new Rect();
+            assertTrue("Touch target is actually visible", view.isShown() && view.getGlobalVisibleRect(result) && !result.isEmpty());
+            return result;
+        });
+        tap(bounds.exactCenterX(), bounds.exactCenterY());
+    }
+
+    private void tap(float x, float y) {
+        long downTime = SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0);
+        down.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        try { instrumentation.sendPointerSync(down); }
+        finally { down.recycle(); }
+        SystemClock.sleep(40);
+        MotionEvent up = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0);
+        up.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        try { instrumentation.sendPointerSync(up); }
+        finally { up.recycle(); }
         instrumentation.waitForIdleSync();
     }
 

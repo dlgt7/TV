@@ -29,6 +29,7 @@ import com.fongmi.android.tv.ui.activity.SettingActivity;
 import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.custom.CustomSelector;
 import com.fongmi.android.tv.ui.custom.JetStreamHomeNavView;
+import com.fongmi.android.tv.ui.custom.TouchFocus;
 import com.fongmi.android.tv.ui.presenter.DiscoverHeroPresenter;
 import com.fongmi.android.tv.ui.presenter.VodPresenter;
 import com.fongmi.android.tv.utils.ResUtil;
@@ -233,7 +234,9 @@ public final class PosterHomeController implements VodPresenter.OnClickListener 
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
-            return delegate.onCreateViewHolder(parent);
+            ViewHolder holder = delegate.onCreateViewHolder(parent);
+            TouchFocus.bind(holder.view);
+            return holder;
         }
 
         @Override
@@ -263,6 +266,7 @@ public final class PosterHomeController implements VodPresenter.OnClickListener 
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
             AdapterHomeWallCategoriesBinding binding = AdapterHomeWallCategoriesBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+            binding.categories.setTouchHandlingEnabled(true);
             List<JetStreamHomeNavView.NavItem> items = new ArrayList<>();
             int[] labels = {R.string.home_wall_all, R.string.home_wall_movies, R.string.home_wall_tv, R.string.home_wall_top};
             for (int i = 0; i < labels.length; i++) items.add(new JetStreamHomeNavView.NavItem(String.valueOf(i), activity.getString(labels[i]), 0));
@@ -297,7 +301,16 @@ public final class PosterHomeController implements VodPresenter.OnClickListener 
         @SuppressLint("RestrictedApi")
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
             AdapterHomeWallShelfBinding binding = AdapterHomeWallShelfBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
-            ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(PosterHomeController.this, Style.rect(), new int[]{ResUtil.dp2px(132), ResUtil.dp2px(176)}));
+            VodPresenter presenter = new VodPresenter(PosterHomeController.this, Style.rect(), new int[]{ResUtil.dp2px(132), ResUtil.dp2px(176)}) {
+                @NonNull
+                @Override
+                public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+                    ViewHolder holder = super.onCreateViewHolder(parent);
+                    TouchFocus.bind(holder.view);
+                    return holder;
+                }
+            };
+            ArrayObjectAdapter adapter = new ArrayObjectAdapter(presenter);
             // Empty adapters cannot supply a wrap_content cross-axis measurement to Leanback.
             // Reserve 176 poster + 8 gap + 26 title + 20 metadata; the XML adds 12dp padding per side.
             binding.posters.setRowHeight(ResUtil.dp2px(230));
@@ -339,6 +352,7 @@ public final class PosterHomeController implements VodPresenter.OnClickListener 
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
             AdapterHomeWallFooterBinding binding = AdapterHomeWallFooterBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+            TouchFocus.bind(binding.retry, binding.more, binding.settings);
             binding.retry.setOnClickListener(view -> refresh());
             binding.more.setOnClickListener(view -> DiscoverActivity.start(activity));
             binding.settings.setOnClickListener(view -> SettingActivity.start(activity));
