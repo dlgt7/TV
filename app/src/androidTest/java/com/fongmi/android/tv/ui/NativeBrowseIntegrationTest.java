@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.leanback.widget.ArrayObjectAdapter;
@@ -36,6 +37,7 @@ import com.fongmi.android.tv.source.PosterSourceResults;
 import com.fongmi.android.tv.test.CorePlaybackActivity;
 import com.fongmi.android.tv.ui.activity.DiscoverDetailActivity;
 import com.fongmi.android.tv.ui.activity.HomeActivity;
+import com.fongmi.android.tv.ui.activity.SearchActivity;
 import com.fongmi.android.tv.ui.custom.JetStreamPageProgressLayout;
 import com.fongmi.android.tv.ui.home.PosterHomeController;
 import com.fongmi.android.tv.utils.TmdbNetwork;
@@ -465,6 +467,21 @@ public final class NativeBrowseIntegrationTest {
         press(KeyEvent.KEYCODE_BACK);
         await(() -> !panel.isShown() && detail.findViewById(R.id.search).hasFocus(), "BACK closes only the panel and restores the primary action");
         main(() -> assertFalse(detail.isFinishing()));
+
+        tapView(value(() -> detail.findViewById(R.id.search)));
+        await(panel::isShown, "source panel reopens for the complete-search fallback");
+        tapView(value(() -> panel.findViewById(R.id.fullSearch)));
+        SearchActivity search = awaitActivity(SearchActivity.class);
+        main(() -> {
+            View keyword = search.findViewById(R.id.keyword);
+            assertTrue("The fallback opens an editable input, not a results-only page", keyword instanceof EditText);
+            EditText input = (EditText) keyword;
+            assertEquals("星河旅人", input.getText().toString());
+            assertTrue(input.isEnabled() && input.isFocusable() && input.onCheckIsTextEditor());
+            assertNotNull("The prefilled keyword accepts edits", input.getKeyListener());
+        });
+        press(KeyEvent.KEYCODE_BACK);
+        await(() -> detail.hasWindowFocus() && !detail.isFinishing(), "BACK from editable search returns to the poster detail");
     }
 
     private HomeActivity changeHomeMode(HomeActivity previous, Runnable change, boolean enabled) {
