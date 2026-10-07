@@ -13,7 +13,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -132,6 +132,12 @@ jobs:
           ./gradlew -I "$RUNNER_TEMP/tv-validation.init.gradle" \
             :app:assembleLeanbackArm64_v8aDebug \
             :app:assembleLeanbackArm64_v8aDebugAndroidTest \
+            :app:assembleLeanbackArmeabi_v7aDebug \
+            :app:assembleLeanbackArmeabi_v7aDebugAndroidTest \
+            :app:assembleMobileArm64_v8aDebug \
+            :app:assembleMobileArm64_v8aDebugAndroidTest \
+            :app:assembleMobileArmeabi_v7aDebug \
+            :app:assembleMobileArmeabi_v7aDebugAndroidTest \
             --no-daemon --build-cache --max-workers=2
 
       - name: Verify packages and collect APKs
@@ -140,10 +146,19 @@ jobs:
           import hashlib, json, os, pathlib, re, shutil, subprocess
           root = pathlib.Path('app/build/outputs/apk')
           apks = list(root.rglob('*.apk'))
-          groups = {
-              'app': [p for p in apks if 'androidTest' not in p.parts],
-              'test': [p for p in apks if 'androidTest' in p.parts],
+          VARIANTS = {
+              'leanbackArm64_v8a': ('leanback', 'arm64-v8a'),
+              'leanbackArmeabi_v7a': ('leanback', 'armeabi-v7a'),
+              'mobileArm64_v8a': ('mobile', 'arm64-v8a'),
+              'mobileArmeabi_v7a': ('mobile', 'armeabi-v7a'),
           }
+          groups = {}
+          for apk in apks:
+              variant = next((part for part in apk.parts if part in VARIANTS), None)
+              if variant is None:
+                  raise SystemExit('Unexpected APK variant directory: ' + str(apk))
+              role = 'test' if 'androidTest' in apk.parts else 'app'
+              groups.setdefault((variant, role), []).append(apk)
           package = os.environ['VALIDATION_PACKAGE']
           app_id = 'com.fongmi.android.tv.' + package
           aapt = pathlib.Path(os.environ['ANDROID_HOME']) / 'build-tools/37.0.0/aapt'
@@ -152,12 +167,14 @@ jobs:
           metadata = {
               'applicationCommit': os.environ['GITHUB_SHA'],
               'media3Commit': subprocess.check_output(['git', '-C', '.media3', 'rev-parse', 'HEAD'], text=True).strip(),
-              'abi': 'arm64-v8a', 'buildType': 'debug',
+              'buildType': 'debug',
               'instrumentationExecuted': False, 'files': [],
           }
-          for role, candidates in groups.items():
+          for variant, role in sorted(groups):
+              mode, abi = VARIANTS[variant]
+              candidates = groups[(variant, role)]
               if len(candidates) != 1:
-                  raise SystemExit('Expected exactly one ' + role + ' APK')
+                  raise SystemExit('Expected exactly one ' + mode + '/' + abi + ' ' + role + ' APK')
               source = candidates[0]
               badging = subprocess.check_output([str(aapt), 'dump', 'badging', str(source)], text=True)
               expected = app_id + ('.test' if role == 'test' else '')
@@ -168,17 +185,20 @@ jobs:
                   manifest = subprocess.check_output([str(aapt), 'dump', 'xmltree', str(source), 'AndroidManifest.xml'], text=True)
                   if not re.search(r'android:targetPackage[^\n]*="' + re.escape(app_id) + r'"', manifest):
                       raise SystemExit('Unexpected instrumentation target package')
-              output = destination / (package + '-' + role + '-debug.apk')
+              output = destination / (package + '-' + mode + '-' + abi + '-' + role + '-debug.apk')
               shutil.copyfile(source, output)
-              metadata['files'].append({'file': output.name, 'applicationId': expected,
+              metadata['files'].append({'file': output.name, 'mode': mode, 'abi': abi, 'role': role,
+                                        'applicationId': expected,
                                         'sha256': hashlib.sha256(output.read_bytes()).hexdigest()})
+          if len(metadata['files']) != 8:
+              raise SystemExit('Expected 8 APKs across 4 variants')
           (destination / 'build-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
           PY
 
-      - name: Upload debug APK pair
+      - name: Upload validation APKs
         uses: actions/upload-artifact@v4
         with:
-          name: tv-validation-${{ matrix.package }}-arm64-${{ github.run_id }}
+          name: tv-validation-${{ matrix.package }}-${{ github.run_id }}
           path: validation-apks/
           if-no-files-found: error
           retention-days: 7

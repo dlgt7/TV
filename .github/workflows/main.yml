@@ -1,4 +1,4 @@
-name: Build TV release (manual)
+name: Build TV and Mobile release (manual)
 
 on:
   workflow_dispatch:
@@ -91,9 +91,9 @@ jobs:
           test -n "$KEY_ALIAS"
           test -n "$STORE_PASSWORD"
           test -n "$KEY_PASSWORD"
-          echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode > app/release.jks
           {
-            echo "storeFile=../release.jks"
+            echo "storeFile=release.jks"
             echo "keyAlias=$KEY_ALIAS"
             echo "keyPassword=$KEY_PASSWORD"
             echo "storePassword=$STORE_PASSWORD"
@@ -107,7 +107,7 @@ jobs:
       - name: Build release APKs
         env:
           MEDIA3_SOURCE_DIR: ${{ github.workspace }}/.media3
-        run: ./gradlew -I "$RUNNER_TEMP/tv-sdk-compat.init.gradle" assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
+        run: ./gradlew -I "$RUNNER_TEMP/tv-sdk-compat.init.gradle" assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease assembleMobileArm64_v8aRelease assembleMobileArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
 
       - name: Validate APKs and generate OTA manifest
         env:
@@ -126,6 +126,13 @@ jobs:
             --mode leanback \
             --desc="$RELEASE_NOTES" \
             --output app/build/outputs/ota/leanback.json
+          python3 tools/ota-release.py manifest \
+            --apk-root app/build/outputs/apk \
+            --repository "$RELEASE_REPOSITORY" \
+            --tag "$RELEASE_TAG" \
+            --mode mobile \
+            --desc="$RELEASE_NOTES" \
+            --output app/build/outputs/ota/mobile.json
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
@@ -150,7 +157,7 @@ jobs:
             Source: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
             Branch: `${{ github.ref_name }}`
 
-            Android TV APKs for ARM64 and ARMv7. Choose the ABI supported by your Android system.
+            Android TV and Mobile APKs for ARM64 and ARMv7. Choose the mode and ABI supported by your Android system.
           files: |
             app/build/outputs/apk/**/release/*.apk
             app/build/outputs/ota/*.json
