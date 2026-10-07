@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.ui.custom.TouchFocus;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
@@ -46,6 +47,7 @@ final class PosterSourcesController {
         binding.results.setLayoutManager(new LinearLayoutManager(activity));
         binding.results.setAdapter(adapter);
         binding.results.setItemAnimator(null);
+        TouchFocus.bind(binding.smart, binding.retry, binding.season, binding.fullSearch, binding.close);
         binding.retry.setOnClickListener(view -> start());
         binding.smart.setOnClickListener(view -> {
             BrowseExperienceSettings.putSmartSourceEnabled(!BrowseExperienceSettings.isSmartSourceEnabled());
@@ -203,6 +205,10 @@ final class PosterSourcesController {
 
     private static final class SourceHolder extends RecyclerView.ViewHolder {
         final AdapterPosterSourceBinding row;
-        SourceHolder(AdapterPosterSourceBinding row) { super(row.getRoot()); this.row = row; }
+        SourceHolder(AdapterPosterSourceBinding row) {
+            super(row.getRoot());
+            this.row = row;
+            TouchFocus.bind(row.getRoot());
+        }
     }
 }
