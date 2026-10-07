@@ -63,7 +63,7 @@ class ManifestTest(unittest.TestCase):
         path.write_text(json.dumps(value))
 
     def manifest(self, **kwargs):
-        return OTA.build_manifest(self.root, kwargs.get("repository", "wobuhui666/TV"), kwargs.get("tag", "build-37500000000-1"), desc="遥控体验改进")
+        return OTA.build_manifest(self.root, kwargs.get("repository", "dlgt7/TV"), kwargs.get("tag", "build-37500000000-1"), desc="遥控体验改进")
 
     def test_manifest_uses_actual_outputs_and_tag_pinned_downloads(self):
         result = self.manifest()
@@ -78,7 +78,7 @@ class ManifestTest(unittest.TestCase):
             content = self.paths[abi][0].read_bytes()
             self.assertEqual(hashlib.sha256(content).hexdigest(), asset["sha256"])
             self.assertEqual(len(content), asset["size"])
-            self.assertEqual(f"https://github.com/wobuhui666/TV/releases/download/build-37500000000-1/leanback-{abi}.apk", asset["url"])
+            self.assertEqual(f"https://github.com/dlgt7/TV/releases/download/build-37500000000-1/leanback-{abi}.apk", asset["url"])
 
     def test_reruns_use_distinct_urls_and_legacy_tags_remain_readable(self):
         first = self.manifest(tag="build-37500000000-1")
@@ -93,11 +93,11 @@ class ManifestTest(unittest.TestCase):
         output = self.root / "manifest.json"
         result = subprocess.run([
             sys.executable, str(Path(OTA.__file__)), "manifest",
-            "--apk-root", str(self.root), "--repository", "wobuhui666/TV",
+            "--apk-root", str(self.root), "--repository", "dlgt7/TV",
             "--tag", "build-37500000000-2", "--desc=" + notes, "--output", str(output),
         ], capture_output=True, text=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual(notes, json.loads(output.read_text())["desc"])
+        self.assertEqual(notes, json.loads(output.read_text(encoding="utf-8"))["desc"])
 
     def test_rejects_partial_release(self):
         self.paths["arm64_v8a"][1].unlink()
