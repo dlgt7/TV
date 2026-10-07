@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string-array name="discover_douban_movie_genres">
+        <item>剧情</item>
         <item>喜剧</item>
         <item>爱情</item>
         <item>动作</item>
