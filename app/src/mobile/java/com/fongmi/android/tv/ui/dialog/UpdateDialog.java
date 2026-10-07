@@ -1,5 +1,8 @@
 package com.fongmi.android.tv.ui.dialog;
 
+import android.content.DialogInterface;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
@@ -38,7 +41,7 @@ public class UpdateDialog extends BaseAlertDialog {
     }
 
     public UpdateDialog show(FragmentActivity activity) {
-        show(activity.getSupportFragmentManager(), null);
+        show(activity.getSupportFragmentManager(), "ota-update");
         return this;
     }
 
@@ -49,7 +52,7 @@ public class UpdateDialog extends BaseAlertDialog {
 
     @Override
     protected MaterialAlertDialogBuilder getBuilder() {
-        return builder().setTitle(title).setView(getBinding().getRoot()).setPositiveButton(R.string.update_confirm, null).setNegativeButton(R.string.dialog_negative, null).setCancelable(false);
+        return builder().setTitle(title).setView(getBinding().getRoot()).setPositiveButton(R.string.update_confirm, null).setNegativeButton(R.string.dialog_negative, null).setCancelable(true);
     }
 
     @Override
@@ -60,6 +63,10 @@ public class UpdateDialog extends BaseAlertDialog {
     @Override
     public void onStart() {
         super.onStart();
+        if (listener == null) {
+            dismissAllowingStateLoss();
+            return;
+        }
         AlertDialog dialog = (AlertDialog) getDialog();
         if (dialog != null) dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(view -> listener.onCancel(view));
         if (dialog != null) dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> listener.onConfirm(view));
@@ -68,5 +75,11 @@ public class UpdateDialog extends BaseAlertDialog {
     public void setProgress(int progress) {
         AlertDialog dialog = (AlertDialog) getDialog();
         if (dialog != null) dialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(String.format(Locale.getDefault(), "%1$d%%", progress));
+    }
+
+    @Override
+    public void onCancel(@NonNull DialogInterface dialog) {
+        super.onCancel(dialog);
+        if (listener != null) listener.onCancel(null);
     }
 }
