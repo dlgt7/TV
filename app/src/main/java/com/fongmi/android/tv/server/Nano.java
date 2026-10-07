@@ -5,6 +5,7 @@ import com.fongmi.android.tv.bean.Device;
 import com.fongmi.android.tv.server.impl.Process;
 import com.fongmi.android.tv.server.process.Action;
 import com.fongmi.android.tv.server.process.Cache;
+import com.fongmi.android.tv.server.process.Diagnostics;
 import com.fongmi.android.tv.server.process.Local;
 import com.fongmi.android.tv.server.process.Media;
 import com.fongmi.android.tv.server.process.Parse;
@@ -22,6 +23,7 @@ import fi.iki.elonen.NanoHTTPD;
 public class Nano extends NanoHTTPD {
 
     private static final String INDEX = "index.html";
+    private final Diagnostics diagnostics = new Diagnostics();
 
     private List<Process> process;
 
@@ -32,6 +34,7 @@ public class Nano extends NanoHTTPD {
 
     private void addProcess() {
         process = new ArrayList<>();
+        process.add(diagnostics);
         process.add(new Action());
         process.add(new Cache());
         process.add(new Local());
@@ -60,6 +63,7 @@ public class Nano extends NanoHTTPD {
     public Response serve(IHTTPSession session) {
         String url = session.getUri().trim();
         Map<String, String> files = new HashMap<>();
+        if (diagnostics.isRequest(session, url)) return diagnostics.doResponse(session, url, files);
         if (session.getMethod() == Method.POST) parse(session, files);
         if (url.startsWith("/tvbus")) return ok(LiveConfig.getResp());
         if (url.startsWith("/device")) return ok(Device.get().toString());

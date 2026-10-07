@@ -377,6 +377,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             }
             case JetStreamSettingView.KEY_WEBDAV -> JetStreamDialogDecor.tintButtons(WebDavSyncDialog.show(this, this::refreshAppRows));
             case JetStreamSettingView.KEY_CACHE -> onCache();
+            case JetStreamSettingView.KEY_MAINTENANCE -> com.fongmi.android.tv.ui.dialog.MaintenanceDialog.show(this);
             case JetStreamSettingView.KEY_MPV_LOG -> setMpvLog();
             case JetStreamSettingView.KEY_MPV_LOG_EXPORT -> onMpvLog();
             case JetStreamSettingView.KEY_QUICKJS_LOG -> setQuickJsLog();
@@ -914,12 +915,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     }
 
     private void onCache() {
-        FileUtil.clearCache(new Callback() {
-            @Override
-            public void success() {
-                setCacheText();
-            }
-        });
+        com.fongmi.android.tv.ui.dialog.MaintenanceDialog.cache(this, this::setCacheText);
     }
 
     private String getLogText(boolean enabled, int count) {

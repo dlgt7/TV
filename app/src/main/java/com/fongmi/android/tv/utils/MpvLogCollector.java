@@ -22,6 +22,7 @@ public class MpvLogCollector {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
 
     public static void log(String tag, String message) {
+        com.github.catvod.crawler.diagnostics.DiagnosticLog.record("mpv", tag + ": " + message);
         if (!isEnabled()) return;
         synchronized (logs) {
             String timestamp = dateFormat.format(new Date());
@@ -39,6 +40,7 @@ public class MpvLogCollector {
     }
 
     public static void logError(String tag, String message) {
+        com.github.catvod.crawler.diagnostics.DiagnosticLog.record("mpv", "error " + tag + ": " + message);
         if (!isEnabled()) return;
         synchronized (logs) {
             String timestamp = dateFormat.format(new Date());

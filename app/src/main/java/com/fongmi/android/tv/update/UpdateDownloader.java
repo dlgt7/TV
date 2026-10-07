@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.update;
 
+import com.fongmi.android.tv.cache.CacheLease;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -65,7 +67,7 @@ public final class UpdateDownloader {
             worker = Thread.currentThread();
         }
         boolean completed = false;
-        try {
+        try (CacheLease lease = CacheLease.acquire(target, partial)) {
             File parent = target.getAbsoluteFile().getParentFile();
             if (parent != null && !parent.isDirectory() && !parent.mkdirs() && !parent.isDirectory()) {
                 throw new IOException("Cannot create update directory");
@@ -86,6 +88,7 @@ public final class UpdateDownloader {
                         publish(progress, 100);
                         checkCancelled();
                         completed = true;
+                        CacheLease.protectFor(target, TimeUnit.MINUTES.toMillis(10));
                         return target;
                     }
                 } catch (IOException failure) {

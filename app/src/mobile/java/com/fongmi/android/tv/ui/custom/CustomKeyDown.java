@@ -56,12 +56,28 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
 
     public boolean onTouchEvent(MotionEvent e) {
         int action = e.getActionMasked();
+        if (action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_POINTER_DOWN) cancelGesture();
         if (action == MotionEvent.ACTION_DOWN) multiTouch = false;
         if (action == MotionEvent.ACTION_POINTER_DOWN) multiTouch = true;
         if (action == MotionEvent.ACTION_UP) listener.onTouchEnd();
-        if (changeSpeed && action == MotionEvent.ACTION_UP) listener.onSpeedEnd();
+        if (changeSpeed && action == MotionEvent.ACTION_UP) endSpeed();
         if (changeTime && action == MotionEvent.ACTION_UP) listener.onSeekEnd(time);
         return e.getPointerCount() == 2 ? scaleDetector.onTouchEvent(e) : detector.onTouchEvent(e);
+    }
+
+    public void cancelGesture() {
+        endSpeed();
+        changeTime = false;
+        changeBright = false;
+        changeVolume = false;
+        touch = false;
+        listener.onTouchEnd();
+    }
+
+    private void endSpeed() {
+        if (!changeSpeed) return;
+        changeSpeed = false;
+        listener.onSpeedEnd();
     }
 
     public void resetScale() {
@@ -74,6 +90,7 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
     }
 
     public void setLock(boolean lock) {
+        if (lock) cancelGesture();
         this.lock = lock;
     }
 
@@ -114,7 +131,7 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
 
     @Override
     public void onLongPress(@NonNull MotionEvent e) {
-        if (multiTouch || isEdge(e) || changeScale || lock) return;
+        if (multiTouch || isEdge(e) || changeScale || lock || changeSpeed) return;
         listener.onSpeedUp();
         changeSpeed = true;
     }

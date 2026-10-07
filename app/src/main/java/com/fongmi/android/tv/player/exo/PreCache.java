@@ -25,6 +25,7 @@ public class PreCache implements Player.Listener {
     private static final int PROGRESSIVE_PARALLEL_DOWNLOAD_COUNT = 1;
 
     private final PriorityTaskManager priorityTaskManager;
+    private final PreloadCoordinator coordinator;
     private final Runnable task;
 
     private PreCacheHelper helper;
@@ -33,10 +34,12 @@ public class PreCache implements Player.Listener {
     private HandlerThread worker;
     private MediaItem mediaItem;
     private ExoPlayer player;
+    private PreloadBudget.Lease lease;
     private long lastStartMs;
     private long seekStartMs;
 
-    public PreCache() {
+    PreCache(PreloadCoordinator coordinator) {
+        this.coordinator = coordinator;
         priorityTaskManager = new PriorityTaskManager();
         task = this::check;
     }
@@ -58,6 +61,7 @@ public class PreCache implements Player.Listener {
         cancel();
         if (player != null) player.removeListener(this);
         releaseHelper();
+        coordinator.cancelWaiting(PreloadBudget.Owner.CURRENT);
         unregisterPriorities();
         handler = null;
         mediaItem = null;
@@ -122,6 +126,9 @@ public class PreCache implements Player.Listener {
             return true;
         }
         if (!PreCachePolicy.shouldPreCache(startMs, lastStartMs, hasSeek(), PreloadSetting.getPreloadDurationMs())) return true;
+        if (helper != null) return true;
+        lease = coordinator.acquire(PreloadBudget.Owner.CURRENT, this::pauseForPlayback);
+        if (lease == null) return true;
         ensureHelper();
         helper.preCache(startMs, lengthMs);
         lastStartMs = startMs;
@@ -130,7 +137,10 @@ public class PreCache implements Player.Listener {
     }
 
     private void schedule() {
-        if (handler != null) handler.postDelayed(task, TICK_MS);
+        if (handler != null) {
+            handler.removeCallbacks(task);
+            handler.postDelayed(task, TICK_MS);
+        }
     }
 
     private void cancel() {
@@ -147,15 +157,28 @@ public class PreCache implements Player.Listener {
         // priority manager only blocks at downloader checkpoints, so leaving the request alive
         // can still delay a seek on slow cloud-drive endpoints.
         releaseHelper();
+        schedule();
     }
 
     private PreCacheHelper createHelper(MediaItem mediaItem) {
         callFactory = new AbortableCallFactory(OkHttp.player());
+        AbortableCallFactory request = callFactory;
         DataSource.Factory upstreamFactory = MediaSourceFactory.createUpstreamDataSourceFactory(ExoUtil.extractHeaders(mediaItem), callFactory);
         return new PreCacheHelper.Factory(MediaSourceFactory.getCache(), upstreamFactory, ExoUtil.buildRenderersFactory(), getWorker().getLooper())
                 .setUpstreamPriorityTaskManager(priorityTaskManager)
                 .setProgressiveParallelDownloadCount(PROGRESSIVE_PARALLEL_DOWNLOAD_COUNT)
+                .setListener(new PreCacheHelper.Listener() {
+                    @Override public void onPreCacheCompleted(MediaItem item) { finish(request, true); }
+                    @Override public void onPrepareError(MediaItem item, java.io.IOException error) { finish(request, false); }
+                    @Override public void onDownloadError(MediaItem item, java.io.IOException error) { finish(request, false); }
+                })
                 .create(mediaItem);
+    }
+
+    private void finish(AbortableCallFactory request, boolean completed) {
+        if (request != callFactory) return;
+        if (!completed) lastStartMs = C.TIME_UNSET;
+        releaseHelper();
     }
 
     private void abortUpstream() {
@@ -167,10 +190,12 @@ public class PreCache implements Player.Listener {
     }
 
     private void releaseHelper() {
-        if (helper != null) helper.release(false);
         abortUpstream();
+        if (helper != null) helper.release(false);
         helper = null;
         callFactory = null;
+        coordinator.release(lease);
+        lease = null;
     }
 
     private void registerPriorities() {

@@ -146,6 +146,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.wall.setOnClickListener(this::onWall);
         mBinding.size.setOnClickListener(this::setSize);
         mBinding.cache.setOnClickListener(this::onCache);
+        mBinding.maintenance.setOnClickListener(view -> com.fongmi.android.tv.ui.dialog.MaintenanceDialog.show(requireActivity()));
         mBinding.backup.setOnClickListener(this::onBackup);
         mBinding.player.setOnClickListener(this::onPlayer);
         mBinding.danmaku.setOnClickListener(this::onDanmaku);
@@ -460,11 +461,8 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
     }
 
     private void onCache(View view) {
-        FileUtil.clearCache(new Callback() {
-            @Override
-            public void success() {
-                setCacheText();
-            }
+        com.fongmi.android.tv.ui.dialog.MaintenanceDialog.cache(requireActivity(), () -> {
+            if (isAdded() && getView() != null) setCacheText();
         });
     }
 

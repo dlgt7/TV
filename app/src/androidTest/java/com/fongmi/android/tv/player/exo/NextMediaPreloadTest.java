@@ -29,6 +29,7 @@ public class NextMediaPreloadTest {
     private final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
     private final AtomicReference<PlaybackException> error = new AtomicReference<>();
     private NextMediaPreload next;
+    private PreloadCoordinator coordinator;
     private AdvancedSubtitleController subtitles;
     private CorePlaybackActivity activity;
 
@@ -41,15 +42,23 @@ public class NextMediaPreloadTest {
             main(() -> {
                 PreloadSetting.putNextEpisode(true);
                 subtitles = new AdvancedSubtitleController();
+                coordinator = new PreloadCoordinator();
                 next = new NextMediaPreload(1, new Player.Listener() {
                     @Override public void onPlayerError(PlaybackException e) { error.set(e); }
-                }, subtitles);
+                }, subtitles, coordinator);
                 activity.view.setPlayer(next.player);
                 subtitles.activate(first);
                 next.player.setMediaItem(first); next.player.prepare(); next.player.play();
             });
             await(() -> next.player.getPlaybackState() == Player.STATE_READY && !next.player.isLoading(), "current buffer ready");
-            main(() -> next.preload(second, 0));
+            main(() -> {
+                PreloadBudget.Lease current = coordinator.acquire(PreloadBudget.Owner.CURRENT, () -> {});
+                assertNotNull("Current item can reserve the background connection", current);
+                next.preload(second, 0);
+                assertNull("Next item must wait while current-item pre-cache owns the connection", next.take(second));
+                coordinator.release(current);
+                next.preload(second, 0);
+            });
             SystemClock.sleep(1500);
             AtomicReference<MediaSource> source = new AtomicReference<>();
             main(() -> {
@@ -71,6 +80,7 @@ public class NextMediaPreloadTest {
         } finally {
             main(() -> {
                 activity.view.setPlayer(null);
+                if (coordinator != null) coordinator.detach();
                 if (next != null) { next.release(); next.player.release(); }
                 if (subtitles != null) subtitles.release();
                 activity.finish(); PreloadSetting.putNextEpisode(true);

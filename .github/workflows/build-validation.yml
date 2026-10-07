@@ -108,6 +108,17 @@ jobs:
             :app:testLeanbackArm64_v8aDebugUnitTest \
             --tests "com.fongmi.android.tv.sync.*" \
             --tests "com.fongmi.android.tv.update.*" \
+            --tests "com.fongmi.android.tv.cache.*" \
+            --tests "com.fongmi.android.tv.diagnostics.*" \
+            --tests "com.fongmi.android.tv.drive.*" \
+            --tests "com.fongmi.android.tv.model.BoundedSearchBatchTest" \
+            --tests "com.fongmi.android.tv.source.health.*" \
+            --tests "com.fongmi.android.tv.server.process.DiagnosticsTest" \
+            --tests "com.fongmi.android.tv.player.exo.AbortableCallFactoryTest" \
+            --tests "com.fongmi.android.tv.player.exo.PreCachePolicyTest" \
+            --tests "com.fongmi.android.tv.player.exo.PreloadBudgetTest" \
+            --tests "com.fongmi.android.tv.playback.TemporaryPlaybackSpeedTest" \
+            --tests "com.fongmi.android.tv.utils.HistoryProgressTextTest" \
             --tests "com.fongmi.android.tv.syncplay.*" \
             --tests "com.fongmi.android.tv.player.mpv.*" \
             --tests "com.fongmi.android.tv.ui.custom.SeekConfirmKeySequenceTest" \

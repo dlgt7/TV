@@ -11,13 +11,45 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.SocketPolicy;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 public class AbortableCallFactoryTest {
 
     private static final Request REQUEST = new Request.Builder().url("https://example.com/video.mp4").build();
+
+    @Test public void foregroundPriorityActuallyInterruptsStalledHttpRead() throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        OkHttpClient client = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+            AbortableCallFactory calls = new AbortableCallFactory(client);
+            PreloadBudget budget = new PreloadBudget();
+            budget.update(true, 0);
+            assertNotNull(budget.acquire(PreloadBudget.Owner.NEXT, 0, calls::abort));
+            Future<Boolean> read = executor.submit(() -> {
+                try (Response response = calls.newCall(new Request.Builder().url(server.url("/slow-video")).build()).execute()) {
+                    response.body().bytes();
+                    return false;
+                } catch (java.io.IOException canceled) {
+                    return true;
+                }
+            });
+            assertNotNull(server.takeRequest(2, TimeUnit.SECONDS));
+            budget.update(false, 1);
+            assertTrue("Cancellation must end the socket read, not wait for its 30-second timeout", read.get(2, TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+            client.connectionPool().evictAll();
+            client.dispatcher().executorService().shutdownNow();
+        }
+    }
 
     @Test
     public void shouldCancelCallsCreatedBeforeAbort() {
