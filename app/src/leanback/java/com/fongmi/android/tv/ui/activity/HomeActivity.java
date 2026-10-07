@@ -868,6 +868,17 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             if (mFeaturedPresenter != null) mFeaturedPresenter.onUserInteraction();
         }
         if (KeyUtil.isMenuKey(event)) showDialog();
+        if (KeyUtil.isActionDown(event) && KeyUtil.isUpKey(event) && isContentFocused()) {
+            View focused = getCurrentFocus();
+            RecyclerView.ViewHolder holder = focused == null ? null : mBinding.recycler.findContainingViewHolder(focused);
+            int position = holder == null ? mBinding.recycler.getSelectedPosition() : holder.getBindingAdapterPosition();
+            // The hero overlaps the toolbar's vertical bounds, and a hidden toolbar
+            // cannot be found by spatial focus search. Bridge only the top content row.
+            if (position >= 0 && position == firstFocusableRowIndex()) {
+                requestNavFocus();
+                return true;
+            }
+        }
         if (KeyUtil.isActionDown(event) && KeyUtil.isDownKey(event) && mBinding.toolbar.hasFocus()) {
             requestRecyclerFocus(firstFocusableRowIndex());
             return true;
