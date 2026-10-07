@@ -1,7 +1,7 @@
 name: Build TV release
 
 on:
- // push:
+  push:
     branches:
       - ui/apple-tv-redesign
     paths-ignore:
