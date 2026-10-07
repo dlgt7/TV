@@ -42,6 +42,10 @@ public class Server {
         return "http://" + (local ? "127.0.0.1" : Util.getIp()) + ":" + Proxy.getPort();
     }
 
+    public synchronized boolean isRunning() {
+        return nano != null && nano.isAlive();
+    }
+
     public synchronized void start() {
         if (nano != null) return;
         for (int i = 9978; i < 9999; i++) {

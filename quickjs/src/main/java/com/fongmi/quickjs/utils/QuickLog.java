@@ -5,6 +5,7 @@ import android.os.Environment;
 import android.util.Log;
 
 import com.github.catvod.utils.Prefers;
+import com.github.catvod.crawler.diagnostics.DiagnosticLog;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -98,6 +99,8 @@ public class QuickLog {
     }
 
     private static void write(int priority, String level, String tag, String message, Throwable throwable) {
+        DiagnosticLog.record("quickjs:" + tag, level + ": " + message);
+        if (throwable != null) DiagnosticLog.record("quickjs:" + tag, throwable);
         if (!isEnabled()) return;
         synchronized (logs) {
             String logEntry = String.format(Locale.getDefault(), "[%s] %s-%s: %s", dateFormat.format(new Date()), level, tag, message);

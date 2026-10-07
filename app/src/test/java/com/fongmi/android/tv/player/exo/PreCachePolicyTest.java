@@ -11,6 +11,19 @@ import static org.junit.Assert.assertTrue;
 
 public class PreCachePolicyTest {
 
+    @Test public void reservesTenSecondsAtActualPlaybackSpeed() {
+        assertFalse(PreCachePolicy.hasPlaybackReserve(9_999, 60_000, 20_000, 1f));
+        assertTrue(PreCachePolicy.hasPlaybackReserve(10_000, 60_000, 20_000, 1f));
+        assertFalse(PreCachePolicy.hasPlaybackReserve(15_000, 60_000, 20_000, 2f));
+        assertTrue(PreCachePolicy.hasPlaybackReserve(20_000, 60_000, 25_000, 2f));
+        assertFalse(PreCachePolicy.hasPlaybackReserve(7_000, C.TIME_UNSET, 8_000, 1f));
+    }
+
+    @Test public void completelyBufferedShortEpisodeDoesNotStarveNext() {
+        assertTrue(PreCachePolicy.hasPlaybackReserve(2_000, 8_000, 8_000, 2f));
+        assertFalse(PreCachePolicy.hasPlaybackReserve(2_000, 8_000, 7_999, 1f));
+    }
+
     @Test
     public void shouldOnlyStartAfterPlaybackIsReadyAndNotLoading() {
         assertFalse(PreCachePolicy.canStart(Player.STATE_IDLE, false));

@@ -2,6 +2,10 @@ package com.fongmi.android.tv.update;
 
 import static org.junit.Assert.*;
 
+import com.fongmi.android.tv.cache.CacheFiles;
+import com.fongmi.android.tv.cache.CacheLease;
+import com.fongmi.android.tv.cache.CacheResult;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -68,6 +72,25 @@ public class UpdateDownloaderTest {
     private void assertClean() {
         assertFalse(target().exists());
         assertFalse(new File(target().getPath() + ".part").exists());
+        assertFalse(CacheLease.isInUse(target()));
+        assertFalse(CacheLease.isInUse(new File(target().getPath() + ".part")));
+    }
+
+    @Test public void cleanupCannotRemoveInFlightOrInstallerApk() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(response(APK));
+            CacheFiles cleaner = new CacheFiles(temporary.getRoot());
+            downloader().download(sources(server), target(), APK.length, hash(APK), partial -> {
+                assertTrue(CacheLease.isInUse(target()));
+                CacheResult duringValidation = cleaner.clear(partial);
+                assertEquals(Integer.valueOf(1), duringValidation.reasons.get(CacheResult.Reason.IN_USE));
+                assertTrue(partial.exists());
+            }, null);
+            CacheResult awaitingInstaller = cleaner.clear(target());
+            assertEquals(Integer.valueOf(1), awaitingInstaller.reasons.get(CacheResult.Reason.IN_USE));
+            assertArrayEquals(APK, Files.readAllBytes(target().toPath()));
+            assertFalse(CacheLease.isInUse(new File(target().getPath() + ".part")));
+        }
     }
 
     private void assertFallback(MockResponse broken) throws Exception {

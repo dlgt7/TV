@@ -8,9 +8,12 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fongmi.android.tv.api.config.VodConfig;
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.databinding.AdapterVodBinding;
 import com.fongmi.android.tv.utils.ImgUtil;
+import com.fongmi.android.tv.utils.HistoryProgressText;
+import com.fongmi.android.tv.utils.ContinueWatchingProgress;
 
 public class HistoryAdapter extends BaseDiffAdapter<History, HistoryAdapter.ViewHolder> {
 
@@ -61,6 +64,8 @@ public class HistoryAdapter extends BaseDiffAdapter<History, HistoryAdapter.View
         ViewHolder holder = new ViewHolder(AdapterVodBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
         holder.binding.getRoot().getLayoutParams().width = width;
         holder.binding.image.getLayoutParams().height = height;
+        holder.binding.remark.setMaxWidth(Math.max(0, width - com.fongmi.android.tv.utils.ResUtil.dp2px(16)));
+        holder.binding.remark.setEllipsize(android.text.TextUtils.TruncateAt.END);
         return holder;
     }
 
@@ -70,12 +75,14 @@ public class HistoryAdapter extends BaseDiffAdapter<History, HistoryAdapter.View
         boolean same = item.getVodName().equals(item.getVodRemarks());
         holder.binding.name.setText(item.getVodName());
         holder.binding.site.setText(item.getSiteName());
-        holder.binding.remark.setText(item.getVodRemarks());
+        String played = holder.itemView.getContext().getString(R.string.history_played_time, HistoryProgressText.elapsed(item.getPosition(), item.getDuration()));
+        holder.binding.remark.setText(same || item.getVodRemarks().isEmpty() ? played : played + " · " + item.getVodRemarks());
         holder.binding.site.setVisibility(item.getSiteVisible());
-        holder.binding.progress.setMax((int) item.getDuration());
-        holder.binding.progress.setProgress((int) item.getPosition(), animate);
+        holder.binding.progress.setMax(1000);
+        holder.binding.progress.setProgress(Math.round(1000 * ContinueWatchingProgress.fraction(item.getPosition(), item.getDuration())), animate);
         holder.binding.delete.setVisibility(!delete ? View.GONE : View.VISIBLE);
-        holder.binding.remark.setVisibility(delete || same ? View.GONE : View.VISIBLE);
+        holder.binding.remark.setVisibility(delete ? View.GONE : View.VISIBLE);
+        holder.itemView.setContentDescription(item.getVodName() + ", " + item.getVodRemarks() + ", " + played);
         ImgUtil.load(item.getVodName(), item.getVodPic(), holder.binding.image);
         setClickListener(holder.binding.getRoot(), item);
     }

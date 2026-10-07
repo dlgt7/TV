@@ -622,7 +622,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
-                    android:text="@string/setting_cache"
+                    android:text="@string/maintenance_cache"
                     android:textColor="@color/white"
                     android:textSize="16sp" />
 
@@ -675,6 +675,16 @@
                     android:textSize="16sp" />
 
             </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/maintenance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/shape_item"
+                android:text="@string/maintenance_title"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
 
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/version"

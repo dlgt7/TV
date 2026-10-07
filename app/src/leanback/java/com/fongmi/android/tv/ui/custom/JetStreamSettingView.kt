@@ -596,7 +596,8 @@ class JetStreamSettingView @JvmOverloads constructor(
                     RowSpec(KEY_SYNCPLAY_ENABLED, context.getString(R.string.setting_syncplay), toggle = true),
                     RowSpec(KEY_SYNCPLAY, context.getString(R.string.syncplay_connection_settings)),
                     RowSpec(KEY_WEBDAV, context.getString(R.string.setting_webdav)),
-                    RowSpec(KEY_CACHE, context.getString(R.string.setting_cache), actions = listOf(ActionSpec(KEY_CACHE, context.getString(R.string.setting_clear), R.drawable.msr_storage))),
+                    RowSpec(KEY_CACHE, context.getString(R.string.maintenance_cache), actions = listOf(ActionSpec(KEY_CACHE, context.getString(R.string.maintenance_cache), R.drawable.msr_storage))),
+                    RowSpec(KEY_MAINTENANCE, context.getString(R.string.maintenance_title)),
                     RowSpec(KEY_MPV_LOG, "MPV播放日志", actions = listOf(ActionSpec(KEY_MPV_LOG_EXPORT, "导出日志", R.drawable.msr_storage))),
                     RowSpec(KEY_QUICKJS_LOG, "JS调试日志", actions = listOf(ActionSpec(KEY_QUICKJS_LOG_EXPORT, "导出日志", R.drawable.msr_storage))),
                     RowSpec(KEY_VERSION, context.getString(R.string.setting_version))
@@ -685,6 +686,7 @@ class JetStreamSettingView @JvmOverloads constructor(
         const val KEY_SYNCPLAY_ENABLED = "syncplay_enabled"
         const val KEY_WEBDAV = "webdav"
         const val KEY_CACHE = "cache"
+        const val KEY_MAINTENANCE = "maintenance"
         const val KEY_MPV_LOG = "mpv_log"
         const val KEY_MPV_LOG_EXPORT = "mpv_log_export"
         const val KEY_QUICKJS_LOG = "quickjs_log"

@@ -3,6 +3,7 @@ package com.fongmi.chaquo;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.github.catvod.utils.Path;
+import com.github.catvod.crawler.SpiderDebug;
 
 public class Loader {
 
@@ -10,6 +11,11 @@ public class Loader {
 
     public Loader() {
         if (!Python.isStarted()) Python.start(Platform.create());
+        try {
+            Python.getInstance().getModule("tv_diagnostics").callAttr("install");
+        } catch (Exception error) {
+            SpiderDebug.log(error);
+        }
         app = Python.getInstance().getModule("app");
     }
 

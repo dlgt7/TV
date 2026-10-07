@@ -13,6 +13,13 @@ final class PreCachePolicy {
         return playbackState == Player.STATE_READY && !loading;
     }
 
+    static boolean hasPlaybackReserve(long bufferedDurationMs, long durationMs, long bufferedPositionMs, float speed) {
+        // Short clips and the end of an episode cannot reach a ten-second buffer, but no
+        // foreground download remains once the whole item has been buffered.
+        if (durationMs > 0 && bufferedPositionMs >= durationMs) return true;
+        return bufferedDurationMs >= 10_000L * Math.max(1f, speed);
+    }
+
     static boolean supportsContentType(@C.ContentType int contentType) {
         return contentType == C.CONTENT_TYPE_OTHER;
     }

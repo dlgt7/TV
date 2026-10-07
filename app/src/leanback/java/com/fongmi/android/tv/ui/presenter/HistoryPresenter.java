@@ -11,6 +11,7 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.databinding.AdapterHistoryBinding;
 import com.fongmi.android.tv.utils.ContinueWatchingProgress;
+import com.fongmi.android.tv.utils.HistoryProgressText;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 
@@ -84,9 +85,11 @@ public class HistoryPresenter extends Presenter {
         String time = remaining < 0 ? holder.view.getContext().getString(R.string.home_continue_watching)
                 : remaining == 0 ? holder.view.getContext().getString(R.string.home_history_watched)
                 : holder.view.getContext().getString(R.string.home_history_remaining, remaining);
-        holder.binding.remaining.setText(time);
+        String played = holder.view.getContext().getString(R.string.history_played_time, HistoryProgressText.elapsed(item.getPosition(), item.getDuration()));
+        holder.binding.remaining.setText(played + " · " + time);
+        holder.binding.remaining.setEllipsize(android.text.TextUtils.TruncateAt.END);
         holder.binding.progress.setProgress(ContinueWatchingProgress.fraction(item.getPosition(), item.getDuration()));
-        holder.view.setContentDescription(item.getVodName() + ", " + item.getVodRemarks() + ", " + time);
+        holder.view.setContentDescription(item.getVodName() + ", " + item.getVodRemarks() + ", " + played + ", " + time);
         ImgUtil.loadArtwork(item.getVodName(), item.getVodPic(), holder.binding.image, null);
     }
 

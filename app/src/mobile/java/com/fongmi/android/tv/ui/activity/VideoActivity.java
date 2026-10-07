@@ -132,6 +132,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private VideoViewModel mViewModel;
     private ValueAnimator mAnimator;
     private CustomKeyDown mKeyDown;
+    private final com.fongmi.android.tv.playback.TemporaryPlaybackSpeed temporarySpeed = new com.fongmi.android.tv.playback.TemporaryPlaybackSpeed();
     private History mHistory;
     private boolean fullscreen;
     private boolean useParse;
@@ -584,6 +585,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     public void startPlayback(Result result, boolean useParse, long startPositionMs, History history, Episode episode) {
+        onSpeedEnd();
         claimLocalPlayback();
         startPlayer(getHistoryKey(), result, useParse, getSite().getTimeout(), startPositionMs, VodPlaybackMedia.metadata(history, episode));
     }
@@ -666,6 +668,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     public void renderHistory(History history) {
+        onSpeedEnd();
         mHistory = history;
         mBinding.control.action.opening.setText(history.getOpening() <= 0 ? getString(R.string.play_op) : Util.timeMs(history.getOpening()));
         mBinding.control.action.ending.setText(history.getEnding() <= 0 ? getString(R.string.play_ed) : Util.timeMs(history.getEnding()));
@@ -1526,7 +1529,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     public void onSpeedUp() {
-        if (!player().isPlaying()) return;
+        if (!isPlaybackReady() || !player().isPlaying() || !temporarySpeed.begin(player().getSpeed())) return;
         mBinding.widget.speed.setVisibility(View.VISIBLE);
         mBinding.widget.speed.startAnimation(ResUtil.getAnim(R.anim.forward));
         PlaybackAction.setSpeed(player(), mBinding.control.action.speed, PlayerSetting.getSpeed());
@@ -1534,8 +1537,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     public void onSpeedEnd() {
+        Float previousSpeed = temporarySpeed.end();
         mBinding.widget.speed.clearAnimation();
-        PlaybackAction.setSpeed(player(), mBinding.control.action.speed, mHistory.getSpeed());
+        mBinding.widget.speed.setVisibility(View.GONE);
+        if (isPlaybackReady() && previousSpeed != null) PlaybackAction.setSpeed(player(), mBinding.control.action.speed, previousSpeed);
     }
 
     @Override
@@ -1669,6 +1674,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     protected void onStop() {
+        if (mKeyDown != null) mKeyDown.cancelGesture();
         super.onStop();
         if (PlayerSetting.isBackgroundOff()) mClock.stop();
         if (!isAudioOnly()) setStop(true);
