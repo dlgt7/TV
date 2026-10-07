@@ -143,6 +143,10 @@ public class DiscoverResultActivity extends BaseActivity implements VodPresenter
     }
 
     private void openDetail(Vod item, View poster) {
+        if (com.fongmi.android.tv.setting.BrowseExperienceSettings.isDetailSourcesEnabled()) {
+            DiscoverDetailActivity.start(this, item, poster);
+            return;
+        }
         com.fongmi.android.tv.bean.DiscoverMediaKey key = com.fongmi.android.tv.bean.DiscoverMediaKey.parse(item.getId());
         if (key == null) {
             CollectActivity.start(this, item.getName());

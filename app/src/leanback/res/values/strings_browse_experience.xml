@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browse_tmdb_recovery">TMDB 网络兼容</string>
+    <string name="browse_section">首页与发现</string>
+    <string name="browse_home">首页海报墙</string>
+    <string name="browse_home_original">原有首页</string>
+    <string name="browse_home_posters">推荐海报墙</string>
+    <string name="browse_search_filter">搜索相关性</string>
+    <string name="browse_filter_original">原有匹配</string>
+    <string name="browse_filter_relevant">过滤无关结果</string>
+    <string name="browse_filter_strict">严格片名匹配</string>
+    <string name="browse_detail_sources">海报详情内选源</string>
+    <string name="browse_smart_sources">海报智能匹配</string>
+    <string name="browse_restore">恢复原有浏览体验</string>
+    <string name="browse_restored">已恢复原有首页、搜索和详情；片源与记录已保留</string>
+    <string name="browse_settings_help">所有新功能均可独立关闭。智能匹配在海报选源内按片名、原名、年份排列结果，不会自动播放。</string>
+    <string name="poster_sources_title">选择播放来源</string>
+    <string name="poster_sources_open">选择来源</string>
+    <string name="poster_sources_smart">智能匹配</string>
+    <string name="poster_sources_order">按源顺序</string>
+    <string name="poster_sources_ranked">匹配优先</string>
+    <string name="poster_sources_idle">从已配置的片源查找这部作品，选择后进入播放详情。</string>
+    <string name="poster_sources_progress">正在查找 · %1$d 个候选 · %2$d/%3$d 次检索已返回</string>
+    <string name="poster_sources_complete">%1$d 个候选 · 已隐藏 %2$d 个无关结果</string>
+    <string name="poster_sources_deadline">本轮查找已结束 · %1$d 个候选；慢源可重试</string>
+    <string name="poster_sources_empty">暂未找到相关来源，可重试或打开完整搜索修改片名。</string>
+    <string name="poster_sources_no_sites">还没有可搜索的片源，请先在设置中配置。</string>
+    <string name="poster_sources_search">完整搜索</string>
+    <string name="poster_sources_retry">重新查找</string>
+    <string name="poster_sources_close">收起</string>
+    <string name="poster_sources_ready">片名与信息吻合</string>
+    <string name="poster_sources_check">相关候选 · 请核对年份与季数</string>
+    <string name="poster_sources_unverified">来源尚未验证播放</string>
+    <string name="poster_sources_season">选择季数</string>
+    <string name="poster_sources_all_seasons">所有季</string>
+    <string name="poster_sources_season_number">第 %1$d 季</string>
+</resources>

@@ -739,6 +739,10 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
     }
 
     private void openItem(Vod item, View poster) {
+        if (com.fongmi.android.tv.setting.BrowseExperienceSettings.isDetailSourcesEnabled()) {
+            DiscoverDetailActivity.start(this, item, poster);
+            return;
+        }
         DiscoverMediaKey key = DiscoverMediaKey.parse(item.getId());
         if (key != null) {
             openTmdb(key, item, poster);

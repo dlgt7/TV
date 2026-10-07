@@ -13,6 +13,7 @@ import com.fongmi.android.tv.bean.DiscoverQuery;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.utils.TmdbNetwork;
 import com.github.catvod.utils.Prefers;
+import com.github.catvod.net.OkHttp;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,6 +42,7 @@ public final class TmdbConnectivityTest {
         long started = SystemClock.elapsedRealtime();
         try {
             TmdbNetwork.setRouteRecoveryEnabled(true);
+            assertSame(OkHttp.client().dispatcher(), OkHttp.trustedClient().dispatcher());
             CountDownLatch listing = new CountDownLatch(1);
             AtomicReference<List<Vod>> items = new AtomicReference<>();
             AtomicReference<Exception> failure = new AtomicReference<>();
@@ -49,7 +51,7 @@ public final class TmdbConnectivityTest {
                 public void onError(Exception e) { failure.set(e); listing.countDown(); }
             });
             assertTrue("TMDB list timed out", listing.await(25, TimeUnit.SECONDS));
-            assertNull(failure.get() == null ? "" : failure.get().getClass().getSimpleName(), failure.get());
+            if (failure.get() != null) fail("TMDB request failed: " + failure.get().getClass().getSimpleName());
             assertNotNull(items.get()); assertFalse(items.get().isEmpty());
             report.put("listCount", items.get().size());
             DiscoverMediaKey key = DiscoverMediaKey.parse(items.get().get(0).getId());
@@ -61,7 +63,7 @@ public final class TmdbConnectivityTest {
                 public void onError(Exception e) { failure.set(e); details.countDown(); }
             });
             assertTrue("TMDB detail timed out", details.await(25, TimeUnit.SECONDS));
-            assertNull(failure.get() == null ? "" : failure.get().getClass().getSimpleName(), failure.get());
+            if (failure.get() != null) fail("TMDB request failed: " + failure.get().getClass().getSimpleName());
             assertNotNull(detail.get()); assertFalse(detail.get().getTitle().isEmpty());
             report.put("detailLoaded", true);
             try (Response response = TmdbNetwork.newCall(new Request.Builder().url(detail.get().getPoster()).tag(tag).build()).execute()) {
@@ -75,7 +77,7 @@ public final class TmdbConnectivityTest {
             report.put("passed", true);
         } catch (Throwable failure) {
             report.put("errorType", failure.getClass().getSimpleName());
-            throw failure;
+            throw new AssertionError("TMDB network verification failed: " + failure.getClass().getSimpleName());
         } finally {
             DiscoverApi.cancel(tag);
             TmdbNetwork.setRouteRecoveryEnabled(previous);

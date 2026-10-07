@@ -7,6 +7,7 @@
 | 主题 | 文档 |
 | --- | --- |
 | 配置字段与示例 | [CONFIG](CONFIG.md) |
+| 原生海报墙、搜索过滤与海报选源 | [使用说明](native-discovery.md) |
 | 诊断、缓存与播放工具 | [使用说明](practical-improvements.md) |
 | OTA 更新与云控 | [使用说明](ota-updates.md) |
 | 直播与节目单 | [LIVE](LIVE.md) |
