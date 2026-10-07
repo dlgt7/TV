@@ -28,7 +28,7 @@
     <androidx.recyclerview.widget.RecyclerView android:id="@+id/results"
         android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
         android:layout_marginTop="12dp" android:layout_marginBottom="12dp"
-        android:clipToPadding="false" android:padding="3dp" />
+        android:clipChildren="true" android:clipToPadding="true" android:padding="3dp" />
     <com.fongmi.android.tv.ui.custom.JetStreamSupportingLabelTextView
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginBottom="8dp" android:textSize="11sp" android:text="@string/poster_sources_unverified" />
