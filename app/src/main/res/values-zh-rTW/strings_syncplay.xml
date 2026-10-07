@@ -32,4 +32,6 @@
     <string name="syncplay_same_server">房間成員需使用同一伺服器和連接埠。</string>
     <string name="syncplay_custom_server">自訂伺服器</string>
     <string name="syncplay_selected_server">同步伺服器：%1$s</string>
+    <string name="syncplay_connection_settings">一起看連線設定</string>
+    <string name="syncplay_password_required">此伺服器需要密碼，請輸入本次密碼，並先開啟影片再加入。</string>
 </resources>

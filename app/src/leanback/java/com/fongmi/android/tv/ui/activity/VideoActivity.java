@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
@@ -60,6 +61,8 @@ import com.fongmi.android.tv.player.util.PlayerHelper;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.syncplay.SyncplaySession;
+import com.fongmi.android.tv.ui.dialog.SyncplayControls;
 import com.fongmi.android.tv.ui.custom.CustomKeyDownVod;
 import com.fongmi.android.tv.ui.custom.JetStreamAnimator;
 import com.fongmi.android.tv.ui.custom.JetStreamChipRow;
@@ -154,6 +157,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private String mTmdbLogoUrl;
     private String mTmdbLogoRequest;
     private int mRatingRequest;
+    private final java.util.function.Consumer<SyncplaySession.Status> mSyncplayObserver = this::syncJetStreamSyncplay;
 
     public static void push(FragmentActivity activity, String text) {
         Uri uri = UrlUtil.uri(text);
@@ -1471,6 +1475,13 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
             case "ending" -> onEnding();
             case "edition" -> onEdition();
             case "chapter" -> onChapter();
+            case "syncplay_toggle" -> {
+                AlertDialog dialog = SyncplayControls.toggle(this);
+                if (dialog != null) {
+                    playbackPanelCommand = key;
+                    com.fongmi.android.tv.ui.custom.JetStreamDialogDecor.tintButtons(dialog);
+                }
+            }
             case "syncplay" -> com.fongmi.android.tv.ui.custom.JetStreamDialogDecor.tintButtons(
                     com.fongmi.android.tv.ui.dialog.SyncplayDialog.show(this));
         }
@@ -1548,7 +1559,13 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         setJetStreamCommand("ending", mBinding.control.action.ending, true);
         setJetStreamCommand("edition", mBinding.control.action.edition, isVisible(mBinding.control.action.edition));
         setJetStreamCommand("chapter", mBinding.control.action.chapter, isVisible(mBinding.control.action.chapter));
-        setJetStreamCommand("syncplay", getString(R.string.setting_syncplay), true, false);
+        syncJetStreamSyncplay(SyncplaySession.get().status());
+    }
+
+    private void syncJetStreamSyncplay(SyncplaySession.Status status) {
+        if (mBinding == null) return;
+        setJetStreamCommand("syncplay_toggle", SyncplayControls.statusText(this, status), true, SyncplayControls.enabled(status));
+        setJetStreamCommand("syncplay", getString(R.string.syncplay_connection_settings), true, false);
     }
 
     private void setJetStreamCommand(String key, TextView view, boolean visible) {
@@ -2112,12 +2129,14 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     @Override
     protected void onStart() {
         super.onStart();
+        SyncplaySession.get().observe(mSyncplayObserver);
         AiSubtitlePlaybackUi.refresh(mBinding.control.action.aiSubtitle, mBinding.control.action.aiLanguage);
         mClock.stop().start();
     }
 
     @Override
     protected void onStop() {
+        SyncplaySession.get().removeObserver(mSyncplayObserver);
         super.onStop();
         if (PlayerSetting.isBackgroundOff()) mClock.stop();
     }
@@ -2139,6 +2158,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     protected void onDestroy() {
+        SyncplaySession.get().removeObserver(mSyncplayObserver);
         com.fongmi.android.tv.syncplay.SyncplaySession.get().detach(this);
         if (mVod != null) mVod.clearPreload();
         if (mKeyDown != null) mKeyDown.reset();

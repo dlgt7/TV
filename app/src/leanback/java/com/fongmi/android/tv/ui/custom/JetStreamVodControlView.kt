@@ -43,6 +43,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
@@ -72,8 +73,13 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -732,6 +738,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     itemsIndexed(displayedCommands, key = { _, item -> item.first }) { index, item ->
+                        val isSyncplaySwitch = item.first == "syncplay_toggle"
                         MaterialSettingsButton(
                             enabled = open,
                             onClick = { triggerCommand(item.first, false) },
@@ -742,6 +749,10 @@ class JetStreamVodControlView @JvmOverloads constructor(
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                             modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).focusRequester(requesters[index])
                                 .onFocusChanged { if (it.isFocused) focusedIndex = index }
+                                .then(if (isSyncplaySwitch) Modifier.semantics {
+                                    role = Role.Switch
+                                    toggleableState = if (item.second.selected) ToggleableState.On else ToggleableState.Off
+                                } else Modifier)
                         ) {
                             val title = commandTitle(item.first, item.second)
                             val value = item.second.label.trim()
@@ -752,7 +763,7 @@ class JetStreamVodControlView @JvmOverloads constructor(
                             }
                             val showValue = title.isNotEmpty() && value != title && value != placeholder
                             Column(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = if (isSyncplaySwitch) Modifier.weight(1f) else Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 Text(
@@ -770,6 +781,15 @@ class JetStreamVodControlView @JvmOverloads constructor(
                                     lineHeight = 18.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (isSyncplaySwitch) {
+                                // The existing TV button owns remote input: one row, one focus target.
+                                Switch(
+                                    checked = item.second.selected,
+                                    onCheckedChange = null,
+                                    enabled = open,
+                                    modifier = Modifier.padding(start = 12.dp).clearAndSetSemantics { }
                                 )
                             }
                         }
@@ -791,7 +811,8 @@ class JetStreamVodControlView @JvmOverloads constructor(
             "ending" -> R.string.playback_command_ending
             "edition" -> R.string.play_edition
             "chapter" -> R.string.play_chapter
-            "syncplay" -> R.string.setting_syncplay
+            "syncplay" -> R.string.syncplay_connection_settings
+            "syncplay_toggle" -> R.string.setting_syncplay
             "text" -> R.string.play_track_text
             "audio" -> R.string.play_track_audio
             "video" -> R.string.play_track_video
@@ -1057,6 +1078,6 @@ class JetStreamVodControlView @JvmOverloads constructor(
 
         private val PLAYLIST_COMMANDS = listOf("prev", "next", "change", "parse", "replay", "reset")
         private val CAPTION_COMMANDS = listOf("subtitle", "text", "audio", "video", "ai", "ai_language", "danmaku")
-        private val SETTINGS_COMMANDS = listOf("speed", "scale", "player", "decode", "opening", "ending", "edition", "chapter", "syncplay")
+        private val SETTINGS_COMMANDS = listOf("syncplay_toggle", "syncplay", "speed", "scale", "player", "decode", "opening", "ending", "edition", "chapter")
     }
 }

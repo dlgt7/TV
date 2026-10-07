@@ -27,6 +27,10 @@ public final class SyncplayDialog {
     private SyncplayDialog() { }
 
     public static AlertDialog show(Context context) {
+        return show(context, 0);
+    }
+
+    public static AlertDialog show(Context context, int notice) {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
         View form = LayoutInflater.from(builder.getContext()).inflate(R.layout.dialog_syncplay, null);
         TextInputEditText host = form.findViewById(R.id.syncplay_host), port = form.findViewById(R.id.syncplay_port);
@@ -51,6 +55,7 @@ public final class SyncplayDialog {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(value.phase != SyncplaySession.Phase.CONNECTING);
         };
         session.observe(observer);
+        if (notice != 0) status.setText(notice);
         dialog.setOnDismissListener(ignored -> session.removeObserver(observer));
         confirm.setOnClickListener(view -> session.confirmSameMedia());
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> session.leave());

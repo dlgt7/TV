@@ -9,10 +9,12 @@ public final class SyncplaySettings {
     public static String username() { return Prefers.getString("syncplay_username", "TV"); }
     public static String room() { return Prefers.getString("syncplay_room", ""); }
     public static boolean tls() { return Prefers.getBoolean("syncplay_tls", true); }
+    public static boolean needsPassword() { return Prefers.getBoolean("syncplay_requires_password", false); }
     public static void save(SyncplayConfig config) {
         Prefers.put("syncplay_host", config.host); Prefers.put("syncplay_port", config.port);
         Prefers.put("syncplay_username", config.username); Prefers.put("syncplay_room", config.room);
         Prefers.put("syncplay_tls", config.requireTls);
+        Prefers.put("syncplay_requires_password", !config.password.isEmpty());
         // Server passwords belong to this connection only; saving settings never joins a room.
     }
 }

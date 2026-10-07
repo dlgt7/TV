@@ -32,4 +32,6 @@
     <string name="syncplay_same_server">房间成员需使用同一服务器和端口。</string>
     <string name="syncplay_custom_server">自定义服务器</string>
     <string name="syncplay_selected_server">同步服务器：%1$s</string>
+    <string name="syncplay_connection_settings">一起看连接设置</string>
+    <string name="syncplay_password_required">此服务器需要密码，请输入本次密码，并先打开影片再加入。</string>
 </resources>

@@ -32,4 +32,6 @@
     <string name="syncplay_same_server">Room members must use the same server and port.</string>
     <string name="syncplay_custom_server">Custom server</string>
     <string name="syncplay_selected_server">Sync server: %1$s</string>
+    <string name="syncplay_connection_settings">Syncplay connection settings</string>
+    <string name="syncplay_password_required">Enter the password for this connection. Open a video before joining.</string>
 </resources>

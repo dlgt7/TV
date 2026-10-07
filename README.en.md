@@ -76,7 +76,7 @@ Choose a theme color, open a source, and browse or search for a title. During pl
 
 | Entry point | What it controls |
 | --- | --- |
-| Player → Options → Watch together | Manually join or leave a Syncplay room. Each device opens its own copy of the same video. |
+| Player → Options; My → Settings → App | Toggle Watch together to join or leave; separate connection settings select the server and room. |
 | My → Settings → Multi-device sync | WebDAV account, sync scope, manual sync, and optional automatic sync. |
 
 Exo's next-episode feature is controlled in **Settings → Preload**. It applies to eligible HTTP sources; parser-dependent, DRM, and non-HTTP sources are excluded. MPV retains its own current-stream cache.

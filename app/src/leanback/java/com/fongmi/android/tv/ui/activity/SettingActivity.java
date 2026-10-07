@@ -52,6 +52,7 @@ import com.fongmi.android.tv.ui.dialog.WebDavSyncDialog;
 import com.fongmi.android.tv.sync.WebDavSyncManager;
 import com.fongmi.android.tv.sync.WebDavSyncSettings;
 import com.fongmi.android.tv.syncplay.SyncplaySession;
+import com.fongmi.android.tv.ui.dialog.SyncplayControls;
 import com.fongmi.android.tv.ui.dialog.DohDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
@@ -95,6 +96,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     private String[] engine;
     private String[] size;
     private String[] mpvAnime4K;
+    private final java.util.function.Consumer<SyncplaySession.Status> mSyncplayObserver = this::refreshSyncplayRows;
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingActivity.class));
@@ -240,12 +242,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         setRowValue(JetStreamSettingView.KEY_DOH, doh.length == 0 ? "" : doh[getDohIndex()]);
         setRowValue(JetStreamSettingView.KEY_ECH, Setting.getSwitch(EchSettings.isEnabled()));
         setRowValue(JetStreamSettingView.KEY_CF_PREFERRED, getCloudflarePreferredStatus());
-        SyncplaySession.Status syncplay = SyncplaySession.get().status();
-        setRowValue(JetStreamSettingView.KEY_SYNCPLAY, getString(switch (syncplay.phase) {
-            case OFFLINE -> R.string.syncplay_offline;
-            case CONNECTING -> R.string.syncplay_connecting;
-            case JOINED -> R.string.syncplay_synchronizing;
-        }));
+        refreshSyncplayRows(SyncplaySession.get().status());
         setRowValue(JetStreamSettingView.KEY_WEBDAV, getWebDavStatus());
         setThemeText();
         mBinding.settingView.refreshThemeSelection();
@@ -374,6 +371,10 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
             case JetStreamSettingView.KEY_BACKUP -> onBackup();
             case JetStreamSettingView.KEY_RESTORE -> onRestore();
             case JetStreamSettingView.KEY_SYNCPLAY -> JetStreamDialogDecor.tintButtons(SyncplayDialog.show(this));
+            case JetStreamSettingView.KEY_SYNCPLAY_ENABLED -> {
+                androidx.appcompat.app.AlertDialog dialog = SyncplayControls.toggle(this);
+                if (dialog != null) JetStreamDialogDecor.tintButtons(dialog);
+            }
             case JetStreamSettingView.KEY_WEBDAV -> JetStreamDialogDecor.tintButtons(WebDavSyncDialog.show(this, this::refreshAppRows));
             case JetStreamSettingView.KEY_CACHE -> onCache();
             case JetStreamSettingView.KEY_MPV_LOG -> setMpvLog();
@@ -1015,6 +1016,24 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     public void onConfigEvent(ConfigEvent event) {
         refreshSourceRows();
         refreshDanmakuRows();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        SyncplaySession.get().observe(mSyncplayObserver);
+    }
+
+    @Override
+    protected void onStop() {
+        SyncplaySession.get().removeObserver(mSyncplayObserver);
+        super.onStop();
+    }
+
+    private void refreshSyncplayRows(SyncplaySession.Status status) {
+        if (mBinding == null) return;
+        setRowValue(JetStreamSettingView.KEY_SYNCPLAY_ENABLED, Setting.getSwitch(SyncplayControls.enabled(status)));
+        setRowValue(JetStreamSettingView.KEY_SYNCPLAY, SyncplayControls.statusText(this, status));
     }
 
     @Override
