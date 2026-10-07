@@ -12,6 +12,7 @@ import android.webkit.WebView;
 import android.widget.TextView;
 
 import androidx.leanback.widget.ArrayObjectAdapter;
+import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -222,11 +223,16 @@ public final class NativeBrowseIntegrationTest {
         press(KeyEvent.KEYCODE_DPAD_RIGHT);
         press(KeyEvent.KEYCODE_DPAD_CENTER);
         await(() -> (int) field(field(home, "mPosterHome"), "category") == 1, "movie category selected with the remote");
-        main(() -> focusRow(home, firstShelfPosition(home)));
-        await(() -> recycler.hasFocus() && recycler.getSelectedPosition() == firstShelfPosition(home), "poster shelf focus");
+        int shelfPosition = value(() -> firstShelfPosition(home));
+        main(() -> focusRow(home, shelfPosition));
+        // Home first selects the shelf, then transfers focus to a card in a delayed callback.
+        // The category still owns focus in between; sending CENTER then cancels that callback.
+        await(() -> focusedPosterCard(home, shelfPosition) != null, "the actual clickable poster card receives focus");
+        String posterTitle = value(() -> ((TextView) focusedPosterCard(home, shelfPosition).findViewById(R.id.name)).getText().toString());
         press(KeyEvent.KEYCODE_DPAD_CENTER);
         DiscoverDetailActivity fromPoster = awaitActivity(DiscoverDetailActivity.class);
         main(() -> {
+            assertEquals(posterTitle, ((TextView) fromPoster.findViewById(R.id.title)).getText().toString());
             assertFalse(containsWebView(fromPoster.getWindow().getDecorView()));
             assertNotNull(field(fromPoster, "sources"));
         });
@@ -363,6 +369,19 @@ public final class NativeBrowseIntegrationTest {
         if (holder == null) return "";
         TextView view = holder.itemView.findViewById(viewId);
         return view == null ? "" : view.getText().toString();
+    }
+
+    private static View focusedPosterCard(HomeActivity home, int shelfPosition) {
+        VerticalGridView page = home.findViewById(R.id.recycler);
+        if (!home.hasWindowFocus() || page.getSelectedPosition() != shelfPosition) return null;
+        RecyclerView.ViewHolder shelf = page.findViewHolderForAdapterPosition(shelfPosition);
+        if (shelf == null) return null;
+        HorizontalGridView posters = shelf.itemView.findViewById(R.id.posters);
+        if (posters == null || !posters.hasFocus()) return null;
+        RecyclerView.ViewHolder card = posters.findViewHolderForAdapterPosition(posters.getSelectedPosition());
+        if (card == null || !card.itemView.isShown() || !card.itemView.hasFocus()
+                || !card.itemView.isClickable() || !card.itemView.hasOnClickListeners()) return null;
+        return card.itemView;
     }
 
     private static View visibleView(Activity activity, int id) {
