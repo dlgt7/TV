@@ -76,6 +76,10 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     private final Player.Commands commands;
     private final Map<String, Integer> trackIdsByGroupId;
     private final MpvSeekPreroll seekPreroll = new MpvSeekPreroll();
+    private final MpvVideoOutputRecovery videoOutputRecovery = new MpvVideoOutputRecovery();
+    private boolean outputReloadPending;
+    private boolean awaitingOutputStart;
+    private boolean recoveryHasVideo;
 
     private PlaybackParameters playbackParameters;
     private TrackSelectionParameters trackSelectionParameters;
@@ -281,6 +285,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     @Override
     protected ListenableFuture<?> handleStop() {
+        beginVideoOutputPlayback();
         command("stop");
         pendingUrl = null;
         pendingStartPositionMs = C.TIME_UNSET;
@@ -409,6 +414,10 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         long targetMs = positionMs == C.TIME_UNSET ? 0 : Math.max(0, positionMs);
         if (durationMs > 0) targetMs = Math.min(targetMs, durationMs);
         this.positionMs = targetMs;
+        if (outputReloadPending) {
+            pendingSeekAfterLoadMs = targetMs;
+            return Futures.immediateVoidFuture();
+        }
         command("seek", seconds(targetMs), "absolute+exact");
         if (playbackState == Player.STATE_ENDED) playbackState = Player.STATE_READY;
         return Futures.immediateVoidFuture();
@@ -421,7 +430,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     @Override
     public void eventProperty(String property, long value) {
-        runOnApplicationThread(() -> {
+        runForPlayback(() -> {
+            if (outputReloadPending) return;
             if ("time-pos".equals(property)) positionMs = Math.max(0, value * 1000L);
             invalidateState();
         });
@@ -429,7 +439,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     @Override
     public void eventProperty(String property, boolean value) {
-        runOnApplicationThread(() -> {
+        runForPlayback(() -> {
+            if (outputReloadPending) return;
             switch (property) {
                 case "pause" -> playWhenReady = !value;
                 case "paused-for-cache" -> {
@@ -444,7 +455,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     @Override
     public void eventProperty(String property, String value) {
-        runOnApplicationThread(() -> {
+        runForPlayback(() -> {
+            if (outputReloadPending) return;
             if ("speed".equals(property)) playbackParameters = new PlaybackParameters(parseFloat(value, playbackParameters.speed));
             invalidateState();
         });
@@ -452,7 +464,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     @Override
     public void eventProperty(String property, double value) {
-        runOnApplicationThread(() -> {
+        runForPlayback(() -> {
+            if (outputReloadPending) return;
             switch (property) {
                 case "time-pos/full" -> positionMs = secondsToMs(value, positionMs);
                 case "duration/full", "duration" -> durationMs = secondsToMs(value, C.TIME_UNSET);
@@ -479,17 +492,17 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
      */
     @Override
     public void event(int eventId, MPVNode data) {
-        runOnApplicationThread(() -> handleEvent(eventId, data));
+        runForPlayback(() -> handleEvent(eventId, data));
     }
 
     /** Gold-compatible shape if JNI dispatches bare event ids without node payload. */
     public void event(int eventId) {
-        runOnApplicationThread(() -> handleEvent(eventId, null));
+        runForPlayback(() -> handleEvent(eventId, null));
     }
 
     /** Gold MPVLib.EventObserver default path for END_FILE with reason/error strings. */
     public void eventEndFile(int reason, int error, @Nullable String errorString) {
-        runOnApplicationThread(() -> handleEndFile(reason, error, errorString));
+        runForPlayback(() -> handleEndFile(reason, error, errorString));
     }
 
     @Override
@@ -498,6 +511,12 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         String message = (TextUtils.isEmpty(prefix) ? "" : prefix + ": ") + text.trim();
         if (level <= MpvLogLevel.MPV_LOG_LEVEL_ERROR) MpvLogCollector.logError("MPV", message);
         else MpvLogCollector.log("MPV", message);
+        if (level <= MpvLogLevel.MPV_LOG_LEVEL_ERROR && MpvVideoOutputRecovery.isContextFailure(prefix, text)) {
+            long observedGeneration = videoOutputRecovery.generation();
+            runForPlayback(() -> {
+                if (videoOutputRecovery.recordFailure(observedGeneration)) recoverVideoOutputIfNeeded();
+            });
+        }
     }
 
     private void initialize() {
@@ -656,6 +675,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     }
 
     private void startInternal(PlaySpec spec, long startPositionMs, int decode) {
+        beginVideoOutputPlayback();
         this.spec = spec;
         this.decode = decode;
         this.mediaItem = MediaItemFactory.from(spec);
@@ -690,6 +710,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
 
     private void startMediaItem(MediaItem item, long startPositionMs) {
         if (item.localConfiguration == null) return;
+        beginVideoOutputPlayback();
         this.spec = null;
         this.mediaItem = item;
         this.positionMs = startPositionMs == C.TIME_UNSET ? 0 : Math.max(0, startPositionMs);
@@ -713,6 +734,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     }
 
     private void clearPlaylist() {
+        beginVideoOutputPlayback();
         command("stop");
         restoreSeekPreroll();
         mediaItem = null;
@@ -777,6 +799,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         if (closed) return;
         switch (eventId) {
             case MpvEvent.MPV_EVENT_START_FILE -> {
+                awaitingOutputStart = false;
                 fileLoaded = false;
                 loading = true;
                 playbackState = Player.STATE_BUFFERING;
@@ -784,6 +807,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 invalidateState();
             }
             case MpvEvent.MPV_EVENT_FILE_LOADED -> {
+                if (recoverVideoOutputIfNeeded()) return;
+                restoreOutputReloadState();
                 fileLoaded = true;
                 loading = false;
                 playbackState = Player.STATE_READY;
@@ -803,6 +828,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                         && !effectsAudioLayout.equals(propString("audio-params/channels", ""))) applyAudioEffects();
             }
             case MpvEvent.MPV_EVENT_VIDEO_RECONFIG -> {
+                if (recoverVideoOutputIfNeeded()) return;
                 MpvLogCollector.log("MpvPlayer", "视频重新配置");
                 seekAfterLoadIfNeeded();
                 readVideoSize();
@@ -811,6 +837,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 invalidateState();
             }
             case MpvEvent.MPV_EVENT_PLAYBACK_RESTART -> {
+                if (recoverVideoOutputIfNeeded()) return;
+                restoreOutputReloadState();
                 fileLoaded = true;
                 loading = false;
                 if (mediaItem != null) playbackState = Player.STATE_READY;
@@ -833,7 +861,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     }
 
     private void handleEndFile(int reason, int error, @Nullable String errorString) {
-        if (closed) return;
+        if (closed || awaitingOutputStart) return;
+        if (recoverVideoOutputIfNeeded()) return;
         loading = false;
         fileLoaded = false;
         boolean isError = reason == MpvEndFile.REASON_ERROR || error != 0
@@ -955,7 +984,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
             MpvLogCollector.log("MpvPlayer", "视频尺寸: " + width + "x" + height + ", 显示尺寸: " + displayWidth + "x" + displayHeight);
             markRenderedFirstFrame();
         } else {
-            MpvLogCollector.log("MpvPlayer", "无视频尺寸信息 (可能是纯音频)");
+            MpvLogCollector.log("MpvPlayer", "暂未取得视频尺寸，不能据此判断为纯音频");
         }
     }
 
@@ -990,6 +1019,7 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
                 int type = toTrackType(propString(prefix + "type", ""));
                 int id = propInt(prefix + "id", C.INDEX_UNSET);
                 if (type == C.TRACK_TYPE_UNKNOWN || id == C.INDEX_UNSET) continue;
+                if (type == C.TRACK_TYPE_VIDEO && !propBoolean(prefix + "albumart")) recoveryHasVideo = true;
                 String groupId = trackGroupId(type, id);
                 TrackGroup group = new TrackGroup(groupId, buildTrackFormat(prefix, type, id));
                 boolean selected = type == C.TRACK_TYPE_TEXT ? id == propInt("sid", -1) : propBoolean(prefix + "selected");
@@ -1216,6 +1246,77 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         return HttpHeaders.REFERER.equalsIgnoreCase(key) || "Referrer".equalsIgnoreCase(key);
     }
 
+    private void beginVideoOutputPlayback() {
+        videoOutputRecovery.beginPlayback();
+        outputReloadPending = false;
+        awaitingOutputStart = false;
+        recoveryHasVideo = false;
+    }
+
+    private boolean recoverVideoOutputIfNeeded() {
+        if (!videoOutputRecovery.hasFailure() || awaitingOutputStart || closed || mediaItem == null
+                || playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED
+                || attachedSurface == null || !attachedSurface.isValid()) return false;
+        // A missing size alone is not a GPU failure, and audio/cover-art-only files must not reload.
+        if (!recoveryHasVideo) {
+            for (int i = 0; i < trackListCount(); i++) {
+                if ("video".equals(propString("track-list/" + i + "/type", ""))
+                        && !propBoolean("track-list/" + i + "/albumart")) {
+                    recoveryHasVideo = true; break;
+                }
+            }
+        }
+        if (!recoveryHasVideo) return false;
+        // Late errors from the discarded VO must not replace an already configured new output.
+        if (propBoolean("vo-configured") && activeVideoOutputDriver().equals(propString("current-vo", ""))) {
+            videoOutputRecovery.clearFailure(); return false;
+        }
+        return recoverVideoOutput();
+    }
+
+    private boolean recoverVideoOutput() {
+        String driver = videoOutputRecovery.next(PlayerSetting.isMpvVulkan(), activeVideoOutputDriver());
+        if (driver == null) {
+            outputReloadPending = false; awaitingOutputStart = false;
+            try { MPVLib.INSTANCE.command(new String[]{"stop"}); } catch (RuntimeException ignored) { }
+            fail(new PlaybackException("MPV播放失败: 视频输出初始化失败，兼容 OpenGL 输出也不可用", null,
+                    PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSOR_INIT_FAILED));
+            return true;
+        }
+        long resumePosition = pendingSeekAfterLoadMs != C.TIME_UNSET ? pendingSeekAfterLoadMs
+                : pendingStartPositionMs != C.TIME_UNSET ? pendingStartPositionMs : positionMs;
+        String url = spec != null ? spec.getUrl() : mediaItem.localConfiguration == null ? null : mediaItem.localConfiguration.uri.toString();
+        outputReloadPending = true; awaitingOutputStart = true;
+        try {
+            MpvLogCollector.log("MpvPlayer", "GPU context失败，兼容重载 OpenGL/" + driver + " position=" + Math.max(0, resumePosition) + "ms");
+            MPVLib.INSTANCE.command(new String[]{"stop"});
+            pendingUrl = null; pendingStartPositionMs = C.TIME_UNSET; pendingSeekAfterLoadMs = C.TIME_UNSET;
+            fileLoaded = false; renderedFirstFrame = false; newlyRenderedFirstFrame = false;
+            videoSize = VideoSize.UNKNOWN; loading = true; playerError = null; playbackState = Player.STATE_BUFFERING;
+            MpvOptions.applyOpenGlVideoOutput(driver);
+            if (spec != null) applyHeaders(spec.getHeaders());
+            if (!rebindVideoOutputForDecoderChange("兼容视频输出")) throw new IllegalStateException("Video surface rebind failed");
+            positionMs = Math.max(0, resumePosition);
+            if (TextUtils.isEmpty(url)) throw new IllegalStateException("No media to reload");
+            loadUrl(url, positionMs);
+            invalidateState();
+        } catch (RuntimeException failure) {
+            // This is a renderer failure, not a network retry or a reason to switch decode repeatedly.
+            MpvLogCollector.logError("MpvPlayer", "兼容视频输出配置失败: " + failure.getClass().getSimpleName());
+            return recoverVideoOutput();
+        }
+        return true;
+    }
+
+    private void restoreOutputReloadState() {
+        if (!outputReloadPending) return;
+        // Ignore native reset notifications until the reloaded file can receive our current controls.
+        MPVLib.INSTANCE.setPropertyString("pause", playWhenReady ? "no" : "yes");
+        MPVLib.INSTANCE.setPropertyString("speed", Float.toString(playbackParameters.speed));
+        MPVLib.INSTANCE.setPropertyString("volume", Float.toString(volume * 100f));
+        outputReloadPending = false;
+    }
+
     private void reloadForDecoderChange(String reason, Runnable applyOptions) {
         if (closed) return;
         String url = spec != null ? spec.getUrl() : mediaItem != null && mediaItem.localConfiguration != null
@@ -1296,7 +1397,8 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         if (profile == 7) {
             MpvLogCollector.log("MpvPlayer", "Dolby Vision profile 7 enhancement layer is unsupported; using BL/RPU");
         }
-        reloadForDecoderChange("Dolby Vision 软件解码", MpvOptions::applyDolbyVisionSoftwareDecode);
+        reloadForDecoderChange("Dolby Vision 软件解码", () ->
+                MpvOptions.applyDolbyVisionSoftwareDecode(videoOutputRecovery.driver("gpu-next")));
         return true;
     }
 
@@ -1304,14 +1406,14 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         dolbyDecoderOverride = null;
         dolbyPlatformFallbackRequested = false;
         try {
-            MpvOptions.applyPlaybackDefaults(decode);
+            MpvOptions.applyPlaybackDefaults(decode, videoOutputRecovery.openGlDriver());
         } catch (Throwable e) {
             MpvLogCollector.logError("MpvPlayer", "恢复默认视频输出失败: " + e.getMessage());
         }
     }
 
     private String activeVideoOutputDriver() {
-        return "no".equals(dolbyDecoderOverride) ? "gpu-next" : MpvOptions.videoOutputDriver();
+        return videoOutputRecovery.driver("no".equals(dolbyDecoderOverride) ? "gpu-next" : MpvOptions.videoOutputDriver());
     }
 
     private int selectedVideoDolbyProfile() {
@@ -1618,6 +1720,14 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
         return isHlsUrl(url) || isHttpUrl(url);
     }
 
+    private void runForPlayback(Runnable runnable) {
+        long observedGeneration = videoOutputRecovery.generation();
+        runOnApplicationThread(() -> {
+            if (!closed && !videoOutputRecovery.isTerminal()
+                    && observedGeneration == videoOutputRecovery.generation()) runnable.run();
+        });
+    }
+
     private void runOnApplicationThread(Runnable runnable) {
         if (Looper.myLooper() == getApplicationLooper()) runnable.run();
         else App.post(runnable);
@@ -1630,9 +1740,10 @@ final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObserver, 
     }
 
     private void refreshTracksOnApplicationThread() {
-        runOnApplicationThread(() -> {
-            if (closed) return;
+        runForPlayback(() -> {
+            if (outputReloadPending) return;
             readTracks();
+            if (recoverVideoOutputIfNeeded()) return;
             invalidateState();
         });
     }

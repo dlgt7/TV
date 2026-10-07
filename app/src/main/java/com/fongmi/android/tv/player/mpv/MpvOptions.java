@@ -102,14 +102,29 @@ final class MpvOptions {
         }
     }
 
-    static void applyPlaybackDefaults(int decode) {
-        MPVLib.INSTANCE.setPropertyString("vo", videoOutputDriver());
+    static void applyPlaybackDefaults(int decode, String openGlDriver) {
+        MPVLib.INSTANCE.setPropertyString("vo", openGlDriver == null ? videoOutputDriver() : openGlDriver);
         applyDecode(decode);
     }
 
-    static void applyDolbyVisionSoftwareDecode() {
+    static void applyDolbyVisionSoftwareDecode(String driver) {
         MPVLib.INSTANCE.setPropertyString("hwdec", "no");
-        MPVLib.INSTANCE.setPropertyString("vo", "gpu-next");
+        MPVLib.INSTANCE.setPropertyString("vo", driver);
+    }
+
+    /** Recreate the VO in the existing native player, keeping demux/network options intact. */
+    static void applyOpenGlVideoOutput(String driver) {
+        if (!"gpu".equals(driver) && !"gpu-next".equals(driver)) throw new IllegalArgumentException("Unsupported compatible video output");
+        checked("vo", "null");
+        checked("gpu-api", "opengl");
+        checked("gpu-context", "android");
+        checked("opengl-es", "yes");
+        checked("vo", driver);
+    }
+
+    private static void checked(String name, String value) {
+        int result = MPVLib.INSTANCE.setOptionString(name, value);
+        if (result < 0) throw new IllegalStateException("MPV video option rejected: " + name + " (" + result + ")");
     }
 
     /**

@@ -106,7 +106,7 @@ jobs:
             :app:testLeanbackArm64_v8aDebugUnitTest \
             --tests "com.fongmi.android.tv.sync.*" \
             --tests "com.fongmi.android.tv.syncplay.*" \
-            --tests "com.fongmi.android.tv.player.mpv.MpvSeekPrerollTest" \
+            --tests "com.fongmi.android.tv.player.mpv.*" \
             --no-daemon --build-cache --max-workers=2
 
       - name: Build application and instrumentation APKs
