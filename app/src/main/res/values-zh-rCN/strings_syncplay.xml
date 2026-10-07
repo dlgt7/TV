@@ -28,4 +28,8 @@
     <string name="syncplay_disconnected">连接已断开，已恢复本地播放。可手动重新加入。</string>
     <string name="syncplay_speed_changed">已退出一起看，保留你手动选择的倍速。</string>
     <string name="syncplay_close">关闭</string>
+    <string name="syncplay_sync_server">同步服务器</string>
+    <string name="syncplay_same_server">房间成员需使用同一服务器和端口。</string>
+    <string name="syncplay_custom_server">自定义服务器</string>
+    <string name="syncplay_selected_server">同步服务器：%1$s</string>
 </resources>

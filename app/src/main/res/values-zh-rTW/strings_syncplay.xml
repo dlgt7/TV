@@ -28,4 +28,8 @@
     <string name="syncplay_disconnected">連線已中斷，已恢復本機播放。可手動重新加入。</string>
     <string name="syncplay_speed_changed">已退出一起看，保留你手動選擇的倍速。</string>
     <string name="syncplay_close">關閉</string>
+    <string name="syncplay_sync_server">同步伺服器</string>
+    <string name="syncplay_same_server">房間成員需使用同一伺服器和連接埠。</string>
+    <string name="syncplay_custom_server">自訂伺服器</string>
+    <string name="syncplay_selected_server">同步伺服器：%1$s</string>
 </resources>

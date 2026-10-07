@@ -28,4 +28,8 @@
     <string name="syncplay_disconnected">Disconnected. Playback is local again; join manually to reconnect.</string>
     <string name="syncplay_speed_changed">Left the room to keep your manually selected speed.</string>
     <string name="syncplay_close">Close</string>
+    <string name="syncplay_sync_server">Sync server</string>
+    <string name="syncplay_same_server">Room members must use the same server and port.</string>
+    <string name="syncplay_custom_server">Custom server</string>
+    <string name="syncplay_selected_server">Sync server: %1$s</string>
 </resources>
