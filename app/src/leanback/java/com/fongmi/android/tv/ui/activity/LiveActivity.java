@@ -1248,6 +1248,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mBinding.control.jetstream.consumeSeekConfirmKey(event)) return true;
         if (isJetStreamControlVisible()) setR1Callback();
         if (isJetStreamControlVisible() && mBinding.control.getRoot().hasFocus()) mFocus2 = getCurrentFocus();
         if (mKeyDown.hasEvent(event) && isPlaybackReady()) mKeyDown.onKeyDown(event);

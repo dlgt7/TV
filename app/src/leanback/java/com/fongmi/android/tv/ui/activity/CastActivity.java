@@ -640,6 +640,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mBinding.control.jetstream.consumeSeekConfirmKey(event)) return true;
         if (KeyUtil.isMenuKey(event)) onToggle();
         if (isJetStreamControlVisible()) setR1Callback();
         if (!isJetStreamControlVisible() && mKeyDown.hasEvent(event) && isPlaybackReady()) return mKeyDown.onKeyDown(event);

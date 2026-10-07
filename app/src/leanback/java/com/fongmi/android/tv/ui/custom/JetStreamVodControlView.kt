@@ -139,6 +139,12 @@ class JetStreamVodControlView @JvmOverloads constructor(
         val commandKeys: List<String>
     )
 
+    private val seekConfirmKeys = SeekConfirmKeySequence()
+
+    // Called before Activity shortcuts, even if confirming a seek changes focus or hides us.
+    fun consumeSeekConfirmKey(event: android.view.KeyEvent): Boolean =
+        seekConfirmKeys.consume(event.keyCode, event.downTime, event.action == android.view.KeyEvent.ACTION_UP)
+
     private var listener: Listener? = null
     private var mediaPlayer by mutableStateOf<Player?>(null)
     private var mediaTitle by mutableStateOf("")
@@ -943,9 +949,11 @@ class JetStreamVodControlView @JvmOverloads constructor(
                 .height(height)
                 .padding(horizontal = 4.dp)
                 .onPreviewKeyEvent { event ->
+                    if (consumeSeekConfirmKey(event.nativeKeyEvent)) return@onPreviewKeyEvent true
                     if (event.type != KeyEventType.KeyDown || durationMs <= 0) return@onPreviewKeyEvent false
                     when (event.key) {
-                        Key.DirectionCenter, Key.Enter -> {
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.Spacebar -> {
+                            seekConfirmKeys.claim(event.nativeKeyEvent.keyCode, event.nativeKeyEvent.downTime)
                             if (event.nativeKeyEvent.repeatCount != 0) return@onPreviewKeyEvent true
                             if (selected) listener?.onSeekTo((durationMs * seekProgress).roundToLong())
                             else onSeekProgressChange(progress)

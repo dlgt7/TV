@@ -2034,6 +2034,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mBinding.control.jetstream.consumeSeekConfirmKey(event)) return true;
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             App.removeCallbacks(restorePlaybackPanel);
             playbackPanelCommand = null;
