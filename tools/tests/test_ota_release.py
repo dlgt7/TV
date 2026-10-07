@@ -80,6 +80,32 @@ class ManifestTest(unittest.TestCase):
             self.assertEqual(len(content), asset["size"])
             self.assertEqual(f"https://github.com/dlgt7/TV/releases/download/build-37500000000-1/leanback-{abi}.apk", asset["url"])
 
+    def test_mobile_manifest_and_mixed_outputs_stay_isolated(self):
+        for abi, native in OTA.ABIS.items():
+            folder = self.root / "mobile" / abi / "release"
+            folder.mkdir(parents=True)
+            apk = folder / f"mobile-{abi}.apk"
+            self.write_apk(apk, native)
+            metadata = {
+                "version": 3,
+                "applicationId": OTA.PACKAGE_NAME,
+                "elements": [{"versionCode": 214_537_600, "versionName": "5.5.5+20261007.120000", "outputFile": apk.name}],
+            }
+            (folder / "output-metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+        mobile = OTA.build_manifest(self.root, "dlgt7/TV", "build-37500000000-1", mode="mobile")
+        leanback = self.manifest()
+        self.assertEqual("mobile", mobile["mode"])
+        self.assertEqual(OTA.PACKAGE_NAME, mobile["packageName"])
+        self.assertEqual(set(OTA.ABIS), set(mobile["assets"]))
+        for abi, asset in mobile["assets"].items():
+            self.assertEqual(f"https://github.com/dlgt7/TV/releases/download/build-37500000000-1/mobile-{abi}.apk", asset["url"])
+        self.assertEqual(set(OTA.ABIS), set(leanback["assets"]))
+        self.assertEqual("leanback", leanback["mode"])
+
+    def test_rejects_mode_without_matching_outputs(self):
+        with self.assertRaisesRegex(ValueError, "Both ARM64 and ARMv7"):
+            OTA.build_manifest(self.root, "dlgt7/TV", "build-37500000000-1", mode="mobile")
+
     def test_reruns_use_distinct_urls_and_legacy_tags_remain_readable(self):
         first = self.manifest(tag="build-37500000000-1")
         retry = self.manifest(tag="build-37500000000-2")
