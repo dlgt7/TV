@@ -89,7 +89,10 @@ final class MpvOptions {
         MpvAnime4K.apply(configDir);
         set("save-position-on-quit", "no");
         set("force-window", "no");
-        set("idle", "once");
+        // This embedded player reuses one native handle for stop/reload and decoder/VO changes.
+        // idle=once shuts that handle down after the first stop, before loadfile can run.
+        // Release remains explicit (quit followed by asynchronous native destroy).
+        set("idle", "yes");
     }
 
     static void applyDecode(int decode) {
