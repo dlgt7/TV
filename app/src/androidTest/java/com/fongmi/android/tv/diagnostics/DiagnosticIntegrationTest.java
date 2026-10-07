@@ -133,6 +133,9 @@ public class DiagnosticIntegrationTest {
     }
 
     @Test public void realLoopbackDownloadRequiresTokenRejectsMutationsAndRevokesOnStop() throws Exception {
+        // Proxy.port is -1 until the real server binds; that URI has no parsed host.
+        Server.get().start();
+        assertTrue("Local diagnostic server did not bind", Server.get().isRunning());
         URI advertised = new URI(Server.get().getAddress(false));
         DiagnosticManager.start(fixtureContext);
         boolean lanAvailable = advertised.getHost() != null && DiagnosticManager.isLocalPeer(advertised.getHost());
