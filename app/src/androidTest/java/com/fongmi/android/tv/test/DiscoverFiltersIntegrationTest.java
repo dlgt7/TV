@@ -23,6 +23,7 @@ import com.fongmi.android.tv.bean.DiscoverRequestState;
 import com.fongmi.android.tv.bean.DoubanDiscoverQuery;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.ui.activity.DiscoverActivity;
+import com.github.catvod.net.OkHttp;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,11 +32,20 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /** Real activity, real presenters and live APIs. Runs only in the disposable sourceprobe UID. */
 @RunWith(AndroidJUnit4.class)
@@ -45,12 +55,17 @@ public final class DiscoverFiltersIntegrationTest {
     private final JSONObject report = new JSONObject();
     private final JSONArray stages = new JSONArray();
     private DiscoverActivity activity;
-    private String stage = "start";
+    private volatile String stage = "start";
+    private final List<JSONObject> network = new ArrayList<>();
 
     @Test
     public void realDiscoverFiltersKeepLibrariesAndPlatformStateSeparate() throws Exception {
         assertEquals("Use the isolated test application", "com.fongmi.android.tv.sourceprobe", target.getPackageName());
+        OkHttpClient original = OkHttp.client();
+        Field clientField = OkHttp.class.getDeclaredField("client");
+        clientField.setAccessible(true);
         try {
+            clientField.set(OkHttp.get(), observeDiscover(original));
             activity = (DiscoverActivity) instrumentation.startActivitySync(new Intent(target, DiscoverActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
             stage = "initial-douban-movie";
@@ -129,11 +144,83 @@ public final class DiscoverFiltersIntegrationTest {
             if (failure instanceof Error error) throw error;
             throw new AssertionError(failure);
         } finally {
-            report.put("stages", stages);
-            try (FileOutputStream output = new FileOutputStream(new File(target.getFilesDir(), "discover-filters-integration-result.json"))) {
-                output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
+            try {
+                if (activity != null) main(() -> { activity.finish(); return null; });
+            } finally {
+                clientField.set(OkHttp.get(), original);
+                report.put("stages", stages);
+                synchronized (network) {
+                    JSONArray snapshot = new JSONArray();
+                    for (JSONObject event : network) {
+                        synchronized (event) { snapshot.put(new JSONObject(event.toString())); }
+                    }
+                    report.put("network", snapshot);
+                }
+                try (FileOutputStream output = new FileOutputStream(new File(target.getFilesDir(), "discover-filters-integration-result.json"))) {
+                    output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
+                }
             }
-            if (activity != null) main(() -> { activity.finish(); return null; });
+        }
+    }
+
+    /** Observe bounded JSON metadata only; never record URLs, query values, body text or exception messages. */
+    private OkHttpClient observeDiscover(OkHttpClient original) {
+        return original.newBuilder().addInterceptor(chain -> {
+            Request request = chain.request();
+            String path = request.url().encodedPath();
+            String kind = path.endsWith("/discover/movie") ? "tmdb-movie"
+                    : path.endsWith("/discover/tv") ? "tmdb-tv"
+                    : path.equals("/j/new_search_subjects") ? "douban-search" : "";
+            if (kind.isEmpty()) return chain.proceed(request);
+            JSONObject event = new JSONObject();
+            long started = SystemClock.elapsedRealtime();
+            put(event, "kind", kind);
+            put(event, "stageAtStart", stage);
+            String key = request.url().queryParameter("api_key");
+            put(event, "hasTmdbKey", key != null && !key.trim().isEmpty());
+            put(event, "completed", false);
+            synchronized (network) { network.add(event); }
+            try {
+                Response response = chain.proceed(request);
+                put(event, "httpStatus", response.code());
+                try {
+                    JSONObject body = new JSONObject(response.peekBody(256 * 1024L).string());
+                    // Known schema keys only; a malformed server must not smuggle secrets into a key name.
+                    Set<String> allowed = Set.of("results", "data", "subjects", "page", "total_pages", "total_results",
+                            "status_code", "status_message", "success", "error", "errors", "code", "message", "detail");
+                    JSONArray keys = new JSONArray();
+                    int otherKeys = 0;
+                    Iterator<String> iterator = body.keys();
+                    while (iterator.hasNext()) {
+                        String name = iterator.next();
+                        if (allowed.contains(name)) keys.put(name); else otherKeys++;
+                    }
+                    put(event, "jsonTopLevelKeys", keys);
+                    put(event, "otherKeyCount", otherKeys);
+                    JSONArray results = body.optJSONArray("results");
+                    JSONArray data = body.optJSONArray("data");
+                    put(event, "resultsCount", results == null ? -1 : results.length());
+                    put(event, "dataCount", data == null ? -1 : data.length());
+                    Object status = body.opt("status_code");
+                    if (status instanceof Number number) put(event, "statusCode", number.intValue());
+                } catch (Exception diagnosticError) {
+                    put(event, "peekExceptionClass", diagnosticError.getClass().getSimpleName());
+                }
+                return response;
+            } catch (IOException | RuntimeException error) {
+                put(event, "exceptionClass", error.getClass().getSimpleName());
+                throw error;
+            } finally {
+                put(event, "elapsedMs", SystemClock.elapsedRealtime() - started);
+                put(event, "cancelled", chain.call().isCanceled());
+                put(event, "completed", true);
+            }
+        }).build();
+    }
+
+    private static void put(JSONObject object, String key, Object value) {
+        synchronized (object) {
+            try { object.put(key, value); } catch (org.json.JSONException ignored) { }
         }
     }
 
