@@ -107,6 +107,7 @@ jobs:
           ./gradlew -I "$RUNNER_TEMP/tv-validation.init.gradle" \
             :app:testLeanbackArm64_v8aDebugUnitTest \
             --tests "com.fongmi.android.tv.sync.*" \
+            --tests "com.fongmi.android.tv.update.*" \
             --tests "com.fongmi.android.tv.syncplay.*" \
             --tests "com.fongmi.android.tv.player.mpv.*" \
             --tests "com.fongmi.android.tv.ui.custom.SeekConfirmKeySequenceTest" \

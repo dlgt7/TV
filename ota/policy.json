@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "popup": {
+    "enabled": false,
+    "code": 0,
+    "minCode": 0,
+    "maxCode": 0,
+    "expiresAt": 0
+  }
+}

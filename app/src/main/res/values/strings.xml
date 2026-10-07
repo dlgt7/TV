@@ -276,6 +276,11 @@
     <string name="update_version">New version <xliff:g name="name">%s</xliff:g></string>
     <string name="update_check">Checking for updates…</string>
     <string name="update_confirm">Update</string>
+    <string name="update_latest">You are up to date</string>
+    <string name="update_busy">An update check or download is already in progress</string>
+    <string name="update_check_failed">Unable to check for updates. Please try again later.</string>
+    <string name="update_download_failed">Download or verification failed on all sources. Please try again.</string>
+    <string name="update_install_failed">Unable to open the package installer.</string>
 
     <!-- Crash -->
     <string name="crash_info">An unexpected error occurred.\nSorry for the inconvenience.</string>

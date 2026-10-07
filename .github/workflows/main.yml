@@ -2,12 +2,17 @@ name: Build TV release (manual)
 
 on:
   workflow_dispatch:
+    inputs:
+      release_notes:
+        description: "更新说明；留空使用当前提交标题"
+        required: false
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.workflow }}-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -17,6 +22,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Assign release version
+        run: python3 tools/ota-release.py version >> "$GITHUB_ENV"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -38,6 +46,8 @@ jobs:
 
       - name: Configure SDK 37.0 target
         run: |
+          # Use the JDK installed above, as in the automatic release workflow.
+          printf 'toolchainVersion=21\n' > gradle/gradle-daemon-jvm.properties
           cat > "$RUNNER_TEMP/tv-sdk-compat.init.gradle" <<'GRADLE'
           gradle.beforeProject { p ->
               ['com.android.application', 'com.android.library'].each { pluginId ->
@@ -99,37 +109,61 @@ jobs:
           MEDIA3_SOURCE_DIR: ${{ github.workspace }}/.media3
         run: ./gradlew -I "$RUNNER_TEMP/tv-sdk-compat.init.gradle" assembleLeanbackArm64_v8aRelease assembleLeanbackArmeabi_v7aRelease --no-daemon --build-cache --max-workers=2
 
-      - name: Verify APKs exist
-        id: apk-check
+      - name: Validate APKs and generate OTA manifest
+        env:
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_TAG: build-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          find app/build/outputs/apk -name "*.apk" -type f
-          if find app/build/outputs/apk -path "*/release/*.apk" -type f | grep -q .; then
-            echo "apk_exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "APK not found!" >&2
-            exit 1
+          python3 -m unittest discover -s tools/tests -p 'test_ota_release.py'
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="$(git log -1 --pretty=%s)"
           fi
+          python3 tools/ota-release.py manifest \
+            --apk-root app/build/outputs/apk \
+            --repository "$RELEASE_REPOSITORY" \
+            --tag "$RELEASE_TAG" \
+            --mode leanback \
+            --desc="$RELEASE_NOTES" \
+            --output app/build/outputs/ota/leanback.json
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-apks
-          path: app/build/outputs/apk/**/release/*.apk
+          path: |
+            app/build/outputs/apk/**/release/*.apk
+            app/build/outputs/ota/*.json
           retention-days: 14
 
-      - name: Create Release
-        if: steps.apk-check.outputs.apk_exists == 'true'
+      - name: Upload complete release as draft
         uses: softprops/action-gh-release@v2
         with:
           name: "Release ${{ github.run_number }}"
-          tag_name: "build-${{ github.run_id }}"
+          tag_name: "build-${{ github.run_id }}-${{ github.run_attempt }}"
           target_commitish: ${{ github.sha }}
-          make_latest: true
+          draft: true
+          make_latest: false
+          prerelease: ${{ github.ref != 'refs/heads/ui/apple-tv-redesign' }}
+          fail_on_unmatched_files: true
           body: |
             Source: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
             Branch: `${{ github.ref_name }}`
 
             Android TV APKs for ARM64 and ARMv7. Choose the ABI supported by your Android system.
-          files: app/build/outputs/apk/**/release/*.apk
+          files: |
+            app/build/outputs/apk/**/release/*.apk
+            app/build/outputs/ota/*.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish completed release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_TAG: build-${{ github.run_id }}-${{ github.run_attempt }}
+          RELEASE_LATEST: ${{ github.ref == 'refs/heads/ui/apple-tv-redesign' }}
+          RELEASE_PRERELEASE: ${{ github.ref != 'refs/heads/ui/apple-tv-redesign' }}
+        run: |
+          gh release edit "$RELEASE_TAG" --repo "$RELEASE_REPOSITORY" \
+            --draft=false --latest="$RELEASE_LATEST" --prerelease="$RELEASE_PRERELEASE"

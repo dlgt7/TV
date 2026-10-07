@@ -1,7 +1,9 @@
 package com.fongmi.android.tv.ui.dialog;
 
+import android.content.DialogInterface;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
 
@@ -38,7 +40,7 @@ public class UpdateDialog extends BaseAlertDialog {
     }
 
     public UpdateDialog show(FragmentActivity activity) {
-        show(activity.getSupportFragmentManager(), null);
+        show(activity.getSupportFragmentManager(), "ota-update");
         return this;
     }
 
@@ -49,7 +51,7 @@ public class UpdateDialog extends BaseAlertDialog {
 
     @Override
     protected MaterialAlertDialogBuilder getBuilder() {
-        return builder().setView(getBinding().getRoot()).setCancelable(false);
+        return builder().setView(getBinding().getRoot()).setCancelable(true);
     }
 
     @Override
@@ -67,16 +69,29 @@ public class UpdateDialog extends BaseAlertDialog {
         binding.cancel.setOnClickListener(this::onCancel);
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (listener == null) dismissAllowingStateLoss();
+    }
+
     public void setProgress(int progress) {
+        if (binding == null) return;
         binding.confirm.setText(String.format(Locale.getDefault(), "%1$d%%", progress));
     }
 
     private void onConfirm(View view) {
         if (binding.confirm.hasFocus() && binding.cancel.isShown() && binding.cancel.isEnabled()) binding.cancel.requestFocus();
-        listener.onConfirm(view);
+        if (listener != null) listener.onConfirm(view);
     }
 
     private void onCancel(View view) {
-        listener.onCancel(view);
+        if (listener != null) listener.onCancel(view);
+    }
+
+    @Override
+    public void onCancel(@NonNull DialogInterface dialog) {
+        super.onCancel(dialog);
+        if (listener != null) listener.onCancel(null);
     }
 }

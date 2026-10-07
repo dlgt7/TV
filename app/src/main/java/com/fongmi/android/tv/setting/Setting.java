@@ -145,14 +145,6 @@ public class Setting {
         Prefers.put("incognito", incognito);
     }
 
-    public static boolean getUpdate() {
-        return Prefers.getBoolean("update", true);
-    }
-
-    public static void putUpdate(boolean update) {
-        Prefers.put("update", update);
-    }
-
     public static boolean isAdblock() {
         return Prefers.getBoolean("adblock", true);
     }

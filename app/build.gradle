@@ -19,6 +19,13 @@ def buildConfigString = { value ->
     return "\"${(value ?: '').toString().replace("\\", "\\\\").replace("\"", "\\\"")}\""
 }
 
+// CI assigns one timestamp-based version to both ABI builds and their OTA manifest.
+def tvVersionCode = System.getenv('TV_VERSION_CODE') ?: '555'
+if (!(tvVersionCode ==~ /[0-9]+/) || tvVersionCode.toBigInteger() < 1 || tvVersionCode.toBigInteger() > 2100000000) {
+    throw new GradleException('TV_VERSION_CODE must be an integer between 1 and 2100000000')
+}
+def tvVersionName = System.getenv('TV_VERSION_NAME') ?: '5.5.5'
+
 android {
     namespace = 'com.fongmi.android.tv'
 
@@ -28,8 +35,8 @@ android {
         applicationId "com.fongmi.android.tv"
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdk libs.versions.targetSdk.get().toInteger()
-        versionCode 555
-        versionName "5.5.5"
+        versionCode tvVersionCode.toInteger()
+        versionName tvVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "TMDB_API_KEY", buildConfigString(localOrEnv('tmdbApiKey', 'TMDB_API_KEY'))
         buildConfigField "String", "TMDB_LOGO_SIZE", buildConfigString(localOrEnv('tmdbLogoSize', 'TMDB_LOGO_SIZE') ?: 'w500')
