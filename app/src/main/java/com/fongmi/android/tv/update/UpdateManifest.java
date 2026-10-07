@@ -52,7 +52,7 @@ public final class UpdateManifest {
     private static void validateAssetUrl(String value, String mode, String abi) throws IOException {
         try {
             URI uri = new URI(value);
-            String prefix = "/wobuhui666/TV/releases/download/";
+            String prefix = "/dlgt7/TV/releases/download/";
             String path = uri.getRawPath();
             if (!"https".equals(uri.getScheme()) || !"github.com".equals(uri.getHost()) ||
                     uri.getRawUserInfo() != null || uri.getPort() != -1 ||

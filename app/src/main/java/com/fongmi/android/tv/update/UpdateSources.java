@@ -10,8 +10,8 @@ import java.util.Set;
 /** Ordered download routes; the original GitHub URL is always the final fallback. */
 public final class UpdateSources {
 
-    private static final String RELEASES = "https://github.com/wobuhui666/TV/releases/";
-    private static final String POLICY = "https://raw.githubusercontent.com/wobuhui666/TV/ui/apple-tv-redesign/ota/policy.json";
+    private static final String RELEASES = "https://github.com/dlgt7/TV/releases/";
+    private static final String POLICY = "https://raw.githubusercontent.com/dlgt7/TV/ui/apple-tv-redesign/ota/policy.json";
 
     private UpdateSources() {
     }
