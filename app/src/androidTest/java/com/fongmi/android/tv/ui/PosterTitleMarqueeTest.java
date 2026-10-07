@@ -115,7 +115,8 @@ public class PosterTitleMarqueeTest {
         // Explicit line break makes this independent of density and font-specific word wrapping.
         attach(R.layout.adapter_history, "First\nSecond");
         main(() -> assertTrue(card.requestFocus()));
-        await(() -> title.getLayout() != null && title.getLayout().getLineCount() == 2,
+        await(() -> title.getLayout() != null && title.getLayout().getLineCount() == 2
+                && !title.isSelected() && !title.isLayoutRequested(),
                 "original two-line history title");
         assertEquals(2, value(title::getMaxLines).intValue());
         assertFalse(value(title::isSelected));

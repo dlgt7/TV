@@ -124,7 +124,12 @@ public final class PosterTitleMarquee implements View.OnAttachStateChangeListene
         if (layout == null || availableWidth() <= 0) return true;
         pending = false;
         availableWidth = availableWidth();
-        if (!cardHasFocus() || !isTruncated(layout)) return true;
+        if (!cardHasFocus() || !isTruncated(layout)) {
+            // Card focus animation may propagate selected=true to its children
+            // after the global focus callback. A fitting title stays unselected.
+            title.setSelected(false);
+            return true;
+        }
         configuring = true;
         marquee = true;
         title.setSingleLine(true);
