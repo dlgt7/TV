@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="discover_media_show">綜藝</string>
+    <string name="discover_filter_platform">平台</string>
+    <string name="discover_year_before_1960">更早</string>
+    <string name="discover_filter_library">片庫</string>
+</resources>

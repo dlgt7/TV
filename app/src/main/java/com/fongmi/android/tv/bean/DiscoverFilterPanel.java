@@ -8,9 +8,17 @@ public final class DiscoverFilterPanel {
 
     private final List<List<DiscoverFilterOption>> rows = new ArrayList<>();
     private int expandedRow = -1;
+    private int rowCount = 6;
 
     public DiscoverFilterPanel() {
-        for (int i = 0; i < 5; i++) rows.add(Collections.emptyList());
+        for (int i = 0; i < 7; i++) rows.add(Collections.emptyList());
+    }
+
+    public int getRowCount() { return rowCount; }
+
+    public void setRowCount(int count) {
+        rowCount = Math.max(1, Math.min(count, rows.size()));
+        if (expandedRow >= rowCount) expandedRow = -1;
     }
 
     public void setRow(int row, List<DiscoverFilterOption> options) {
@@ -26,6 +34,6 @@ public final class DiscoverFilterPanel {
     }
 
     public void setExpandedRow(int expandedRow) {
-        this.expandedRow = expandedRow >= 0 && expandedRow < rows.size() ? expandedRow : -1;
+        this.expandedRow = expandedRow >= 0 && expandedRow < rowCount ? expandedRow : -1;
     }
 }

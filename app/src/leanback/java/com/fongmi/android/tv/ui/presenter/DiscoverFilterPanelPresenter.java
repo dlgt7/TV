@@ -19,8 +19,6 @@ import java.util.List;
 
 public final class DiscoverFilterPanelPresenter extends Presenter {
 
-    private static final int ROW_COUNT = 5;
-
     public interface Listener {
         void onFilterGroupClick(int row);
         void onFilterClick(int row, DiscoverFilterOption option);
@@ -58,19 +56,20 @@ public final class DiscoverFilterPanelPresenter extends Presenter {
         }
 
         private void bind(DiscoverFilterPanel panel, Listener listener) {
+            int rowCount = panel.getRowCount();
             List<String> summaries = new ArrayList<>();
-            for (int row = 0; row < ROW_COUNT; row++) summaries.add(summaryLabel(binding.getRoot().getContext(), row, selected(panel.getRow(row))));
+            for (int row = 0; row < rowCount; row++) summaries.add(summaryLabel(binding.getRoot().getContext(), row, selected(panel.getRow(row))));
             int expanded = panel.getExpandedRow();
             int focused = binding.summary.getFocusedPosition();
             binding.summary.setItems(summaries, expanded);
-            if (focused >= 0) binding.summary.setFocusedPosition(Math.min(focused, ROW_COUNT - 1));
+            if (focused >= 0) binding.summary.setFocusedPosition(Math.min(focused, rowCount - 1));
             binding.summary.setOnChipClickListener(listener::onFilterGroupClick);
             binding.summary.setNextFocusLeftId(binding.summary.getId());
             binding.summary.setNextFocusRightId(binding.summary.getId());
             binding.options.setNextFocusLeftId(binding.options.getId());
             binding.options.setNextFocusRightId(binding.options.getId());
 
-            boolean expandedVisible = expanded >= 0 && expanded < ROW_COUNT;
+            boolean expandedVisible = expanded >= 0 && expanded < rowCount;
             binding.optionsContainer.setVisibility(expandedVisible ? View.VISIBLE : View.GONE);
             if (!expandedVisible) {
                 binding.options.clearListeners();
@@ -93,10 +92,10 @@ public final class DiscoverFilterPanelPresenter extends Presenter {
 
         private String summaryLabel(Context context, int row, DiscoverFilterOption selected) {
             String group = groupName(context, row);
-            if (selected == null || row == 0) return selected == null ? group : selected.getLabel();
-            if (row == 1 && selected.getValue().isEmpty()) return group;
-            if (row == 2 && selected.getValue().isEmpty()) return group;
-            if (row == 3 && selected.getStartDate().isEmpty() && selected.getEndDate().isEmpty()) return group;
+            if (selected == null || row <= 1) return selected == null ? group : selected.getLabel();
+            if ((row == 2 || row == 3) && selected.getValue().isEmpty()) return group;
+            if (row == 6 && selected.getValue().isEmpty()) return group;
+            if (row == 4 && selected.getStartDate().isEmpty() && selected.getEndDate().isEmpty()) return group;
             return group + " · " + selected.getLabel();
         }
 
@@ -107,10 +106,12 @@ public final class DiscoverFilterPanelPresenter extends Presenter {
 
         private String groupName(Context context, int row) {
             int resource = switch (row) {
-                case 0 -> R.string.discover_filter_media;
-                case 1 -> R.string.discover_filter_genre;
-                case 2 -> R.string.discover_filter_region;
-                case 3 -> R.string.discover_filter_year;
+                case 0 -> R.string.discover_filter_library;
+                case 1 -> R.string.discover_filter_media;
+                case 2 -> R.string.discover_filter_genre;
+                case 3 -> R.string.discover_filter_region;
+                case 4 -> R.string.discover_filter_year;
+                case 6 -> R.string.discover_filter_platform;
                 default -> R.string.discover_filter_sort;
             };
             return context.getString(resource);

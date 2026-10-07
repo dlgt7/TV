@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="discover_media_show">Variety shows</string>
+    <string name="discover_filter_platform">Platform</string>
+    <string name="discover_year_before_1960">Before 1960</string>
+    <string name="discover_filter_library">Library</string>
+</resources>

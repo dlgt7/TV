@@ -8,7 +8,7 @@ import java.util.Objects;
 
 import okhttp3.HttpUrl;
 
-public final class DiscoverQuery {
+public final class DiscoverQuery implements DiscoverListQuery {
 
     public static final String DEFAULT_TMDB_BASE = TmdbEndpoint.DEFAULT_API_BASE;
 

@@ -20,6 +20,17 @@ import static org.junit.Assert.assertTrue;
 public class DiscoverApiTest {
 
     @Test
+    public void shouldParseDoubanFilterDataWithCastAndDirectors() {
+        String json = "{\"data\":[{\"title\":\"测试剧集\",\"cover\":\"https://img/p.jpg\",\"id\":\"42\",\"rate\":\"8.5\",\"directors\":[\"导演甲\"],\"casts\":[\"演员乙\"]}]}";
+        List<Vod> items = DiscoverApi.parseDoubanSubjects(json, "tv");
+        assertEquals(1, items.size());
+        assertEquals("douban:42", items.get(0).getId());
+        assertEquals("tv", items.get(0).getTypeName());
+        assertEquals("导演甲", items.get(0).getDirector());
+        assertEquals("演员乙", items.get(0).getActor());
+    }
+
+    @Test
     public void shouldParseDoubanSubjects() {
         String json = "{\"subjects\":[" +
                 "{\"title\":\"沙丘2\",\"rate\":\"8.2\",\"cover\":\"https://img1.doubanio.com/view/photo/s_ratio_poster/public/p1.jpg\",\"id\":\"35575567\"}," +

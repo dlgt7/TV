@@ -21,12 +21,14 @@ import com.fongmi.android.tv.BuildConfig;
 import com.fongmi.android.tv.Product;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.DiscoverApi;
-import com.fongmi.android.tv.bean.DiscoverFacet;
 import com.fongmi.android.tv.bean.DiscoverFilterOption;
+import com.fongmi.android.tv.bean.DiscoverFacet;
+import com.fongmi.android.tv.bean.DiscoverListQuery;
 import com.fongmi.android.tv.bean.DiscoverFilterPanel;
 import com.fongmi.android.tv.bean.DiscoverHero;
 import com.fongmi.android.tv.bean.DiscoverMediaKey;
 import com.fongmi.android.tv.bean.DiscoverQuery;
+import com.fongmi.android.tv.bean.DoubanDiscoverQuery;
 import com.fongmi.android.tv.bean.DiscoverRankItem;
 import com.fongmi.android.tv.bean.DiscoverRequestState;
 import com.fongmi.android.tv.bean.DoubanDetail;
@@ -65,11 +67,13 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         DiscoverFilterPanelPresenter.Listener, CustomScroller.Callback {
 
     private static final int FEATURE_REQUESTS = 10;
-    private static final int FILTER_MEDIA = 0;
-    private static final int FILTER_GENRE = 1;
-    private static final int FILTER_REGION = 2;
-    private static final int FILTER_YEAR = 3;
-    private static final int FILTER_SORT = 4;
+    private static final int FILTER_LIBRARY = 0;
+    private static final int FILTER_MEDIA = 1;
+    private static final int FILTER_GENRE = 2;
+    private static final int FILTER_REGION = 3;
+    private static final int FILTER_YEAR = 4;
+    private static final int FILTER_SORT = 5;
+    private static final int FILTER_PLATFORM = 6;
     private static final int RANK_LIMIT = 10;
 
     private final Map<DiscoverApi.Row, List<Vod>> content = new EnumMap<>(DiscoverApi.Row.class);
@@ -86,17 +90,19 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
     private ActivityDiscoverBinding mBinding;
     private ArrayObjectAdapter mAdapter;
     private CustomScroller scroller;
-    private List<DiscoverFacet> genres = List.of();
     private String mediaType = DiscoverMediaKey.MOVIE;
     private String genreId = "";
     private String region = "";
+    private String platform = "";
     private String dateStart = "";
     private String dateEnd = "";
     private String sort = DiscoverQuery.SORT_POPULAR;
-    private DiscoverQuery lastQuery;
+    private DiscoverListQuery lastQuery;
+    private boolean douban = true;
+    private List<DiscoverFacet> genres = List.of();
+    private int genreGeneration;
     private int featurePending;
     private int featureGeneration;
-    private int genreGeneration;
     private int queryGeneration;
     private int retryKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private int page = 1;
@@ -123,7 +129,6 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         emptyState.setText(R.string.tv_empty_discover_retry);
         buildStablePage();
         loadFeatured();
-        loadGenres(mediaType);
         refreshResults(true);
     }
 
@@ -343,14 +348,14 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         DiscoverApi.fetchGenres(type, BuildConfig.TMDB_API_KEY, requestTag, new DiscoverApi.FacetListener() {
             @Override
             public void onSuccess(List<DiscoverFacet> items) {
-                if (isInactive() || generation != genreGeneration || !mediaType.equals(type)) return;
+                if (isInactive() || generation != genreGeneration || douban || !mediaType.equals(type)) return;
                 genres = items;
                 updateFilterPanel();
             }
 
             @Override
             public void onError(Exception e) {
-                if (isInactive() || generation != genreGeneration || !mediaType.equals(type)) return;
+                if (isInactive() || generation != genreGeneration || douban || !mediaType.equals(type)) return;
                 genres = List.of();
                 updateFilterPanel();
             }
@@ -358,6 +363,10 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
     }
 
     private void updateFilterPanel() {
+        filterPanel.setRowCount(douban && !DiscoverMediaKey.MOVIE.equals(mediaType) ? 7 : 6);
+        filterPanel.setRow(FILTER_LIBRARY, List.of(option("douban", getString(R.string.discover_source_douban), douban ? "douban" : "tmdb"),
+                option("tmdb", "TMDB", douban ? "douban" : "tmdb")));
+        filterPanel.setRow(FILTER_PLATFORM, platformOptions());
         filterPanel.setRow(FILTER_MEDIA, mediaOptions());
         filterPanel.setRow(FILTER_GENRE, genreOptions());
         filterPanel.setRow(FILTER_REGION, regionOptions());
@@ -380,7 +389,7 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
     }
 
     private void refreshResults(boolean force) {
-        DiscoverQuery query = currentQuery(1);
+        DiscoverListQuery query = currentQuery(1);
         if (!force && query.equals(lastQuery)) return;
         lastQuery = query;
         queryGeneration = requestState.reset();
@@ -395,7 +404,7 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         loadQuery(query, queryGeneration);
     }
 
-    private void loadQuery(DiscoverQuery query, int generation) {
+    private void loadQuery(DiscoverListQuery query, int generation) {
         DiscoverApi.fetch(query, BuildConfig.TMDB_API_KEY, requestTag, new DiscoverApi.QueryListener() {
             @Override
             public void onSuccess(List<Vod> items, int responsePage, int responseTotalPages) {
@@ -596,7 +605,7 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
                     DiscoverApi.cancel(requestTag);
                     mBinding.progressLayout.showProgress();
                     loadFeatured();
-                    loadGenres(mediaType);
+                    if (!douban) loadGenres(mediaType);
                     refreshResults(true);
                 }
                 return true;
@@ -611,39 +620,59 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
         return result;
     }
 
-    private DiscoverQuery currentQuery(int targetPage) {
-        return new DiscoverQuery(mediaType, genreId, region, dateStart, dateEnd, sort, targetPage);
+    private DiscoverListQuery currentQuery(int targetPage) {
+        if (!douban) return new DiscoverQuery(mediaType, genreId, region, dateStart, dateEnd, sort, targetPage);
+        return new DoubanDiscoverQuery(mediaType, genreId, region, dateStart, dateEnd, sort, platform, targetPage);
     }
 
     private List<DiscoverFilterOption> mediaOptions() {
-        return List.of(option(DiscoverMediaKey.MOVIE, getString(R.string.discover_media_movie), mediaType),
+        if (!douban) return List.of(option(DiscoverMediaKey.MOVIE, getString(R.string.discover_media_movie), mediaType),
                 option(DiscoverMediaKey.TV, getString(R.string.discover_media_tv), mediaType));
+        return List.of(option(DiscoverMediaKey.MOVIE, getString(R.string.discover_media_movie), mediaType),
+                option(DiscoverMediaKey.TV, getString(R.string.discover_media_tv), mediaType),
+                option(DoubanDiscoverQuery.SHOW, getString(R.string.discover_media_show), mediaType));
     }
 
     private List<DiscoverFilterOption> genreOptions() {
-        List<DiscoverFilterOption> items = new ArrayList<>();
-        items.add(option("", getString(R.string.discover_all), genreId));
-        for (DiscoverFacet item : genres) items.add(option(item.getId(), item.getName(), genreId));
-        return items;
+        if (!douban) {
+            List<DiscoverFilterOption> items = new ArrayList<>();
+            items.add(option("", getString(R.string.discover_all), genreId));
+            for (DiscoverFacet genre : genres) items.add(option(genre.getId(), genre.getName(), genreId));
+            return items;
+        }
+        int resource = DiscoverMediaKey.MOVIE.equals(mediaType) ? R.array.discover_douban_movie_genres
+                : DoubanDiscoverQuery.SHOW.equals(mediaType) ? R.array.discover_douban_show_genres : R.array.discover_douban_tv_genres;
+        return tagOptions(resource, genreId);
     }
 
     private List<DiscoverFilterOption> regionOptions() {
-        return List.of(option("", getString(R.string.discover_all), region), option("CN", getString(R.string.discover_region_cn), region),
+        if (!douban) return List.of(option("", getString(R.string.discover_all), region), option("CN", getString(R.string.discover_region_cn), region),
                 option("HK", getString(R.string.discover_region_hk), region), option("TW", getString(R.string.discover_region_tw), region),
                 option("US", getString(R.string.discover_region_us), region), option("JP", getString(R.string.discover_region_jp), region),
                 option("KR", getString(R.string.discover_region_kr), region), option("GB", getString(R.string.discover_region_gb), region),
                 option("FR", getString(R.string.discover_region_fr), region));
+
+        return tagOptions(DiscoverMediaKey.MOVIE.equals(mediaType) ? R.array.discover_douban_movie_regions : R.array.discover_douban_tv_regions, region);
+    }
+
+    private List<DiscoverFilterOption> platformOptions() {
+        return tagOptions(R.array.discover_douban_platforms, platform);
+    }
+
+    private List<DiscoverFilterOption> tagOptions(int resource, String selected) {
+        List<DiscoverFilterOption> items = new ArrayList<>();
+        items.add(option("", getString(R.string.discover_all), selected));
+        for (String tag : getResources().getStringArray(resource)) items.add(option(tag, tag, selected));
+        return items;
     }
 
     private List<DiscoverFilterOption> yearOptions() {
         int current = LocalDate.now().getYear();
         List<DiscoverFilterOption> items = new ArrayList<>();
         items.add(yearOption(getString(R.string.discover_all), "", ""));
-        for (int value = current; value >= current - 2; value--) items.add(yearOption(String.valueOf(value), value + "-01-01", value + "-12-31"));
-        items.add(yearOption(getString(R.string.discover_year_recent, current - 7, current - 3), (current - 7) + "-01-01", (current - 3) + "-12-31"));
-        int decade = current / 10 * 10;
-        for (int start = decade; start >= 2000; start -= 10) items.add(yearOption(getString(R.string.discover_year_decade, start), start + "-01-01", (start + 9) + "-12-31"));
-        items.add(yearOption(getString(R.string.discover_year_before_2000), "", "1999-12-31"));
+        for (int value = current; value >= current - 7; value--) items.add(yearOption(String.valueOf(value), value + "-01-01", value + "-12-31"));
+        for (int start = (current - 8) / 10 * 10; start >= 1960; start -= 10) items.add(yearOption(getString(R.string.discover_year_decade, start), start + "-01-01", (start + 9) + "-12-31"));
+        items.add(yearOption(getString(R.string.discover_year_before_1960), "", "1959-12-31"));
         return items;
     }
 
@@ -665,18 +694,32 @@ public class DiscoverActivity extends BaseActivity implements VodPresenter.OnCli
     public void onFilterClick(int row, DiscoverFilterOption option) {
         boolean changed;
         switch (row) {
+            case FILTER_LIBRARY -> {
+                boolean nextDouban = "douban".equals(option.getValue());
+                changed = douban != nextDouban;
+                if (changed) {
+                    douban = nextDouban;
+                    mediaType = DiscoverMediaKey.MOVIE;
+                    genreId = region = platform = dateStart = dateEnd = "";
+                    genres = List.of();
+                    if (!douban) loadGenres(mediaType);
+                }
+            }
             case FILTER_MEDIA -> {
                 changed = !mediaType.equals(option.getValue());
                 if (changed) {
                     mediaType = option.getValue();
+                    if (regionOptions().stream().noneMatch(item -> item.getValue().equals(region))) region = "";
                     genreId = "";
+                    platform = "";
                     genres = List.of();
-                    loadGenres(mediaType);
+                    if (!douban) loadGenres(mediaType);
                 }
             }
             case FILTER_GENRE -> { changed = !genreId.equals(option.getValue()); genreId = option.getValue(); }
             case FILTER_REGION -> { changed = !region.equals(option.getValue()); region = option.getValue(); }
             case FILTER_YEAR -> { changed = !dateStart.equals(option.getStartDate()) || !dateEnd.equals(option.getEndDate()); dateStart = option.getStartDate(); dateEnd = option.getEndDate(); }
+            case FILTER_PLATFORM -> { changed = !platform.equals(option.getValue()); platform = option.getValue(); }
             case FILTER_SORT -> { changed = !sort.equals(option.getValue()); sort = option.getValue(); }
             default -> changed = false;
         }

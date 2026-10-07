@@ -10,6 +10,8 @@ import com.fongmi.android.tv.bean.DiscoverFacet;
 import com.fongmi.android.tv.bean.DiscoverMediaKey;
 import com.fongmi.android.tv.bean.DiscoverQuery;
 import com.fongmi.android.tv.bean.DoubanDetail;
+import com.fongmi.android.tv.bean.DoubanDiscoverQuery;
+import com.fongmi.android.tv.bean.DiscoverListQuery;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.utils.TmdbEndpoint;
 import com.github.catvod.net.OkHttp;
@@ -218,7 +220,9 @@ public class DiscoverApi {
 
     static List<Vod> parseDoubanSubjects(String body, String mediaType) {
         List<Vod> items = new ArrayList<>();
-        JsonArray subjects = getArray(parseObject(body), "subjects");
+        JsonObject object = parseObject(body);
+        JsonArray subjects = getArray(object, "subjects");
+        if (subjects == null) subjects = getArray(object, "data");
         if (subjects == null) return items;
         for (JsonElement element : subjects) {
             JsonObject subject = getObject(element);
@@ -231,6 +235,8 @@ public class DiscoverApi {
             item.setPic(doubanPic(cover));
             item.setRemarks(doubanRemarks(getString(subject, "rate")));
             item.setTypeName(mediaType);
+            item.setDirector(joinStrings(getArray(subject, "directors")));
+            item.setActor(joinStrings(getArray(subject, "casts")));
             items.add(item);
         }
         return items;
@@ -462,6 +468,36 @@ public class DiscoverApi {
                     post(() -> listener.onSuccess(items, page, totalPages));
                 } catch (Exception e) {
                     post(() -> listener.onError(e));
+                }
+            }
+        });
+    }
+
+    public static void fetch(DiscoverListQuery query, @Nullable String apiKey, Object tag, QueryListener listener) {
+        if (query instanceof DoubanDiscoverQuery douban) fetch(douban, tag, listener);
+        else if (query instanceof DiscoverQuery tmdb) fetch(tmdb, apiKey, tag, listener);
+        else post(() -> listener.onError(new IOException("Unsupported discover query")));
+    }
+
+    public static void fetch(DoubanDiscoverQuery query, Object tag, QueryListener listener) {
+        OkHttp.client().newCall(doubanRequest(query.buildUrl(), tag).build()).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (!call.isCanceled()) post(() -> listener.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                try (Response resp = response) {
+                    if (!resp.isSuccessful() || resp.body() == null) throw new IOException("Douban discover failed: HTTP " + resp.code());
+                    String body = resp.body().string();
+                    JsonArray data = getArray(parseObject(body), "data");
+                    if (data == null) throw new IOException("Douban discover response missing data");
+                    List<Vod> items = parseDoubanSubjects(body, query.getMediaType());
+                    int pages = DoubanDiscoverQuery.totalPages(query.getPage(), data.size());
+                    if (!call.isCanceled()) post(() -> listener.onSuccess(items, query.getPage(), pages));
+                } catch (Exception e) {
+                    if (!call.isCanceled()) post(() -> listener.onError(e));
                 }
             }
         });
