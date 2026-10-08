@@ -96,6 +96,12 @@ public class SiteViewModel extends ViewModel {
         searches.start(ordered, site -> SearchTask.create(site, keyword, quick), search::setValue);
     }
 
+    /** Uses the same global concurrency budget and generation cancellation as ordinary search. */
+    public void searchRawContent(List<Site> sites, String keyword) {
+        String query = Trans.t2s(keyword);
+        searches.start(SourceHealthManager.sort(sites), site -> () -> SiteApi.searchRawContent(site, query, false, "1", null), search::setValue);
+    }
+
     private void executeHealth(String siteKey, SourceHealthManager.Phase phase, Callable<Result> callable) {
         SourceHealthManager.Attempt attempt = SourceHealthManager.attempt(siteKey, phase);
         tasks.execute(TaskType.RESULT, Constant.TIMEOUT_VOD, () -> {

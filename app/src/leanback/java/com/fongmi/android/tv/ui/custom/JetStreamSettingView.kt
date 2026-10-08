@@ -510,7 +510,19 @@ class JetStreamSettingView @JvmOverloads constructor(
                     RowSpec(
                         key = KEY_TMDB_PROXY,
                         label = context.getString(R.string.setting_tmdb_proxy)
-                    )
+                    ),
+                    RowSpec(KEY_TMDB_RECOVERY, context.getString(R.string.browse_tmdb_recovery), toggle = true)
+                )
+            ),
+            SectionSpec(
+                key = SECTION_BROWSE,
+                label = context.getString(R.string.browse_section),
+                rows = listOf(
+                    RowSpec(KEY_BROWSE_HOME, context.getString(R.string.browse_home)),
+                    RowSpec(KEY_BROWSE_FILTER, context.getString(R.string.browse_search_filter)),
+                    RowSpec(KEY_BROWSE_SOURCES, context.getString(R.string.browse_detail_sources), toggle = true),
+                    RowSpec(KEY_BROWSE_SMART, context.getString(R.string.browse_smart_sources), toggle = true),
+                    RowSpec(KEY_BROWSE_RESTORE, context.getString(R.string.browse_restore))
                 )
             ),
             SectionSpec(
@@ -608,6 +620,12 @@ class JetStreamSettingView @JvmOverloads constructor(
 
     companion object {
         const val SECTION_SOURCE = "source"
+        const val SECTION_BROWSE = "browse"
+        const val KEY_BROWSE_HOME = "browse_home"
+        const val KEY_BROWSE_FILTER = "browse_filter"
+        const val KEY_BROWSE_SOURCES = "browse_sources"
+        const val KEY_BROWSE_SMART = "browse_smart"
+        const val KEY_BROWSE_RESTORE = "browse_restore"
         const val SECTION_PLAYBACK = "playback"
         const val SECTION_DECODE = "decode"
         const val SECTION_PRELOAD = "preload"
@@ -619,6 +637,7 @@ class JetStreamSettingView @JvmOverloads constructor(
         const val KEY_WALL = "wall"
         const val KEY_WALL_VISIBLE = "wall_visible"
         const val KEY_TMDB_PROXY = "tmdb_proxy"
+        const val KEY_TMDB_RECOVERY = "tmdb_route_recovery"
         const val KEY_VOD_HOME = "vod_home"
         const val KEY_VOD_HISTORY = "vod_history"
         const val KEY_LIVE_HOME = "live_home"

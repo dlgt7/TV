@@ -54,6 +54,7 @@ import com.fongmi.android.tv.player.extractor.Source;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.service.DLNARendererService;
 import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.setting.BrowseExperienceSettings;
 import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
@@ -62,6 +63,7 @@ import com.fongmi.android.tv.ui.custom.CustomTitleView;
 import com.fongmi.android.tv.ui.custom.JetStreamAnimator;
 import com.fongmi.android.tv.ui.custom.JetStreamHomeNavView;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
+import com.fongmi.android.tv.ui.home.PosterHomeController;
 import com.fongmi.android.tv.ui.presenter.FeaturedVodPresenter;
 import com.fongmi.android.tv.ui.presenter.HeaderPresenter;
 import com.fongmi.android.tv.ui.presenter.HistoryPresenter;
@@ -99,6 +101,8 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private ArrayObjectAdapter mAdapter;
     private HistoryPresenter mPresenter;
     private FeaturedVodPresenter mFeaturedPresenter;
+    private PosterHomeController mPosterHome;
+    private boolean mPosterHeroVisible;
     private SiteViewModel mViewModel;
     private Result mResult;
     private Clock mClock;
@@ -142,6 +146,15 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     protected void initView(Bundle savedInstanceState) {
         mInitialFocusPending = savedInstanceState == null;
         mResult = Result.empty();
+        if (BrowseExperienceSettings.isPosterHomeEnabled()) {
+            mPosterHome = new PosterHomeController(this, visible -> {
+                if (mPosterHeroVisible == visible) return;
+                mPosterHeroVisible = visible;
+                updateHomeContentInsets(visible);
+                if (mBinding.toolbar.hasFocus()) mBinding.recycler.scrollToPosition(0);
+                else if (mBinding.recycler.getSelectedPosition() > 0) mBinding.recycler.setWindowAlignmentOffset(ResUtil.dp2px(16));
+            });
+        }
         mClock = Clock.create(mBinding.clock);
         mBinding.progressLayout.showProgress();
         PermissionUtil.requestNotify(this);
@@ -156,6 +169,8 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         initConfig();
         setTitle();
         setLogo();
+        // The discovery wall can be browsed before a playback source has been configured.
+        if (mPosterHome != null) mBinding.progressLayout.showContent();
     }
 
     @Override
@@ -169,7 +184,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
                     Object row = mAdapter.get(position);
                     // Keep scaled cards below the viewport edge; the hero and empty state
                     // retain their own established alignment and toolbar inset.
-                    int inset = row instanceof FeaturedVodRow ? 0
+                    int inset = row instanceof FeaturedVodRow || (mPosterHome != null && mPosterHome.isHero(row)) ? 0
                             : row instanceof EmptyHome ? ResUtil.dp2px(80)
                             : Math.max(mBinding.recycler.getPaddingTop(), ResUtil.dp2px(16));
                     mBinding.recycler.setWindowAlignmentOffset(inset);
@@ -205,10 +220,11 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
             @Override
             public void onBindViewHolder(@NonNull Presenter.ViewHolder holder, Object object) {
                 boolean emptyHistory = (int) object == R.string.home_history && mHistoryAdapter.size() == 0;
-                holder.view.setVisibility(emptyHistory ? View.GONE : View.VISIBLE);
+                boolean hidden = emptyHistory || (mPosterHome != null && (int) object == R.string.home_recommend);
+                holder.view.setVisibility(hidden ? View.GONE : View.VISIBLE);
                 ViewGroup.LayoutParams params = holder.view.getLayoutParams();
                 if (params == null) params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                params.height = emptyHistory ? 0 : ViewGroup.LayoutParams.WRAP_CONTENT;
+                params.height = hidden ? 0 : ViewGroup.LayoutParams.WRAP_CONTENT;
                 holder.view.setLayoutParams(params);
                 String title = (int) object == R.string.home_history ? getString(R.string.home_continue_watching)
                         : getString(R.string.home_source_recommendations, TextUtils.isEmpty(getHome().getName()) ? getString(R.string.app_name) : getHome().getName());
@@ -221,6 +237,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         selector.addPresenter(Vod.class, new VodPresenter(this, Style.list()));
         selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ITEM, HOME_HORIZONTAL_PADDING), VodPresenter.class);
         selector.addPresenter(ListRow.class, new CustomRowPresenter(HOME_HORIZONTAL_SPACING, FocusHighlight.ZOOM_FACTOR_NONE, HorizontalGridView.FOCUS_SCROLL_ALIGNED, HOME_HORIZONTAL_PADDING), HistoryPresenter.class);
+        if (mPosterHome != null) mPosterHome.register(selector);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
         // Keep the first hero at the top and stop the last row above the bottom inset.
@@ -240,6 +257,11 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private void setViewModel() {
         mViewModel = new ViewModelProvider(this).get(SiteViewModel.class);
         mViewModel.getResult().observe(this, result -> {
+            if (mPosterHome != null) {
+                // Keep the source categories ready for the library without replacing the wall.
+                Cache.clear().put(mResult = result);
+                return;
+            }
             boolean restoreFocus = mRestoreRefreshFocus && mRefreshFocusGeneration == mHistoryFocusGeneration
                     && mRefreshFocusCid == VodConfig.getCid() && canRestoreHistoryFocus();
             boolean keepTop = !restoreFocus && (mInitialFocusPending || mBinding.toolbar.hasFocus());
@@ -265,6 +287,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this, getHistorySpec()));
         mAdapter.add(R.string.home_history);
         mAdapter.add(R.string.home_recommend);
+        if (mPosterHome != null) mPosterHome.attach(mAdapter);
     }
 
     private void setTitle() {
@@ -401,6 +424,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         if (mAdapter == null || index < 0 || index >= mAdapter.size()) return false;
         Object item = mAdapter.get(index);
         if (item == null || item instanceof Integer || "progress".equals(item)) return false;
+        if (mPosterHome != null && mPosterHome.isFocusable(item)) return true;
         return item instanceof ListRow || item instanceof FeaturedVodRow || item instanceof Vod || item instanceof EmptyHome;
     }
 
@@ -516,6 +540,12 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void getVideo() {
+        if (mPosterHome != null) {
+            mResult = Result.empty();
+            mViewModel.homeContent();
+            mPosterHome.refresh();
+            return;
+        }
         mResult = Result.empty();
         mHistoryFocusGeneration++;
         mRestoreRefreshFocus = isRefreshRemovingFocusedRow();
@@ -897,6 +927,10 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     protected void onResume() {
         super.onResume();
+        if ((mPosterHome != null) != BrowseExperienceSettings.isPosterHomeEnabled()) {
+            recreate();
+            return;
+        }
         mClock.start();
     }
 
@@ -954,6 +988,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Override
     protected void onDestroy() {
+        if (mPosterHome != null) mPosterHome.close();
         mHistoryFocusGeneration++;
         cancelHistoryLoad();
         mHistoryRequests.close();

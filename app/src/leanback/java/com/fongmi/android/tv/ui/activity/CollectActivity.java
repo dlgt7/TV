@@ -55,6 +55,7 @@ public class CollectActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (results != null) results.refreshFilter();
         focus.invalidate();
         resumeFocusGeneration = focus.snapshot();
         if (hasWindowFocus()) requestInitialFocus();

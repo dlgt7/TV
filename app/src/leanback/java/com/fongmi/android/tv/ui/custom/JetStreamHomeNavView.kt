@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Rect as ComposeRect
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import com.fongmi.android.tv.ui.components.TvSelectionIndicator
 import com.fongmi.android.tv.ui.theme.JetStreamAnimations
@@ -59,6 +61,7 @@ class JetStreamHomeNavView @JvmOverloads constructor(
     private val requesters = mutableMapOf<String, FocusRequester>()
     private var currentSelectedKey by mutableStateOf("")
     private var focusedKey by mutableStateOf("")
+    private var pointerInputEnabled by mutableStateOf(false)
 
     init {
         // Retain the View focus entry used by HomeActivity and nextFocusUp. Once
@@ -80,6 +83,11 @@ class JetStreamHomeNavView @JvmOverloads constructor(
     fun setSelectedKey(key: String) {
         currentSelectedKey = key
         if (!hasFocus() && requesters.containsKey(key)) focusedKey = key
+    }
+
+    /** TV Material handles remote keys; optional poster-home categories also accept touch taps. */
+    fun setTouchHandlingEnabled(enabled: Boolean) {
+        pointerInputEnabled = enabled
     }
 
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
@@ -115,6 +123,15 @@ class JetStreamHomeNavView @JvmOverloads constructor(
                             shape = RoundedCornerShape(21.dp),
                             modifier = Modifier
                                 .height(42.dp)
+                                .then(if (pointerInputEnabled) Modifier.pointerInput(item.key) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            focusedKey = item.key
+                                            listener?.onNavClick(item.key)
+                                        },
+                                        onLongPress = { listener?.onNavLongClick(item.key) }
+                                    )
+                                } else Modifier)
                                 .onGloballyPositioned { positions[item.key] = it.boundsInParent() }
                                 .focusRequester(requesters.getValue(item.key))
                                 .onFocusChanged { if (it.isFocused) focusedKey = item.key }

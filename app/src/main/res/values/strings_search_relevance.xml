@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_relevance_title">搜索相关性</string>
+    <string name="search_relevance_legacy">过滤：原版</string>
+    <string name="search_relevance_related">过滤：相关</string>
+    <string name="search_relevance_strict">过滤：严格</string>
+    <string name="search_relevance_status">%1$s · 已过滤 %2$d 项</string>
+    <string name="search_relevance_empty">暂未找到匹配结果 · 可切换「原版」放宽过滤</string>
+    <string-array name="search_relevance_modes">
+        <item>原版 · 恢复之前的搜索方式</item>
+        <item>相关 · 保留片名、别名和同系列</item>
+        <item>严格 · 只保留完整片名，排除年份或季数冲突</item>
+    </string-array>
+</resources>

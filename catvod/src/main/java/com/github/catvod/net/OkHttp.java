@@ -45,12 +45,14 @@ public class OkHttp {
     private OkProxySelector selector;
     private volatile OkHttpClient client;
     private volatile OkHttpClient player;
+    private volatile OkHttpClient trusted;
     private final Object echLock = new Object();
     private final OkDns dns = new OkDns();
     private final CloudflarePreferredInterceptor preferred = new CloudflarePreferredInterceptor(dns);
     private final IdleConnectionEvictor poolEvictor = new IdleConnectionEvictor(
             () -> { if (client != null) client.connectionPool().evictAll(); },
-            () -> { if (player != null) player.connectionPool().evictAll(); });
+            () -> { if (player != null) player.connectionPool().evictAll();
+                if (trusted != null) trusted.connectionPool().evictAll(); });
     private EchResolverState echResolver;
     private long echGeneration;
 
@@ -95,6 +97,18 @@ public class OkHttp {
     public static synchronized OkHttpClient player() {
         if (get().player != null) return get().player;
         return get().player = getBuilder().build();
+    }
+
+    /** Metadata/images use platform trust while retaining the configured DNS, ECH and proxy. */
+    public static synchronized OkHttpClient trustedClient() {
+        if (get().trusted != null) return get().trusted;
+        // Startup ordering and instrumentation can initialize a client before OkHttp's provider.
+        android.content.Context context = com.github.catvod.Init.context();
+        if (context != null) okhttp3.OkHttp.INSTANCE.initialize(context);
+        OkHttpClient platform = new OkHttpClient();
+        return get().trusted = getBuilder(platform.x509TrustManager())
+                .hostnameVerifier(platform.hostnameVerifier())
+                .dispatcher(client().dispatcher()).build();
     }
 
     public static OkHttpClient client(long timeout) {
@@ -201,8 +215,11 @@ public class OkHttp {
     }
 
     private static OkHttpClient.Builder getBuilder() {
+        return getBuilder(trustAllCertificates());
+    }
+
+    private static OkHttpClient.Builder getBuilder(X509TrustManager trustManager) {
         OkProxySelector selector = selector();
-        X509TrustManager trustManager = trustAllCertificates();
         ConscryptEchSocketFactory sockets = new ConscryptEchSocketFactory(
                 getSSLContext(trustManager).getSocketFactory(), trustManager,
                 new ConscryptEchSocketFactory.ConfigProvider() {
@@ -232,7 +249,7 @@ public class OkHttp {
             synchronized (instance.echLock) {
                 generation = instance.echGeneration;
             }
-            // Read DNS outside echLock: lazy DNS initialization invalidates the ECH cache.
+            // Keep DNS initialization outside echLock: explicit DNS changes take the DNS lock first.
             Doh selection = dns().getDoh();
             String url = selection.getUrl();
             List<String> ips = new ArrayList<>(selection.getIps());

@@ -50,6 +50,34 @@ public class SearchResultFilterTest {
         assertEquals("庆余年 第二季", result.getList().get(0).getName());
     }
 
+    @Test
+    public void originalModeRetainsPreviouslyShippedReverseContainsBehavior() {
+        Result result = Result.list(List.of(vod("庆"), vod("庆余年 第二季"), vod("完美世界")));
+        SearchResultFilter.apply(result, "庆余年", 0);
+        assertEquals(2, result.getList().size());
+    }
+
+    @Test
+    public void relatedModeRemovesPartialFalsePositivesWithoutHidingRelatedEditions() {
+        Result result = Result.list(List.of(vod("庆"), vod("庆余年 第二季"), vod("庆余年 幕后特辑")));
+        SearchResultFilter.apply(result, "庆余年", 1);
+        assertEquals(2, result.getList().size());
+    }
+
+    @Test
+    public void strictModeOnlyKeepsTheCompleteTitle() {
+        Result result = Result.list(List.of(vod("庆"), vod("庆余年"), vod("庆余年 第二季"), vod("庆余年 幕后特辑")));
+        SearchResultFilter.apply(result, "庆余年", 2);
+        assertEquals(1, result.getList().size());
+    }
+
+    @Test
+    public void fullRelatedSearchStillOffersReviewsExcludedFromPosterSources() {
+        Result result = Result.list(List.of(vod("蜘蛛侠：崭新之日"), vod("线上真实影评《蜘蛛侠崭新之日》"), vod("完美世界")));
+        SearchResultFilter.apply(result, "蜘蛛侠：崭新之日", 1);
+        assertEquals(2, result.getList().size());
+    }
+
     private static Vod vod(String name) {
         Vod vod = new Vod();
         vod.setName(name);

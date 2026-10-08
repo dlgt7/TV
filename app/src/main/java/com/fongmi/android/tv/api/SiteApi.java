@@ -14,6 +14,7 @@ import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.player.extractor.Source;
+import com.fongmi.android.tv.setting.BrowseExperienceSettings;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.SearchResultFilter;
 import com.fongmi.android.tv.utils.Sniffer;
@@ -219,6 +220,18 @@ public class SiteApi {
 
     @NonNull
     public static Result searchContent(@NonNull Site site, @NonNull String keyword, boolean quick, @NonNull String page, @Nullable SearchRequest request) throws Exception {
+        Result result = searchRawContent(site, keyword, quick, page, request);
+        return SearchResultFilter.apply(result, keyword, quick ? 0 : BrowseExperienceSettings.getSearchFilterMode());
+    }
+
+    /** Poster selection supplies its own aliases/year; do not discard those candidates first. */
+    @NonNull
+    public static Result searchRawContent(@NonNull Site site, @NonNull String keyword, boolean quick, @NonNull String page) throws Exception {
+        return searchRawContent(site, keyword, quick, page, null);
+    }
+
+    @NonNull
+    public static Result searchRawContent(@NonNull Site site, @NonNull String keyword, boolean quick, @NonNull String page, @Nullable SearchRequest request) throws Exception {
         if (request != null) request.checkCancelled();
         SpiderDebug.log("search", "site=%s,keyword=%s,quick=%s,page=%s", site.getName(), keyword, quick, page);
         boolean hasPage = !page.equals("1");
@@ -239,7 +252,7 @@ public class SiteApi {
         }
         if (request != null) request.checkCancelled();
         for (Vod vod : result.getList()) vod.setSite(site);
-        return SearchResultFilter.apply(result, keyword);
+        return result;
     }
 
     @NonNull

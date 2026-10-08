@@ -15,6 +15,9 @@ import com.fongmi.android.tv.api.DiscoverApi;
 import com.fongmi.android.tv.bean.DiscoverDetail;
 import com.fongmi.android.tv.bean.DiscoverMediaKey;
 import com.fongmi.android.tv.bean.Keep;
+import com.fongmi.android.tv.bean.Vod;
+import com.fongmi.android.tv.bean.DoubanDetail;
+import com.fongmi.android.tv.setting.BrowseExperienceSettings;
 import com.fongmi.android.tv.databinding.ActivityDiscoverDetailBinding;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.ui.adapter.DiscoverCreditAdapter;
@@ -42,6 +45,28 @@ public class DiscoverDetailActivity extends BaseActivity {
     private String overview;
     private String year;
     private String rating;
+    private Vod doubanItem;
+    private PosterSourcesController sources;
+    private boolean sourcePanelOpen;
+    private boolean metadataError;
+
+    public static void start(Activity activity, Vod item, View sharedPoster) {
+        DiscoverMediaKey key = DiscoverMediaKey.parse(item.getId());
+        if (key != null) {
+            start(activity, key, item.getName(), item.getPic(), item.getBackdrop(), item.getContent(), item.getYear(), item.getRemarks(), sharedPoster);
+            return;
+        }
+        if (!item.getId().startsWith("douban:")) return;
+        Intent intent = new Intent(activity, DiscoverDetailActivity.class);
+        intent.putExtra("doubanItem", item);
+        intent.putExtra("title", item.getName());
+        intent.putExtra("poster", item.getPic());
+        intent.putExtra("backdrop", item.getBackdrop());
+        intent.putExtra("overview", item.getContent());
+        intent.putExtra("year", item.getYear());
+        intent.putExtra("rating", item.getRemarks());
+        activity.startActivity(intent);
+    }
 
     public static void start(Activity activity, DiscoverMediaKey key, String title, String poster, String backdrop,
                              String overview, String year, String rating, View sharedPoster) {
@@ -75,7 +100,8 @@ public class DiscoverDetailActivity extends BaseActivity {
     @Override
     protected void initView(Bundle savedInstanceState) {
         key = DiscoverMediaKey.parse(getIntent().getStringExtra("key"));
-        if (key == null) {
+        doubanItem = getIntent().getParcelableExtra("doubanItem");
+        if (key == null && doubanItem == null) {
             finish();
             return;
         }
@@ -86,7 +112,13 @@ public class DiscoverDetailActivity extends BaseActivity {
         year = value(getIntent().getStringExtra("year"));
         rating = value(getIntent().getStringExtra("rating"));
         setCast();
+        if (doubanItem != null) mBinding.sourceLabel.setText(R.string.discover_source_douban);
+        if (BrowseExperienceSettings.isDetailSourcesEnabled()) {
+            sources = new PosterSourcesController(this, mBinding.sourcePanel, this::closeSources);
+            mBinding.search.setText(BrowseExperienceSettings.isSmartSourceEnabled() ? R.string.poster_sources_smart : R.string.poster_sources_open);
+        }
         bindFallback();
+        updateSourceMetadata();
         updateKeep();
         load();
         mBinding.search.requestFocus();
@@ -107,7 +139,10 @@ public class DiscoverDetailActivity extends BaseActivity {
 
     @Override
     protected void initEvent() {
-        mBinding.search.setOnClickListener(view -> CollectActivity.start(this, title));
+        mBinding.search.setOnClickListener(view -> {
+            if (sources == null) CollectActivity.start(this, title);
+            else openSources();
+        });
         mBinding.keep.setOnClickListener(view -> toggleKeep());
         mBinding.fullOverview.setOnClickListener(view -> ContentDialog.create().content(overview).show(this));
         mBinding.retry.setOnClickListener(view -> load());
@@ -126,7 +161,12 @@ public class DiscoverDetailActivity extends BaseActivity {
     }
 
     private void load() {
+        metadataError = false;
         mBinding.retry.setVisibility(View.GONE);
+        if (key == null) {
+            loadDouban();
+            return;
+        }
         DiscoverApi.fetchDetail(key, BuildConfig.TMDB_API_KEY, requestTag, new DiscoverApi.DetailListener() {
             @Override
             public void onSuccess(DiscoverDetail value) {
@@ -137,7 +177,10 @@ public class DiscoverDetailActivity extends BaseActivity {
 
             @Override
             public void onError(Exception e) {
-                if (!isInactive()) mBinding.retry.setVisibility(View.VISIBLE);
+                if (!isInactive()) {
+                    metadataError = true;
+                    mBinding.retry.setVisibility(sourcePanelOpen ? View.GONE : View.VISIBLE);
+                }
             }
         });
     }
@@ -166,6 +209,87 @@ public class DiscoverDetailActivity extends BaseActivity {
         mBinding.castTitle.setVisibility(castVisibility);
         mBinding.cast.setVisibility(castVisibility);
         updateKeep();
+        updateSourceMetadata();
+        if (sourcePanelOpen) mBinding.fullOverview.setVisibility(View.GONE);
+    }
+
+    private void loadDouban() {
+        if (doubanItem == null) return;
+        DiscoverApi.fetchDoubanDetail(doubanItem, requestTag, new DiscoverApi.DoubanDetailListener() {
+            @Override public void onSuccess(DoubanDetail item) {
+                if (isInactive()) return;
+                if (!item.getTitle().isEmpty()) title = item.getTitle();
+                if (!item.getPoster().isEmpty()) poster = item.getPoster();
+                if (!item.getComment().isEmpty()) overview = item.getComment();
+                if (!item.getYear().isEmpty()) year = item.getYear();
+                if (!item.getRating().isEmpty()) rating = item.getRating();
+                bindFallback();
+                String creator = item.getDirectors();
+                mBinding.creator.setText(creator.isEmpty() ? "" : getString(R.string.discover_creators, creator));
+                mBinding.creator.setVisibility(creator.isEmpty() ? View.GONE : View.VISIBLE);
+                updateSourceMetadata();
+                if (sourcePanelOpen) mBinding.fullOverview.setVisibility(View.GONE);
+                // Enrichment may fail independently; source selection already works with Douban fields.
+                DiscoverApi.matchDoubanToTmdb(item, BuildConfig.TMDB_API_KEY, requestTag, new DiscoverApi.MatchListener() {
+                    @Override public void onMatch(DiscoverMediaKey matched) {
+                        if (isInactive()) return;
+                        key = matched;
+                        updateKeep();
+                        load();
+                    }
+                    @Override public void onNoMatch() { }
+                    @Override public void onError(Exception error) { }
+                });
+            }
+            @Override public void onError(Exception error) {
+                if (isInactive()) return;
+                metadataError = true;
+                mBinding.retry.setVisibility(sourcePanelOpen ? View.GONE : View.VISIBLE);
+            }
+        });
+    }
+
+    private void updateSourceMetadata() {
+        if (sources == null) return;
+        boolean movie = key != null ? key.isMovie() : doubanItem != null && "movie".equals(doubanItem.getTypeName());
+        sources.metadata(title, detail == null ? "" : detail.getOriginalTitle(), year, movie, detail == null ? 0 : detail.getSeasons());
+    }
+
+    private void openSources() {
+        sourcePanelOpen = true;
+        android.view.ViewGroup.LayoutParams params = mBinding.artworkColumn.getLayoutParams();
+        int available = getResources().getDisplayMetrics().widthPixels;
+        params.width = Math.min(ResUtil.dp2px(360), Math.max(ResUtil.dp2px(280), (int) (available * 0.40f)));
+        mBinding.artworkColumn.setLayoutParams(params);
+        mBinding.poster.setVisibility(View.GONE);
+        mBinding.sourcePanel.getRoot().setVisibility(View.VISIBLE);
+        mBinding.fullOverview.setVisibility(View.GONE);
+        mBinding.retry.setVisibility(View.GONE);
+        sources.open();
+    }
+
+    private void closeSources() {
+        sourcePanelOpen = false;
+        sources.stop();
+        mBinding.sourcePanel.getRoot().setVisibility(View.GONE);
+        mBinding.poster.setVisibility(View.VISIBLE);
+        android.view.ViewGroup.LayoutParams params = mBinding.artworkColumn.getLayoutParams();
+        params.width = ResUtil.dp2px(216);
+        mBinding.artworkColumn.setLayoutParams(params);
+        mBinding.fullOverview.setVisibility(hasLongOverview() ? View.VISIBLE : View.GONE);
+        mBinding.retry.setVisibility(metadataError ? View.VISIBLE : View.GONE);
+        mBinding.search.setText(BrowseExperienceSettings.isSmartSourceEnabled() ? R.string.poster_sources_smart : R.string.poster_sources_open);
+        mBinding.search.requestFocus();
+    }
+
+    @Override protected void onBackInvoked() {
+        if (sourcePanelOpen) closeSources();
+        else super.onBackInvoked();
+    }
+
+    @Override protected void onPause() {
+        if (sources != null) sources.stop();
+        super.onPause();
     }
 
     private void bindMeta() {
@@ -185,6 +309,7 @@ public class DiscoverDetailActivity extends BaseActivity {
     }
 
     private void toggleKeep() {
+        if (key == null) return;
         Keep saved = Keep.findDiscover(key.toString());
         if (saved != null) {
             saved.delete();
@@ -206,6 +331,8 @@ public class DiscoverDetailActivity extends BaseActivity {
     }
 
     private void updateKeep() {
+        mBinding.keep.setVisibility(key == null ? View.GONE : View.VISIBLE);
+        if (key == null) return;
         boolean saved = Keep.findDiscover(key.toString()) != null;
         mBinding.keep.setText(saved ? R.string.discover_remove_keep : R.string.discover_add_keep);
     }
@@ -225,6 +352,7 @@ public class DiscoverDetailActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         DiscoverApi.cancel(requestTag);
+        if (sources != null) sources.stop();
         super.onDestroy();
     }
 

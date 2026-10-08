@@ -20,15 +20,20 @@ import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Collect;
+import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.ViewSearchResultsBinding;
 import com.fongmi.android.tv.model.SiteViewModel;
+import com.fongmi.android.tv.setting.BrowseExperienceSettings;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.adapter.CollectAdapter;
 import com.fongmi.android.tv.ui.base.BaseActivity;
+import com.fongmi.android.tv.ui.custom.TouchFocus;
 import com.fongmi.android.tv.ui.fragment.CollectFragment;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.SearchResultFilter;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
@@ -46,6 +51,8 @@ final class SearchResultsController {
     private boolean disposed;
     private boolean searching;
     private int resultCount;
+    private int filteredCount;
+    private int filterMode;
     private final Runnable finishStatus = () -> {
         searching = false;
         if (!isInactive()) updateStatus(false);
@@ -57,6 +64,7 @@ final class SearchResultsController {
     private View mOldView;
     private boolean mSearchStarted;
     private final List<Vod> mPending = new ArrayList<>();
+    private final List<List<Vod>> rawBatches = new ArrayList<>();
 
     SearchResultsController(BaseActivity activity, ViewSearchResultsBinding binding, boolean compact, SearchFocusGuard focus) {
         this.activity = activity;
@@ -66,6 +74,7 @@ final class SearchResultsController {
         setRecyclerView();
         setViewModel();
         initEvent();
+        updateFilterButton();
     }
 
     @Nullable
@@ -88,15 +97,22 @@ final class SearchResultsController {
         List<Site> sites = VodConfig.get().getSites().stream().filter(Site::isSearchable).toList();
         String signature = VodConfig.getCid() + ":" + sites.stream().map(Site::getKey).collect(java.util.stream.Collectors.joining("|"));
         if (next.isEmpty() || isInactive()) return false;
-        if (mSearchStarted && (searching || resultCount > 0) && next.equals(keyword) && signature.equals(siteSignature)) return false;
+        if (mSearchStarted && (searching || resultCount > 0) && next.equals(keyword) && signature.equals(siteSignature)) {
+            refreshFilter();
+            return false;
+        }
         mSearchStarted = false;
         mViewModel.stopSearch();
         App.removeCallbacks(mRunnable);
         App.removeCallbacks(finishStatus);
         mPending.clear();
+        rawBatches.clear();
         mOldView = null;
         mAdapter.clear();
         resultCount = 0;
+        filteredCount = 0;
+        filterMode = BrowseExperienceSettings.getSearchFilterMode();
+        updateFilterButton();
         keyword = next;
         siteSignature = signature;
         mSites = sites;
@@ -109,7 +125,7 @@ final class SearchResultsController {
         mPageAdapter.notifyDataSetChanged();
         updateStatus(!sites.isEmpty());
         if (!sites.isEmpty()) {
-            mViewModel.searchContent(mSites, keyword, false);
+            mViewModel.searchRawContent(mSites, keyword);
             App.post(finishStatus, Constant.TIMEOUT_SEARCH + 250);
         }
         return true;
@@ -118,10 +134,19 @@ final class SearchResultsController {
     private void updateStatus(boolean waiting) {
         if (mSites.isEmpty()) mBinding.status.setText(R.string.tv_search_no_sources);
         else if (resultCount > 0) mBinding.status.setText(activity.getString(R.string.tv_search_result_count, resultCount, Math.max(0, mAdapter.getItemCount() - 1)));
-        else mBinding.status.setText(waiting ? R.string.tv_search_waiting : R.string.tv_search_empty);
+        else mBinding.status.setText(waiting ? R.string.tv_search_waiting : filterMode > 0 ? R.string.search_relevance_empty : R.string.tv_search_empty);
+        if (filterMode > 0 && filteredCount > 0) mBinding.status.setText(activity.getString(R.string.search_relevance_status, mBinding.status.getText(), filteredCount));
     }
 
     private void initEvent() {
+        TouchFocus.bind(mBinding.relevance);
+        mBinding.relevance.setOnClickListener(view -> new MaterialAlertDialogBuilder(activity)
+                .setTitle(R.string.search_relevance_title)
+                .setSingleChoiceItems(R.array.search_relevance_modes, filterMode, (dialog, which) -> {
+                    BrowseExperienceSettings.putSearchFilterMode(which);
+                    refreshFilter();
+                    dialog.dismiss();
+                }).show());
         mBinding.pager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
@@ -157,15 +182,51 @@ final class SearchResultsController {
         mViewModel = new ViewModelProvider(activity).get(SiteViewModel.class).init();
         mViewModel.getSearch().observe(activity, result -> {
             if (isInactive() || !mSearchStarted || result == null || result.getList().isEmpty()) return;
-            List<Vod> items = result.getList();
-            resultCount += items.size();
-            mPending.addAll(items);
-            mAdapter.add(Collect.create(items));
-            updateStatus(true);
+            List<Vod> raw = new ArrayList<>(result.getList());
+            rawBatches.add(raw);
+            addFilteredBatch(raw);
+            updateStatus(searching);
             if (mBinding.pager.getAdapter() != null) mBinding.pager.getAdapter().notifyDataSetChanged();
             flushPending();
             mBinding.pager.post(this::flushPending);
         });
+    }
+
+    private void addFilteredBatch(List<Vod> raw) {
+        List<Vod> items = SearchResultFilter.apply(Result.list(new ArrayList<>(raw)), keyword, filterMode).getList();
+        filteredCount += raw.size() - items.size();
+        if (items.isEmpty()) return;
+        resultCount += items.size();
+        mPending.addAll(items);
+        mAdapter.add(Collect.create(items));
+    }
+
+    /** Cached source responses make all three modes reversible without another network search. */
+    void refreshFilter() {
+        int mode = BrowseExperienceSettings.getSearchFilterMode();
+        if (mode == filterMode || isInactive()) return;
+        filterMode = mode;
+        updateFilterButton();
+        if (!mSearchStarted) return;
+        focus.invalidate();
+        App.removeCallbacks(mRunnable);
+        mOldView = null;
+        resultCount = 0;
+        filteredCount = 0;
+        mPending.clear();
+        mAdapter.clear();
+        setPager();
+        mAdapter.add(Collect.all());
+        // Grouping mutates visible representatives; old candidates must not bypass a stricter filter.
+        for (List<Vod> raw : rawBatches) for (Vod item : raw) if (item != null) item.setSourceCandidates(null);
+        for (List<Vod> raw : rawBatches) addFilteredBatch(raw);
+        mPageAdapter.notifyDataSetChanged();
+        updateStatus(searching);
+        mBinding.pager.post(this::flushPending);
+    }
+
+    private void updateFilterButton() {
+        mBinding.relevance.setText(filterMode == 2 ? R.string.search_relevance_strict : filterMode == 1 ? R.string.search_relevance_related : R.string.search_relevance_legacy);
     }
 
     private void flushPending() {
@@ -275,6 +336,7 @@ final class SearchResultsController {
         App.removeCallbacks(finishStatus);
         if (mViewModel != null) mViewModel.stopSearch();
         mPending.clear();
+        rawBatches.clear();
     }
 
     private boolean isInactive() {
