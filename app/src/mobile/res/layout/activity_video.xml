@@ -22,17 +22,23 @@
         android:focusable="true">
 
         <androidx.media3.ui.PlayerView
-            android:id="@+id/player"
-            style="@style/Player.Vod"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:surface_type="none" />
+                android:id="@+id/player"
+                style="@style/Player.Vod"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:surface_type="none" />
 
-        <include
-            android:id="@+id/widget"
-            layout="@layout/view_widget_vod"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            <include
+                android:id="@+id/display"
+                layout="@layout/view_widget_display"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <include
+                android:id="@+id/widget"
+                layout="@layout/view_widget_vod"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
         <include
             android:id="@+id/control"
