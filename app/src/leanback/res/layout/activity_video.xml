@@ -39,6 +39,12 @@
                 app:surface_type="none" />
 
             <include
+                android:id="@+id/display"
+                layout="@layout/view_widget_display"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <include
                 android:id="@+id/widget"
                 layout="@layout/view_widget_vod"
                 android:layout_width="match_parent"
