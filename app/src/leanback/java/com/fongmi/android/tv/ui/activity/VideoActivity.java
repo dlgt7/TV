@@ -141,6 +141,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private Runnable mR3;
     private Runnable mR4;
     private Clock mClock;
+    private Clock mDisplayClock;
     private View mFocus1;
     private boolean restoreDetailActionFocus;
     private View mFocus2;
@@ -349,6 +350,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         super.initView(savedInstanceState);
         mFrameParams = mBinding.video.getLayoutParams();
         mClock = Clock.create(mBinding.widget.clock);
+        mDisplayClock = Clock.create(mBinding.display.clock);
         mKeyDown = CustomKeyDownVod.create(this);
         clearDetailState();
         mObserveDetail = this::onDetailObserved;
@@ -677,9 +679,12 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     @Override
     public void requestPlayer(VodPlayRequest request) {
         beginPlaybackRequest();
-        mBinding.widget.title.setText(getString(R.string.detail_title, getVodName(), request.getTitle()));
+        String title = getString(R.string.detail_title, getVodName(), request.getTitle());
+        mBinding.widget.title.setText(title);
+        mBinding.display.title.setText(title);
         mViewModel.playerContent(request.getKey(), request.getFlag(), request.getId());
         mBinding.widget.title.setSelected(true);
+        mBinding.display.title.setSelected(true);
         showProgress();
     }
 
@@ -1808,6 +1813,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         if (name) mHistory.setVodName(item.getName());
         if (name) showTitleText(item.getName());
         if (name) mBinding.widget.title.setText(item.getName());
+        if (name) mBinding.display.title.setText(item.getName());
         mVod.mergeFlags(item.getFlags());
         if (pic) setArtwork(item.getPic());
         if (name) fetchTmdbLogo(item);
@@ -1937,6 +1943,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         long position = player().getPosition();
         long duration = player().getDuration();
         if (position < 0 || duration <= 0) return;
+        mBinding.display.duration.setText(player().getPositionTime(0) + "/" + player().getDurationTime());
+        Traffic.setSpeed(mBinding.display.netspeed);
         mVod.onTimeChanged(time, position, duration);
     }
 
@@ -2139,6 +2147,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         SyncplaySession.get().observe(mSyncplayObserver);
         AiSubtitlePlaybackUi.refresh(mBinding.control.action.aiSubtitle, mBinding.control.action.aiLanguage);
         mClock.stop().start();
+        mDisplayClock.stop().start();
     }
 
     @Override
@@ -2146,7 +2155,10 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         if (mKeyDown != null) mKeyDown.reset();
         SyncplaySession.get().removeObserver(mSyncplayObserver);
         super.onStop();
-        if (PlayerSetting.isBackgroundOff()) mClock.stop();
+        if (PlayerSetting.isBackgroundOff()) {
+            mClock.stop();
+            mDisplayClock.stop();
+        }
     }
 
     @Override
@@ -2174,6 +2186,7 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mRatingRequest++;
         MediaRatingHelper.cancel();
         mClock.release();
+        mDisplayClock.release();
         saveHistory(true);
         DanmakuApi.cancel();
         RefreshEvent.keep();
