@@ -142,6 +142,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private Runnable mR3;
     private Runnable mR4;
     private Clock mClock;
+    private Clock mDisplayClock;
     private PiP mPiP;
 
     public static void push(FragmentActivity activity, String text) {
@@ -318,6 +319,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mObservePlayer = this::onPlayerObserved;
         mObserveSearch = this::onSearchObserved;
         mClock = Clock.create();
+        mDisplayClock = Clock.create(mBinding.display.clock);
         mR1 = this::hideControl;
         mR2 = this::setTraffic;
         mR3 = this::setOrient;
@@ -537,9 +539,12 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     @Override
     public void requestPlayer(VodPlayRequest request) {
         beginPlaybackRequest();
-        mBinding.control.title.setText(getString(R.string.detail_title, mBinding.name.getText(), request.getTitle()));
+        String title = getString(R.string.detail_title, mBinding.name.getText(), request.getTitle());
+        mBinding.control.title.setText(title);
+        mBinding.display.title.setText(title);
         mViewModel.playerContent(request.getKey(), request.getFlag(), request.getId());
         mBinding.control.title.setSelected(true);
+        mBinding.display.title.setSelected(true);
         showProgress();
     }
 
@@ -1272,6 +1277,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         if (name) mHistory.setVodName(item.getName());
         if (name) mBinding.name.setText(item.getName());
         if (name) mBinding.control.title.setText(item.getName());
+        if (name) mBinding.display.title.setText(item.getName());
         mVod.mergeFlags(item.getFlags());
         if (pic) setArtwork(item.getPic());
         if (pic || name) setMetadata();
@@ -1400,6 +1406,8 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         long position = player().getPosition();
         long duration = player().getDuration();
         if (position < 0 || duration <= 0) return;
+        mBinding.display.duration.setText(player().getPositionTime(0) + "/" + player().getDurationTime());
+        Traffic.setSpeed(mBinding.display.netspeed);
         mVod.onTimeChanged(time, position, duration);
     }
 
@@ -1668,6 +1676,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         super.onStart();
         AiSubtitlePlaybackUi.refresh(mBinding.control.action.aiSubtitle, mBinding.control.action.aiLanguage);
         mClock.stop().start();
+        mDisplayClock.stop().start();
         setAudioOnly(false);
         setStop(false);
     }
@@ -1676,7 +1685,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     protected void onStop() {
         if (mKeyDown != null) mKeyDown.cancelGesture();
         super.onStop();
-        if (PlayerSetting.isBackgroundOff()) mClock.stop();
+        if (PlayerSetting.isBackgroundOff()) {
+            mClock.stop();
+            mDisplayClock.stop();
+        }
         if (!isAudioOnly()) setStop(true);
     }
 
@@ -1697,6 +1709,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     protected void onDestroy() {
         if (mVod != null) mVod.clearPreload();
         mClock.release();
+        mDisplayClock.release();
         saveHistory(true);
         Timer.get().reset();
         DanmakuApi.cancel();
