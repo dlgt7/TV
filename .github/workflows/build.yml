@@ -89,6 +89,7 @@ jobs:
 
       - name: Build
         run: |
+          chmod +x gradlew
           type="${BUILD_TYPE,,}"
           ./gradlew --stacktrace "assemble${type^}"
 
