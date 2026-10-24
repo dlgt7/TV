@@ -1,0 +1,110 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildType:
+        description: "构建类型"
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - debug
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ inputs.buildType || 'release' }} APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      # 写权限：拉取 deps Release 资产（如为 draft）、打 tag 时发布 Release
+      contents: write
+    env:
+      BUILD_TYPE: ${{ inputs.buildType || 'release' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      # app/libs 下被 .gitignore 忽略的 lib-*.aar（lib-mpvplayer-release.aar、
+      # lib-decoder-ffmpeg-release.aar、media3 的 aar 等）必须自行取得，
+      # 上传到本仓库一个 tag 为 deps 的 Release 里，此步骤会拉回来。
+      - name: Fetch private AARs from deps release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download deps --repo "$GITHUB_REPOSITORY" --dir app/libs --pattern '*.aar' --clobber \
+            || echo "::warning::本仓库没有名为 deps 的 Release，未拉到任何私有 aar"
+          ls -l app/libs
+          fail=0
+          for f in lib-mpvplayer-release.aar lib-decoder-ffmpeg-release.aar; do
+            [ -f "app/libs/$f" ] || { echo "::error::缺少 app/libs/$f，请把它上传到本仓库 tag 为 deps 的 Release"; fail=1; }
+          done
+          count=$(find app/libs -maxdepth 1 -name 'lib-*.aar' | wc -l)
+          if [ "$count" -lt 3 ]; then
+            echo "::warning::app/libs 目前只有 $count 个 lib-*.aar。若缺少 media3 对应的 aar，编译时会报大量 androidx.media3 包不存在的错误"
+          fi
+          exit $fail
+
+      # app/build.gradle 在配置阶段无条件读取 local.properties 的签名信息，
+      # 没有它连任务图都构建不了。默认生成一套临时签名；
+      # 配置了 KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS 三个 secret 则用正式签名。
+      - name: Create local.properties and keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > ci.keystore
+            printf 'storeFile=%s\nkeyAlias=%s\nstorePassword=%s\n' \
+              "$GITHUB_WORKSPACE/ci.keystore" "$KEY_ALIAS" "$KEYSTORE_PASSWORD" > local.properties
+          else
+            keytool -genkeypair -keystore ci.keystore -storetype PKCS12 \
+              -storepass fongmi-ci -keypass fongmi-ci -alias fongmi-ci \
+              -keyalg RSA -keysize 2048 -validity 10950 \
+              -dname "CN=FongMi TV CI" >/dev/null 2>&1
+            printf 'storeFile=%s\nkeyAlias=fongmi-ci\nstorePassword=fongmi-ci\n' \
+              "$GITHUB_WORKSPACE/ci.keystore" > local.properties
+          fi
+
+      - name: Build
+        run: |
+          type="${BUILD_TYPE,,}"
+          ./gradlew --stacktrace "assemble${type^}"
+
+      - name: Show APKs
+        run: find app/build/outputs/apk -name '*.apk' -printf '%p  %k KB\n'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fongmi-tv-apk
+          path: app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/**/*.apk
+          generate_release_notes: true
